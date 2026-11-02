@@ -1,0 +1,170 @@
+@model WebVanTai.Models.Route
+@{
+    ViewData["Title"] = $"Chi Tiết Tuyến: {Model.StartProvince} - {Model.EndProvince}";
+    var orderedStations = Model.RouteStations.OrderBy(rs => rs.StopOrder).ToList();
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Tuyến đường</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-signpost-split-fill text-warning me-2"></i>@Model.StartProvince <i class="bi bi-arrow-right text-muted fs-5"></i> @Model.EndProvince
+            </h3>
+            <span class="badge bg-light text-secondary border mt-1">Mã tuyến: #@Model.RouteId</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.RouteId" class="btn btn-futa btn-sm">
+                <i class="bi bi-pencil-square me-1"></i> Cấu Hình Lại Tuyến
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quay Lại</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Route Details & Summary -->
+    <div class="col-lg-4">
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-info-circle text-primary me-2"></i>Thông Tin Tuyến
+            </h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-5 text-muted">Xuất phát:</dt>
+                <dd class="col-sm-7 fw-bold text-dark">@Model.StartProvince</dd>
+
+                <dt class="col-sm-5 text-muted">Điểm đến:</dt>
+                <dd class="col-sm-7 fw-bold text-dark">@Model.EndProvince</dd>
+
+                <dt class="col-sm-5 text-muted">Cự ly:</dt>
+                <dd class="col-sm-7"><span class="badge bg-light text-dark border font-monospace">@Model.DistanceKm km</span></dd>
+
+                <dt class="col-sm-5 text-muted">Thời gian:</dt>
+                <dd class="col-sm-7"><span class="badge bg-light text-secondary border font-monospace">@Model.DurationHours.ToString("0.0") giờ</span></dd>
+
+                <dt class="col-sm-5 text-muted">Trạng thái:</dt>
+                <dd class="col-sm-7">
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Đang hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary border">Tạm ngưng</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+
+        <!-- Trips on this route -->
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-calendar2-week text-success me-2"></i>Chuyến Xe Đã Lập (@Model.Trips.Count)
+                </h5>
+                <a asp-controller="Trips" asp-action="Create" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus"></i> Thêm chuyến
+                </a>
+            </div>
+
+            @if (!Model.Trips.Any())
+            {
+                <p class="text-muted small mb-0">Chưa có chuyến xe nào được xếp cho tuyến này.</p>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var trip in Model.Trips.Take(5))
+                    {
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold text-dark small">
+                                    <i class="bi bi-clock me-1"></i>@trip.DepartureTime.ToString("HH:mm dd/MM/yyyy")
+                                </div>
+                                <div class="small text-muted">
+                                    Xe: <span class="badge bg-light text-dark border">@trip.Bus?.LicensePlate</span> &bull; Giá: @trip.BasePrice.ToString("N0") đ
+                                </div>
+                            </div>
+                            <a asp-controller="Trips" asp-action="Details" asp-route-id="@trip.TripId" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: Visual Station Timeline -->
+    <div class="col-lg-8">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-signpost-2 text-warning me-2"></i>Lộ Trình Trạm Dừng Theo Thứ Tự (StopOrder)
+            </h5>
+
+            @if (!orderedStations.Any())
+            {
+                <div class="alert alert-warning">
+                    Tuyến xe này chưa được gán bất kỳ trạm dừng nào. Vui lòng nhấn <a asp-action="Edit" asp-route-id="@Model.RouteId" class="alert-link">Chỉnh Sửa</a> để thêm trạm.
+                </div>
+            }
+            else
+            {
+                <div class="timeline position-relative ps-4 py-2">
+                    <div style="position: absolute; left: 15px; top: 15px; bottom: 25px; width: 3px; background-color: #E2E8F0;"></div>
+                    @for (int i = 0; i < orderedStations.Count; i++)
+                    {
+                        var rs = orderedStations[i];
+                        var isFirst = i == 0;
+                        var isLast = i == orderedStations.Count - 1;
+                        var dotColor = isFirst ? "bg-success" : (isLast ? "bg-danger" : "bg-warning");
+
+                        <div class="position-relative mb-4">
+                            <!-- Bullet -->
+                            <div class="position-absolute rounded-circle @dotColor text-white d-flex align-items-center justify-content-center shadow-sm"
+                                 style="left: -33px; top: 0; width: 24px; height: 24px; font-size: 0.75rem; font-weight: bold;">
+                                @rs.StopOrder
+                            </div>
+
+                            <div class="card border p-3 bg-light-subtle shadow-xs">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                                            @rs.Station?.Name
+                                        </h6>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-geo me-1"></i>@rs.Station?.Address, @rs.Station?.Province
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-clock-history me-1"></i>+@rs.OffsetMinutes phút
+                                        </span>
+                                        @switch (rs.StationType)
+                                        {
+                                            case StationType.Pickup:
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Điểm đón</span>
+                                                break;
+                                            case StationType.Dropoff:
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Điểm trả</span>
+                                                break;
+                                            case StationType.Both:
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">Đón & Trả</span>
+                                                break;
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

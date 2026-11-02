@@ -1,0 +1,67 @@
+@model WebVanTai.Models.BusType
+@{
+    ViewData["Title"] = $"Xóa Loại Xe: {Model.Name}";
+    int busesCount = ViewBag.BusesCount ?? 0;
+    bool canDelete = busesCount == 0;
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Loại xe</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Xác nhận xóa</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Xóa Loại Xe
+    </h3>
+    <p class="text-muted small">Kiểm tra thông tin trước khi thực hiện xóa loại xe khỏi hệ thống.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4">
+            @if (!canDelete)
+            {
+                <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-slash-circle-fill fs-3 me-3"></i>
+                    <div>
+                        <strong class="d-block mb-1">Không thể xóa loại xe này!</strong>
+                        Hiện đang có <strong>@busesCount xe khách</strong> đang thuộc phân loại này. Bạn cần đổi loại xe cho các xe đó hoặc xóa các xe đó trước.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-question-circle-fill fs-3 me-3"></i>
+                    <div>
+                        Bạn có chắc chắn muốn xóa loại xe <strong>@Model.Name</strong>? Thao tác này không thể hoàn tác.
+                    </div>
+                </div>
+            }
+
+            <dl class="row mb-4">
+                <dt class="col-sm-4 text-muted">Mã loại xe:</dt>
+                <dd class="col-sm-8 fw-bold">#@Model.BusTypeId</dd>
+
+                <dt class="col-sm-4 text-muted">Tên loại xe:</dt>
+                <dd class="col-sm-8 fw-bold text-dark">@Model.Name</dd>
+
+                <dt class="col-sm-4 text-muted">Số chỗ & số tầng:</dt>
+                <dd class="col-sm-8">@Model.TotalSeats chỗ &bull; @Model.TotalDecks tầng</dd>
+            </dl>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="BusTypeId" />
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger" disabled="@(!canDelete)">
+                        <i class="bi bi-trash-fill me-1"></i> Xác Nhận Xóa
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy Bỏ & Quay Lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

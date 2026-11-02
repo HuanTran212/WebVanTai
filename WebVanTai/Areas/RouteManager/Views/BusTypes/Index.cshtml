@@ -1,0 +1,92 @@
+@model IEnumerable<WebVanTai.Models.BusType>
+@{
+    ViewData["Title"] = "Quản Lý Loại Xe & Sơ Đồ Ghế";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-grid-3x3-gap-fill text-success me-2"></i>Danh Sách Loại Xe & Sơ Đồ Ghế
+        </h3>
+        <p class="text-muted mb-0 small">Định nghĩa cấu hình số lượng ghế, số tầng và ma trận ghế chuẩn JSON.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Thêm Loại Xe Mới
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Mã</th>
+                    <th>Tên Loại Xe</th>
+                    <th class="text-center">Số Chỗ Ngồi</th>
+                    <th class="text-center">Số Tầng</th>
+                    <th class="text-center">Số Lượng Xe</th>
+                    <th>Cấu Trúc JSON Ghế</th>
+                    <th class="text-end" style="width: 150px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-truck fs-1 d-block text-secondary mb-2"></i>
+                            Chưa có loại xe nào.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-muted fw-bold">#@item.BusTypeId</td>
+                            <td>
+                                <div class="fw-bold text-dark">@item.Name</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace fs-6">
+                                    @item.TotalSeats ghế
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">
+                                    @item.TotalDecks tầng
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info-subtle text-info border">
+                                    @item.Buses.Count xe
+                                </span>
+                            </td>
+                            <td>
+                                <span class="small text-muted font-monospace text-truncate d-inline-block" style="max-width: 250px;">
+                                    @item.SeatLayoutJson
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@item.BusTypeId" class="btn btn-outline-secondary" title="Xem trực quan sơ đồ ghế">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.BusTypeId" class="btn btn-outline-primary" title="Sửa cấu hình">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.BusTypeId" class="btn btn-outline-danger" title="Xóa loại xe">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

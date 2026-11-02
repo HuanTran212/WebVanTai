@@ -1,0 +1,143 @@
+@model WebVanTai.Models.BusType
+@{
+    ViewData["Title"] = "Thêm Loại Xe Mới";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Loại xe</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Thêm mới</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-dark">
+        <i class="bi bi-grid-3x3-gap-fill text-success me-2"></i>Thêm Mới Loại Xe & Thiết Lập Sơ Đồ Ghế
+    </h3>
+    <p class="text-muted small">Cấu hình tên loại xe, số chỗ, số tầng và định dạng ma trận ghế chuẩn JSON.</p>
+</div>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+    <div class="row g-4">
+        <!-- Basic Info -->
+        <div class="col-lg-5">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Thông Số Loại Xe
+                </h5>
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label fw-semibold">Tên Loại Xe <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control" placeholder="Ví dụ: Giường nằm 34 phòng VIP" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label asp-for="TotalSeats" class="form-label fw-semibold">Tổng Số Ghế <span class="text-danger">*</span></label>
+                        <input asp-for="TotalSeats" id="totalSeatsInput" type="number" class="form-control" min="4" max="100" required />
+                        <span asp-validation-for="TotalSeats" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="TotalDecks" class="form-label fw-semibold">Số Tầng <span class="text-danger">*</span></label>
+                        <select asp-for="TotalDecks" id="totalDecksInput" class="form-select">
+                            <option value="1">1 tầng</option>
+                            <option value="2">2 tầng</option>
+                        </select>
+                        <span asp-validation-for="TotalDecks" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Số Cột Ghế Mỗi Hàng</label>
+                    <select id="colsInput" class="form-select">
+                        <option value="2">2 cột (Limousine phòng VIP)</option>
+                        <option value="3" selected>3 cột (Giường nằm tiêu chuẩn)</option>
+                        <option value="4">4 cột (Ghế ngồi 2-2)</option>
+                    </select>
+                </div>
+
+                <div class="alert alert-info py-2 small">
+                    <i class="bi bi-magic me-1"></i> Nhấn nút bên dưới để tự động tạo cấu trúc JSON mẫu khớp với số chỗ và số tầng đã nhập.
+                </div>
+
+                <button type="button" class="btn btn-outline-primary w-100 mb-4" id="btnGenerateJson">
+                    <i class="bi bi-arrow-repeat me-1"></i> Tự Động Sinh JSON Sơ Đồ Ghế Mẫu
+                </button>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <button type="submit" class="btn btn-futa flex-grow-1">
+                        <i class="bi bi-save me-1"></i> Lưu Loại Xe
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy Bỏ</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seat Layout JSON Editor -->
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-code-square text-dark me-2"></i>Ma Trận Sơ Đồ Ghế (JSON)
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnFormatJson">
+                        <i class="bi bi-check2-circle me-1"></i> Kiểm tra & Định dạng JSON
+                    </button>
+                </div>
+
+                <div class="mb-2">
+                    <label asp-for="SeatLayoutJson" class="form-label fw-semibold small text-muted">Mã JSON cấu hình từng tầng (decks) và từng ghế (code, row, col, type):</label>
+                    <textarea asp-for="SeatLayoutJson" id="seatLayoutJsonTextarea" class="form-control font-monospace small" rows="18" style="font-size: 0.85rem;" required></textarea>
+                    <span asp-validation-for="SeatLayoutJson" class="text-danger small"></span>
+                </div>
+
+                <div id="jsonValidationStatus" class="small mt-1 text-success">
+                    <i class="bi bi-check-circle-fill me-1"></i> Cấu trúc JSON hợp lệ.
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function generateLayout() {
+            var seats = parseInt($('#totalSeatsInput').val()) || 34;
+            var decks = parseInt($('#totalDecksInput').val()) || 2;
+            var cols = parseInt($('#colsInput').val()) || 3;
+
+            $.get('@Url.Action("GenerateLayout", "BusTypes")', { totalSeats: seats, totalDecks: decks, cols: cols }, function(data) {
+                $('#seatLayoutJsonTextarea').val(JSON.stringify(data, null, 2));
+                validateJson();
+            });
+        }
+
+        function validateJson() {
+            var text = $('#seatLayoutJsonTextarea').val();
+            try {
+                var parsed = JSON.parse(text);
+                $('#jsonValidationStatus').removeClass('text-danger').addClass('text-success')
+                    .html('<i class="bi bi-check-circle-fill me-1"></i> Cấu trúc JSON hợp lệ.');
+                return true;
+            } catch (err) {
+                $('#jsonValidationStatus').removeClass('text-success').addClass('text-danger')
+                    .html('<i class="bi bi-exclamation-triangle-fill me-1"></i> Lỗi cú pháp JSON: ' + err.message);
+                return false;
+            }
+        }
+
+        $('#btnGenerateJson').on('click', generateLayout);
+        $('#btnFormatJson').on('click', function() {
+            if (validateJson()) {
+                var text = $('#seatLayoutJsonTextarea').val();
+                var parsed = JSON.parse(text);
+                $('#seatLayoutJsonTextarea').val(JSON.stringify(parsed, null, 2));
+            }
+        });
+        $('#seatLayoutJsonTextarea').on('input', validateJson);
+    </script>
+}

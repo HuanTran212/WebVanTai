@@ -1,0 +1,230 @@
+@model RouteFormViewModel
+@{
+    ViewData["Title"] = "Tạo Tuyến Đường Mới";
+    var stationList = ViewBag.StationList as SelectList ?? new SelectList(Enumerable.Empty<object>());
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Tuyến đường</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tạo mới</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-dark">
+        <i class="bi bi-signpost-split-fill text-warning me-2"></i>Tạo Tuyến Đường & Cấu Hình Trạm Dừng
+    </h3>
+    <p class="text-muted small">Thiết lập hành trình và cấu hình thứ tự dừng (StopOrder) của các trạm đón/trả khách.</p>
+</div>
+
+<form asp-action="Create" method="post" id="routeForm">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+    <div class="row g-4">
+        <!-- Route Basic Info -->
+        <div class="col-lg-4">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Thông Tin Tuyến
+                </h5>
+
+                <div class="mb-3">
+                    <label asp-for="StartProvince" class="form-label fw-semibold">Tỉnh / Thành Xuất Phát <span class="text-danger">*</span></label>
+                    <input asp-for="StartProvince" class="form-control" placeholder="Ví dụ: Hồ Chí Minh" required />
+                    <span asp-validation-for="StartProvince" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EndProvince" class="form-label fw-semibold">Tỉnh / Thành Đến <span class="text-danger">*</span></label>
+                    <input asp-for="EndProvince" class="form-control" placeholder="Ví dụ: Lâm Đồng" required />
+                    <span asp-validation-for="EndProvince" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label asp-for="DistanceKm" class="form-label fw-semibold">Cự Ly (km) <span class="text-danger">*</span></label>
+                        <input asp-for="DistanceKm" type="number" class="form-control" min="1" required />
+                        <span asp-validation-for="DistanceKm" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="DurationHours" class="form-label fw-semibold">Thời Gian (giờ) <span class="text-danger">*</span></label>
+                        <input asp-for="DurationHours" type="number" step="0.1" class="form-control" min="0.1" required />
+                        <span asp-validation-for="DurationHours" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" checked />
+                    <label class="form-check-label fw-semibold" for="isActiveSwitch">Kích hoạt tuyến ngay</label>
+                </div>
+
+                <div class="d-flex gap-2 mt-auto">
+                    <button type="submit" class="btn btn-futa flex-grow-1">
+                        <i class="bi bi-save me-1"></i> Lưu Tuyến & Trạm Dừng
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- RouteStation Configuration Section -->
+        <div class="col-lg-8">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-list-ol text-warning me-2"></i>Cấu Hình Danh Sách Trạm Dừng (RouteStation)
+                        </h5>
+                        <small class="text-muted">Các trạm được sắp xếp tăng dần theo Thứ tự dừng (StopOrder).</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddStation">
+                        <i class="bi bi-plus-circle me-1"></i> Thêm Trạm Dừng
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="stationsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 70px;" class="text-center">Thứ Tự</th>
+                                <th>Trạm Dừng / Bến Xe <span class="text-danger">*</span></th>
+                                <th style="width: 170px;">Loại Trạm</th>
+                                <th style="width: 140px;">Bù Phút (Offset)</th>
+                                <th style="width: 90px;" class="text-center">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stationsTableBody">
+                            <!-- Populated dynamically via JS or initially -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noStationAlert" class="alert alert-warning py-3 text-center">
+                    <i class="bi bi-exclamation-circle me-1"></i> Chưa có trạm dừng nào. Vui lòng bấm <strong>"Thêm Trạm Dừng"</strong> để cấu hình lộ trình đón/trả.
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Template options for Station dropdown -->
+<select id="stationOptionsTemplate" style="display: none;">
+    <option value="">-- Chọn trạm dừng --</option>
+    @foreach (var item in stationList)
+    {
+        <option value="@item.Value">@item.Text</option>
+    }
+</select>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var stationRowIndex = 0;
+
+        function updateEmptyState() {
+            var rowCount = $('#stationsTableBody tr').length;
+            if (rowCount === 0) {
+                $('#noStationAlert').show();
+            } else {
+                $('#noStationAlert').hide();
+            }
+        }
+
+        function reindexRows() {
+            $('#stationsTableBody tr').each(function(index) {
+                var order = index + 1;
+                $(this).find('.stop-order-input').val(order);
+                $(this).find('.stop-order-display').text('#' + order);
+
+                // Update input names for ASP.NET model binding
+                $(this).find('select.station-select').attr('name', 'RouteStations[' + index + '].StationId');
+                $(this).find('input.stop-order-input').attr('name', 'RouteStations[' + index + '].StopOrder');
+                $(this).find('select.station-type-select').attr('name', 'RouteStations[' + index + '].StationType');
+                $(this).find('input.offset-minutes-input').attr('name', 'RouteStations[' + index + '].OffsetMinutes');
+            });
+            updateEmptyState();
+        }
+
+        function addStationRow(stationId, stationType, offsetMinutes) {
+            var optionsHtml = $('#stationOptionsTemplate').html();
+            var rowCount = $('#stationsTableBody tr').length;
+            var currentOrder = rowCount + 1;
+
+            var tr = $(`
+                <tr class="station-row">
+                    <td class="text-center">
+                        <span class="badge bg-secondary stop-order-display">#${currentOrder}</span>
+                        <input type="hidden" class="stop-order-input" value="${currentOrder}" />
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm station-select" required>
+                            ${optionsHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm station-type-select">
+                            <option value="0">Chỉ đón khách (Pickup)</option>
+                            <option value="1">Chỉ trả khách (Dropoff)</option>
+                            <option value="2" selected>Cả đón & trả (Both)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control offset-minutes-input" value="${offsetMinutes !== undefined ? offsetMinutes : (rowCount * 60)}" min="0" required />
+                            <span class="input-group-text">phút</span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary btn-move-up" title="Lên"><i class="bi bi-chevron-up"></i></button>
+                            <button type="button" class="btn btn-outline-secondary btn-move-down" title="Xuống"><i class="bi bi-chevron-down"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-remove-row" title="Xóa"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            if (stationId) {
+                tr.find('.station-select').val(stationId);
+            }
+            if (stationType !== undefined) {
+                tr.find('.station-type-select').val(stationType);
+            }
+
+            $('#stationsTableBody').append(tr);
+            reindexRows();
+        }
+
+        $(document).ready(function() {
+            // Initial rows: default 2 stations if empty
+            addStationRow(null, 0, 0); // Pickup
+            addStationRow(null, 1, 150); // Dropoff
+
+            $('#btnAddStation').on('click', function() {
+                addStationRow(null, 2, 60);
+            });
+
+            $(document).on('click', '.btn-remove-row', function() {
+                $(this).closest('tr').remove();
+                reindexRows();
+            });
+
+            $(document).on('click', '.btn-move-up', function() {
+                var row = $(this).closest('tr');
+                if (row.prev().length > 0) {
+                    row.insertBefore(row.prev());
+                    reindexRows();
+                }
+            });
+
+            $(document).on('click', '.btn-move-down', function() {
+                var row = $(this).closest('tr');
+                if (row.next().length > 0) {
+                    row.insertAfter(row.next());
+                    reindexRows();
+                }
+            });
+        });
+    </script>
+}

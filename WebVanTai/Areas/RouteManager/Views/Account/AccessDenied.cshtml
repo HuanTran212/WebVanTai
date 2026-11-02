@@ -1,0 +1,29 @@
+@{
+    ViewData["Title"] = "Không Có Quyền Truy Cập";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Từ Chối Truy Cập - WebVanTai</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="card shadow-sm p-4 text-center" style="max-width: 480px;">
+        <div class="text-danger fs-1 mb-2">
+            <i class="bi bi-shield-slash-fill"></i>
+        </div>
+        <h4 class="fw-bold text-dark">Từ Chối Truy Cập (403 Forbidden)</h4>
+        <p class="text-muted small mt-2">
+            Tài khoản hiện tại không có vai trò <strong>RouteManager</strong> hoặc <strong>Admin</strong> để truy cập phân hệ Điều Hành Tuyến Xe.
+        </p>
+        <div class="d-flex gap-2 justify-content-center mt-3">
+            <a href="/Identity/Account/Login" class="btn btn-warning btn-sm">Đổi Tài Khoản Khác</a>
+            <a href="/" class="btn btn-outline-secondary btn-sm">Về Trang Chủ</a>
+        </div>
+    </div>
+</body>
+</html>

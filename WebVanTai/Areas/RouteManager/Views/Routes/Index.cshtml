@@ -1,0 +1,144 @@
+@model IEnumerable<WebVanTai.Models.Route>
+@{
+    ViewData["Title"] = "Quản Lý Tuyến Đường";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-signpost-split-fill text-warning me-2"></i>Danh Sách Tuyến Đường
+        </h3>
+        <p class="text-muted mb-0 small">Quản lý mạng lưới hành trình, cự ly km và cấu hình các trạm dừng đón/trả.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Tạo Tuyến & Trạm Dừng Mới
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card card-custom mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="searchProvince" value="@ViewBag.SearchProvince" class="form-control" placeholder="Tìm theo tỉnh xuất phát hoặc tỉnh đến..." />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="isActive" class="form-select">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="true" selected="@(ViewBag.IsActiveFilter == true)">Đang hoạt động</option>
+                <option value="false" selected="@(ViewBag.IsActiveFilter == false)">Tạm ngưng</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100">
+                <i class="bi bi-funnel me-1"></i> Lọc
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Routes Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Mã</th>
+                    <th>Hành Trình (Tuyến Xe)</th>
+                    <th>Cự Ly (Km)</th>
+                    <th>Thời Gian Ước Tính</th>
+                    <th>Danh Sách Trạm Dừng</th>
+                    <th class="text-center">Chuyến Đã Lập</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end" style="width: 150px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-signpost-2 fs-1 d-block text-secondary mb-2"></i>
+                            Không có tuyến xe nào được tìm thấy.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var route in Model)
+                    {
+                        var orderedStations = route.RouteStations.OrderBy(rs => rs.StopOrder).ToList();
+                        <tr>
+                            <td class="text-muted fw-bold">#@route.RouteId</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark fs-6">@route.StartProvince</span>
+                                    <i class="bi bi-arrow-right text-warning fw-bold"></i>
+                                    <span class="fw-bold text-dark fs-6">@route.EndProvince</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace">@route.DistanceKm km</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-secondary border font-monospace">@route.DurationHours.ToString("0.0") giờ</span>
+                            </td>
+                            <td>
+                                @if (orderedStations.Any())
+                                {
+                                    <div class="small">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-1">
+                                            @orderedStations.Count trạm dừng
+                                        </span>
+                                        <div class="text-muted text-truncate" style="max-width: 250px;">
+                                            @string.Join(" → ", orderedStations.Select(s => s.Station?.Name ?? $"Trạm #{s.StationId}"))
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">Chưa có trạm</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info-subtle text-info border">
+                                    @route.Trips.Count chuyến
+                                </span>
+                            </td>
+                            <td>
+                                @if (route.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border">Tạm ngưng</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@route.RouteId" class="btn btn-outline-secondary" title="Xem chi tiết lộ trình trạm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@route.RouteId" class="btn btn-outline-primary" title="Cấu hình trạm & lộ trình">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@route.RouteId" class="btn btn-outline-danger" title="Xóa tuyến">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

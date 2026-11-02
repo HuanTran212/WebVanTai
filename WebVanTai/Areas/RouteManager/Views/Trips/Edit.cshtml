@@ -1,0 +1,145 @@
+@model WebVanTai.Models.Trip
+@{
+    ViewData["Title"] = $"Chỉnh Sửa Chuyến Xe #{Model.TripId}";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Lịch chạy</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-dark">
+        <i class="bi bi-pencil-square text-primary me-2"></i>Chỉnh Sửa Chuyến Xe #@Model.TripId
+    </h3>
+    <p class="text-muted small">Cập nhật tuyến đường, đổi xe phụ trách hoặc điều chỉnh khung giờ xuất bến.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card card-custom p-4">
+            <form asp-action="Edit" method="post" id="tripForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TripId" />
+                
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null && ViewData.ModelState[string.Empty]!.Errors.Any())
+                {
+                    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-exclamation-octagon-fill fs-3 me-3 flex-shrink-0"></i>
+                        <div>
+                            <strong class="d-block mb-1">Phát hiện xung đột lịch xe!</strong>
+                            @foreach (var error in ViewData.ModelState[string.Empty]!.Errors)
+                            {
+                                <div>@error.ErrorMessage</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label asp-for="RouteId" class="form-label fw-semibold">Tuyến Đường Hành Trình <span class="text-danger">*</span></label>
+                    <select asp-for="RouteId" id="routeSelect" class="form-select" asp-items="ViewBag.RouteId" required>
+                        <option value="">-- Chọn tuyến đường --</option>
+                    </select>
+                    <span asp-validation-for="RouteId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BusId" class="form-label fw-semibold">Xe Khách Phụ Trách <span class="text-danger">*</span></label>
+                    <select asp-for="BusId" id="busSelect" class="form-select" asp-items="ViewBag.BusId" required>
+                        <option value="">-- Chọn xe khách --</option>
+                    </select>
+                    <span asp-validation-for="BusId" class="text-danger small"></span>
+                    <small class="text-muted d-block mt-1">
+                        <i class="bi bi-shield-check text-success me-1"></i>Hệ thống tự động kiểm tra trùng giờ với các chuyến khác mà xe này đang chạy.
+                    </small>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="DepartureTime" class="form-label fw-semibold">Thời Gian Khởi Hành (Departure) <span class="text-danger">*</span></label>
+                        <input asp-for="DepartureTime" id="departureInput" type="datetime-local" class="form-control" value="@Model.DepartureTime.ToString("yyyy-MM-ddTHH:mm")" required />
+                        <span asp-validation-for="DepartureTime" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label asp-for="ArrivalTime" class="form-label fw-semibold mb-0">Thời Gian Đến (Arrival) <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small" id="btnAutoArrival">
+                                <i class="bi bi-magic me-1"></i>Ước tính theo tuyến
+                            </button>
+                        </div>
+                        <input asp-for="ArrivalTime" id="arrivalInput" type="datetime-local" class="form-control mt-1" value="@Model.ArrivalTime.ToString("yyyy-MM-ddTHH:mm")" required />
+                        <span asp-validation-for="ArrivalTime" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="BasePrice" class="form-label fw-semibold">Giá Vé Cơ Bản (VNĐ) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input asp-for="BasePrice" type="number" step="1000" min="10000" class="form-control font-monospace fw-bold" required />
+                            <span class="input-group-text">đ</span>
+                        </div>
+                        <span asp-validation-for="BasePrice" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label fw-semibold">Trạng Thái Chuyến</label>
+                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TripStatus>()"></select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-futa flex-grow-1">
+                        <i class="bi bi-save me-1"></i> Cập Nhật Chuyến Xe
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy Bỏ</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Help & Conflict Info Panel -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4 bg-light border-0 mb-3">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-shield-exclamation text-warning me-2"></i>Quy Tắc Ràng Buộc Lịch Vận Hành
+            </h6>
+            <ul class="small text-secondary ps-3 mb-0">
+                <li class="mb-2"><strong>Ràng buộc giao nhau:</strong> Không được phép xếp một xe vào 2 chuyến có thời gian khởi hành - đến nơi chồng lấn nhau.</li>
+                <li class="mb-2"><strong>Đổi giờ hoặc đổi xe:</strong> Khi hệ thống báo lỗi trùng lịch, người điều hành có thể đổi xe khác có sẵn hoặc dời khung giờ.</li>
+                <li class="mb-2"><strong>Chuyến chính nó:</strong> Chuyến xe hiện tại được loại trừ khỏi danh sách kiểm tra đối chiếu khi đang lưu cập nhật.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $('#btnAutoArrival, #routeSelect').on('change click', function() {
+            var routeId = $('#routeSelect').val();
+            var depVal = $('#departureInput').val();
+            if (!routeId || !depVal) return;
+
+            $.get('@Url.Action("GetRouteDuration", "Trips")', { routeId: routeId }, function(res) {
+                if (res && res.durationHours) {
+                    var depDate = new Date(depVal);
+                    var durationMs = res.durationHours * 60 * 60 * 1000;
+                    var arrDate = new Date(depDate.getTime() + durationMs);
+
+                    var year = arrDate.getFullYear();
+                    var month = String(arrDate.getMonth() + 1).padStart(2, '0');
+                    var day = String(arrDate.getDate()).padStart(2, '0');
+                    var hours = String(arrDate.getHours()).padStart(2, '0');
+                    var minutes = String(arrDate.getMinutes()).padStart(2, '0');
+
+                    $('#arrivalInput').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+                }
+            });
+        });
+    </script>
+}

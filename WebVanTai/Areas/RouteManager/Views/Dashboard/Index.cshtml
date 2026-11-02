@@ -1,11 +1,238 @@
+@model DashboardViewModel
 @{
-    ViewData["Title"] = "Route Manager Dashboard";
+    ViewData["Title"] = "Bảng Điều Khiển Tuyến Xe";
 }
 
-<div class="container-fluid py-4">
-    <h2 class="mb-4 text-warning">Route Manager Dashboard</h2>
-    <div class="alert alert-info">
-        Chào mừng Điều hành tuyến xe đến với giao diện quản lý nhà xe WebVanTai.
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-speedometer2 text-warning me-2"></i>Bảng Điều Khiển
+        </h3>
+        <p class="text-muted mb-0 small">Theo dõi và quản lý mạng lưới bến bãi, tuyến xe, phương tiện và lịch vận hành.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Trips" asp-action="Create" class="btn btn-futa btn-sm shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Xếp Lịch Chạy Mới
+        </a>
+        <a asp-controller="Routes" asp-action="Create" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-signpost-2 me-1"></i> Thêm Tuyến Mới
+        </a>
     </div>
 </div>
 
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Trạm Dừng / Bến Xe</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalStations</h2>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="bi bi-geo-alt fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a asp-controller="Stations" asp-action="Index" class="small text-decoration-none fw-medium text-primary">
+                    Xem tất cả trạm <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tuyến Đường</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalRoutes</h2>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle">
+                    <i class="bi bi-signpost-split fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a asp-controller="Routes" asp-action="Index" class="small text-decoration-none fw-medium text-warning">
+                    Quản lý tuyến đường <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Đội Xe Hoạt Động</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalBuses</h2>
+                    <span class="badge bg-light text-secondary border mt-1">@Model.TotalBusTypes loại xe</span>
+                </div>
+                <div class="bg-info-subtle text-info p-3 rounded-circle">
+                    <i class="bi bi-truck-front fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a asp-controller="Buses" asp-action="Index" class="small text-decoration-none fw-medium text-info">
+                    Xem danh sách xe <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tổng Chuyến Xe</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalTrips</h2>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle mt-1">@Model.ScheduledTrips sắp chạy</span>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="bi bi-calendar2-check fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-top">
+                <a asp-controller="Trips" asp-action="Index" class="small text-decoration-none fw-medium text-success">
+                    Quản lý lịch chạy <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions & Recent Trips -->
+<div class="row g-4">
+    <!-- Quick Actions Panel -->
+    <div class="col-lg-4">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-lightning-charge text-warning me-1"></i> Thao Tác Nhanh
+                </h6>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a asp-controller="Stations" asp-action="Create" class="btn btn-light border text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+                        <span class="fw-medium">Thêm Trạm Dừng Leaflet</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <a asp-controller="Routes" asp-action="Create" class="btn btn-light border text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <i class="bi bi-signpost-split text-primary me-2"></i>
+                        <span class="fw-medium">Tạo Tuyến & Thứ Tự Trạm</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <a asp-controller="BusTypes" asp-action="Create" class="btn btn-light border text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <i class="bi bi-grid-3x3-gap text-success me-2"></i>
+                        <span class="fw-medium">Định Nghĩa Loại Xe / Sơ Đồ</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <a asp-controller="Buses" asp-action="Create" class="btn btn-light border text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <i class="bi bi-truck text-info me-2"></i>
+                        <span class="fw-medium">Đăng Ký Biển Số Xe Khách</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+
+                <a asp-controller="Trips" asp-action="Create" class="btn btn-light border text-start d-flex align-items-center justify-content-between p-2">
+                    <div>
+                        <i class="bi bi-calendar-plus text-warning me-2"></i>
+                        <span class="fw-medium">Lên Lịch Chuyến Xe (Kiểm tra trùng)</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Trips Panel -->
+    <div class="col-lg-8">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-clock-history text-primary me-1"></i> Chuyến Xe Gần Nhất
+                </h6>
+                <a asp-controller="Trips" asp-action="Index" class="btn btn-sm btn-link text-decoration-none">
+                    Xem tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tuyến Xe</th>
+                            <th>Xe Phụ Trách</th>
+                            <th>Khởi Hành</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-end">Chi Tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentTrips.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                                    Chưa có chuyến xe nào được tạo.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var trip in Model.RecentTrips)
+                            {
+                                <tr>
+                                    <td class="fw-bold">#@trip.TripId</td>
+                                    <td>
+                                        <div class="fw-medium">@trip.Route?.StartProvince <i class="bi bi-arrow-right text-muted small"></i> @trip.Route?.EndProvince</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-truck me-1"></i>@trip.Bus?.LicensePlate
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="small fw-semibold">@trip.DepartureTime.ToString("HH:mm dd/MM/yyyy")</span>
+                                    </td>
+                                    <td>
+                                        @switch (trip.Status)
+                                        {
+                                            case TripStatus.Scheduled:
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Lên lịch</span>
+                                                break;
+                                            case TripStatus.Running:
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Đang chạy</span>
+                                                break;
+                                            case TripStatus.Completed:
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">Hoàn thành</span>
+                                                break;
+                                            case TripStatus.Cancelled:
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hủy</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-controller="Trips" asp-action="Details" asp-route-id="@trip.TripId" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

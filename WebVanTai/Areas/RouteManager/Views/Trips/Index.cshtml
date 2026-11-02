@@ -1,0 +1,157 @@
+@model IEnumerable<WebVanTai.Models.Trip>
+@{
+    ViewData["Title"] = "Quản Lý Lịch Chạy & Chuyến Xe";
+    var routes = ViewBag.Routes as SelectList ?? new SelectList(Enumerable.Empty<object>());
+    var buses = ViewBag.Buses as SelectList ?? new SelectList(Enumerable.Empty<object>());
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-calendar2-range-fill text-warning me-2"></i>Quản Lý Lịch Chạy & Chuyến Xe
+        </h3>
+        <p class="text-muted mb-0 small">Điều phối chuyến xe, phân bổ phương tiện và kiểm tra xung đột trùng lịch chạy.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Xếp Lịch Chuyến Xe Mới
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card card-custom mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <select name="routeId" class="form-select" asp-items="routes">
+                <option value="">-- Tất cả tuyến đường --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="busId" class="form-select" asp-items="buses">
+                <option value="">-- Tất cả xe --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">-- Trạng thái --</option>
+                <option value="0" selected="@(ViewBag.SelectedStatus?.ToString() == "Scheduled")">Lên lịch (Scheduled)</option>
+                <option value="1" selected="@(ViewBag.SelectedStatus?.ToString() == "Running")">Đang chạy (Running)</option>
+                <option value="2" selected="@(ViewBag.SelectedStatus?.ToString() == "Completed")">Hoàn thành (Completed)</option>
+                <option value="3" selected="@(ViewBag.SelectedStatus?.ToString() == "Cancelled")">Đã hủy (Cancelled)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="departureDate" value="@ViewBag.SelectedDate" class="form-control" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100">
+                <i class="bi bi-funnel me-1"></i> Lọc
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Trips Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Mã</th>
+                    <th>Tuyến Hành Trình</th>
+                    <th>Xe Phụ Trách</th>
+                    <th>Giờ Khởi Hành</th>
+                    <th>Giờ Đến Dự Kiến</th>
+                    <th>Giá Vé Cơ Bản</th>
+                    <th>Vé / Chỗ</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end" style="width: 150px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-x fs-1 d-block text-secondary mb-2"></i>
+                            Không có chuyến xe nào theo tiêu chí lọc.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var trip in Model)
+                    {
+                        var totalSeats = trip.Bus?.BusType?.TotalSeats ?? 0;
+                        var bookedTickets = trip.Tickets.Count(t => t.Status != TicketStatus.Void);
+                        <tr>
+                            <td class="text-muted fw-bold">#@trip.TripId</td>
+                            <td>
+                                <div class="fw-bold text-dark">
+                                    @trip.Route?.StartProvince <i class="bi bi-arrow-right text-warning small"></i> @trip.Route?.EndProvince
+                                </div>
+                                <small class="text-muted">@trip.Route?.DistanceKm km &bull; @trip.Route?.DurationHours h</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace fs-6">
+                                    <i class="bi bi-truck me-1 text-danger"></i>@trip.Bus?.LicensePlate
+                                </span>
+                                <div class="small text-muted">@trip.Bus?.BusType?.Name</div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">@trip.DepartureTime.ToString("HH:mm")</span>
+                                <small class="d-block text-muted">@trip.DepartureTime.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">@trip.ArrivalTime.ToString("HH:mm")</span>
+                                <small class="d-block text-muted">@trip.ArrivalTime.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-danger">@trip.BasePrice.ToString("N0") đ</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    @bookedTickets / @totalSeats
+                                </span>
+                            </td>
+                            <td>
+                                @switch (trip.Status)
+                                {
+                                    case TripStatus.Scheduled:
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Lên lịch</span>
+                                        break;
+                                    case TripStatus.Running:
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Đang chạy</span>
+                                        break;
+                                    case TripStatus.Completed:
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Hoàn tất</span>
+                                        break;
+                                    case TripStatus.Cancelled:
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hủy</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@trip.TripId" class="btn btn-outline-secondary" title="Chi tiết chuyến & vé">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@trip.TripId" class="btn btn-outline-primary" title="Điều chỉnh lịch">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@trip.TripId" class="btn btn-outline-danger" title="Xóa chuyến">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
