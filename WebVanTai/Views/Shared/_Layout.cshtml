@@ -31,6 +31,77 @@
                             </a>
                         </li>
                     </ul>
+
+                    <!-- Góc Đăng Nhập & Quản Trị Hệ Thống -->
+                    <ul class="navbar-nav align-items-center gap-2">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark fw-semibold d-flex align-items-center gap-1" href="#" id="userNavDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle text-primary fs-5"></i>
+                                    <span>@(User.Identity.Name ?? "Tài khoản")</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userNavDropdown">
+                                    @if (User.IsInRole("RouteManager") || User.IsInRole("Admin"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item py-2 text-warning fw-semibold" asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index">
+                                                <i class="bi bi-speedometer2 me-2"></i>Bảng Điều Hành Tuyến Xe
+                                            </a>
+                                        </li>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item py-2 text-danger fw-semibold" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                                                <i class="bi bi-shield-lock me-2"></i>Quản Trị Hệ Thống (Admin)
+                                            </a>
+                                        </li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-area="RouteManager" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            <button type="submit" class="dropdown-item text-secondary">
+                                                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-outline-warning text-dark btn-sm fw-semibold dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i> Quản Trị & Đăng Nhập
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="loginDropdown" style="min-width: 250px;">
+                                    <li><h6 class="dropdown-header text-uppercase small">Khu vực điều hành</h6></li>
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-warning" asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-bus-front me-2"></i>Bảng Điều Hành Tuyến
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-primary" href="/Identity/Account/Login">
+                                            <i class="bi bi-box-arrow-in-right me-2"></i>Màn hình Đăng Nhập
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=RouteManager">
+                                            <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Vào nhanh: <strong>RouteManager</strong>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Admin">
+                                            <i class="bi bi-lightning-charge-fill text-danger me-2"></i>Vào nhanh: <strong>Admin</strong>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>
