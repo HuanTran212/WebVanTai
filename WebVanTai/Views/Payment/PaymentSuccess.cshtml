@@ -1,0 +1,89 @@
+@model WebVanTai.Models.ViewModels.TicketHistoryViewModel
+@{
+    ViewData["Title"] = "Thanh toán thành công";
+}
+
+<style>
+    :root { --futa-orange: #F26522; --futa-dark: #d9531e; --futa-light: #fff2eb; }
+    .success-card { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.07); border: none; overflow: hidden; }
+    .success-header { background: linear-gradient(135deg, #28a745, #20c997); color: #fff; padding: 28px; text-align: center; }
+    .ticket-card { border: 2px dashed var(--futa-orange); border-radius: 16px; padding: 20px; background: var(--futa-light); }
+    .qr-img { width: 160px; height: 160px; border-radius: 8px; border: 2px solid var(--futa-orange); }
+    .seat-badge { background: var(--futa-orange); color: #fff; border-radius: 8px; padding: 3px 10px; font-weight: 700; font-size: .85rem; }
+    .btn-futa { background: var(--futa-orange); border: none; color: #fff; font-weight: 700; border-radius: 12px; padding: 12px 28px; }
+    .btn-futa:hover { background: var(--futa-dark); color: #fff; }
+</style>
+
+<div class="container py-4" style="max-width: 720px;">
+    <div class="success-card">
+        <div class="success-header">
+            <i class="bi bi-patch-check-fill fs-1 mb-2"></i>
+            <h4 class="fw-bold mb-1">Thanh toán thành công!</h4>
+            <p class="mb-0 opacity-75">Mã đặt vé: <strong>#@Model.BookingId</strong></p>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="p-3 bg-light rounded-3 mb-4">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Tuyến xe</span>
+                    <strong>@Model.RouteName</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Giờ xuất bến</span>
+                    <strong class="text-primary">@Model.DepartureTime.ToLocalTime().ToString("HH:mm - dd/MM/yyyy")</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Điểm đón</span>
+                    <strong>@Model.PickupStationName</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Điểm trả</span>
+                    <strong>@Model.DropoffStationName</strong>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3">Vé của bạn <span class="text-muted fw-normal fs-6">(xuất trình mã QR khi lên xe)</span></h5>
+
+            @foreach (var ticket in Model.Tickets)
+            {
+                <div class="ticket-card mb-3 d-flex align-items-center gap-4 flex-wrap">
+                    <div class="text-center">
+                        @if (!string.IsNullOrEmpty(ticket.QrToken))
+                        {
+                            <img src="/Payment/QrImage?token=@ticket.QrToken"
+                                 alt="QR vé @ticket.SeatCode"
+                                 class="qr-img" />
+                            <div class="mt-1"><small class="text-muted">Mã QR vé</small></div>
+                        }
+                        else
+                        {
+                            <div class="qr-img d-flex align-items-center justify-content-center bg-secondary bg-opacity-10 rounded">
+                                <i class="bi bi-qr-code fs-1 text-muted"></i>
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <div class="mb-1"><span class="seat-badge">Ghế @ticket.SeatCode</span></div>
+                        <div class="fw-semibold">@ticket.PassengerName</div>
+                        <small class="text-muted">Trạng thái:
+                            @(ticket.Status == WebVanTai.Models.Enums.TicketStatus.Valid
+                                ? "✅ Hợp lệ"
+                                : ticket.Status == WebVanTai.Models.Enums.TicketStatus.CheckedIn
+                                    ? "🚌 Đã lên xe"
+                                    : "❌ Đã hủy")
+                        </small>
+                    </div>
+                </div>
+            }
+
+            <div class="d-grid gap-3 mt-4">
+                <a asp-controller="Payment" asp-action="MyTickets" class="btn btn-futa shadow">
+                    <i class="bi bi-ticket-detailed"></i> Xem lịch sử vé
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-3 py-3">
+                    <i class="bi bi-house-door"></i> Về trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

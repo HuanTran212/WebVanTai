@@ -23,6 +23,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequiredLength = 6;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultUI()
 .AddDefaultTokenProviders();
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -32,7 +33,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages(); // Bắt buộc cho ASP.NET Core Identity UI
 builder.Services.AddHostedService<SeatLockCleanupService>();
+
+// ── Payment services ──────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<VnPayService>();
 
 var app = builder.Build();
 
@@ -71,6 +77,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+// Razor Pages (Identity UI)
+app.MapRazorPages();
 
 // Area routing
 app.MapControllerRoute(
