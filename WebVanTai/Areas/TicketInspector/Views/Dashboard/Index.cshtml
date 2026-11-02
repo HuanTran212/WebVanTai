@@ -1,11 +1,135 @@
+@model List<WebVanTai.Areas.TicketInspector.ViewModels.InspectorTripListItem>
 @{
-    ViewData["Title"] = "Ticket Inspector Dashboard";
+    ViewData["Title"] = "Chuyến xe trong ngày";
+    var selectedDate = (DateTime)ViewBag.SelectedDate;
+    var isToday = (bool)ViewBag.IsToday;
+    string FormatDate(DateTime d) => d.ToString("dd/MM/yyyy");
 }
 
-<div class="container-fluid py-4">
-    <h2 class="mb-4 text-success">Ticket Inspector Dashboard</h2>
-    <div class="alert alert-info">
-        Chào mừng Nhân viên soát vé đến với hệ thống kiểm soát vé WebVanTai.
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-bus-front-fill me-1" style="color:var(--futa-orange)"></i>
+            @(isToday ? "Chuyến xuất bến hôm nay" : $"Chuyến ngày {FormatDate(selectedDate)}")
+        </h5>
+        <span class="text-muted small">
+            <i class="bi bi-geo-alt me-1"></i>Bến xe Miền Đông Mới
+        </span>
     </div>
+    <span class="pill-count">
+        <i class="bi bi-collection"></i>@Model.Count chuyến
+    </span>
 </div>
 
+<!-- Điều hướng ngày -->
+<div class="card-mobile p-2 mb-3">
+    <div class="d-flex align-items-center justify-content-between gap-2">
+        <a class="btn btn-light border btn-sm" asp-action="Index" asp-route-date="@selectedDate.AddDays(-1).ToString("yyyy-MM-dd")"
+           aria-label="Ngày trước">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <div class="text-center flex-grow-1">
+            <label for="datePicker" class="small text-muted d-block mb-1">Chọn ngày xuất bến</label>
+            <input type="date" id="datePicker" class="form-control form-control-sm text-center fw-semibold"
+                   value="@selectedDate.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")" />
+        </div>
+        <a class="btn btn-light border btn-sm" asp-action="Index" asp-route-date="@selectedDate.AddDays(1).ToString("yyyy-MM-dd")"
+           aria-label="Ngày sau">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+    @if (!isToday)
+    {
+        <a asp-action="Index" class="btn btn-link btn-sm w-100 mt-1 text-decoration-none" style="color:var(--futa-orange)">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Về hôm nay
+        </a>
+    }
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card-mobile text-center p-4">
+        <i class="bi bi-calendar-x" style="font-size:2.6rem; color:#CBD5E1"></i>
+        <h6 class="fw-bold text-dark mt-3 mb-1">Không có chuyến xe nào</h6>
+        <p class="text-muted small mb-0">Chưa có chuyến nào xuất bến trong ngày @(FormatDate(selectedDate)). Vui lòng chọn ngày khác.</p>
+    </div>
+}
+else
+{
+    @foreach (var trip in Model)
+    {
+        var statusBadge = trip.Status switch
+        {
+            TripStatus.Scheduled => ("<span class='badge rounded-pill' style='background:#EFF6FF;color:#2563EB'>Sắp chạy</span>"),
+            TripStatus.Running => ("<span class='badge rounded-pill' style='background:#F0FDF4;color:#16A34A'>Đang chạy</span>"),
+            TripStatus.Completed => ("<span class='badge rounded-pill' style='background:#F8FAFC;color:#64748B'>Hoàn tất</span>"),
+            TripStatus.Cancelled => ("<span class='badge rounded-pill' style='background:#FEF2F2;color:#DC2626'>Đã hủy</span>"),
+            _ => ""
+        };
+
+        <div class="card-mobile mb-3">
+            <div class="p-3 pb-2">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">@trip.RouteName</h6>
+                        <div class="small text-muted">
+                            <i class="bi bi-clock me-1"></i>@trip.DepartureTime.ToString("HH:mm") – @trip.ArrivalTime.ToString("HH:mm")
+                            <span class="mx-1">·</span>
+                            <i class="bi bi-truck-front me-1"></i>@trip.LicensePlate
+                        </div>
+                    </div>
+                    @Html.Raw(statusBadge)
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="pill-count"><i class="bi bi-grid-3x3-gap"></i>@trip.BusTypeName</span>
+                    <span class="pill-count"><i class="bi bi-people"></i>@trip.SoldTickets/@trip.TotalSeats vé</span>
+                    <span class="pill-count"><i class="bi bi-cash"></i>@trip.BasePrice.ToString("N0")₫</span>
+                </div>
+
+                <!-- Tiến độ soát vé: xanh = đã lên xe, cam = đã bán chưa lên -->
+                <div class="mb-1 d-flex justify-content-between small">
+                    <span class="text-muted">Tiến độ lên xe</span>
+                    <span class="fw-semibold text-dark">@trip.CheckedInTickets/@trip.SoldTickets khách (@trip.CheckedInPercent%)</span>
+                </div>
+                <div class="progress mb-3" style="height:8px; border-radius:99px" role="progressbar"
+                     aria-valuenow="@trip.CheckedInTickets" aria-valuemin="0" aria-valuemax="@trip.SoldTickets">
+                    <div class="progress-bar bg-success" style="width:@(trip.CheckedInPercent)%"></div>
+                    <div class="progress-bar bg-warning" style="width:@(trip.ValidTickets > 0 && trip.TotalSeats > 0 ? Math.Round(trip.ValidTickets * 100.0 / trip.TotalSeats, 1) : 0)%"></div>
+                </div>
+
+                <div class="d-grid">
+                    @if (trip.Status == TripStatus.Cancelled)
+                    {
+                        <button class="btn btn-light border text-muted" disabled>
+                            <i class="bi bi-x-circle me-1"></i>Chuyến đã hủy - không soát vé
+                        </button>
+                    }
+                    else if (trip.SoldTickets == 0)
+                    {
+                        <button class="btn btn-light border text-muted" disabled>
+                            <i class="bi bi-ticket-perforated me-1"></i>Chưa có vé bán
+                        </button>
+                    }
+                    else
+                    {
+                        <a asp-controller="Scanner" asp-action="Index" asp-route-tripId="@trip.TripId"
+                           class="btn btn-futa d-flex align-items-center justify-content-center py-2">
+                            <i class="bi bi-qr-code-scan me-2 fs-5"></i>Bắt đầu soát vé
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('datePicker')?.addEventListener('change', function () {
+            if (this.value) {
+                window.location.href = '@Url.Action("Index", "Dashboard")?date=' + this.value;
+            }
+        });
+    </script>
+}
