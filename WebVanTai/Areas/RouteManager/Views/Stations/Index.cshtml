@@ -1,0 +1,121 @@
+@model IEnumerable<WebVanTai.Models.Station>
+@{
+    ViewData["Title"] = "Quản Lý Trạm Dừng & Bến Xe";
+    var provinces = ViewBag.Provinces as List<string> ?? new List<string>();
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-geo-alt-fill text-danger me-2"></i>Danh Sách Trạm Dừng & Bến Xe
+        </h3>
+        <p class="text-muted mb-0 small">Quản lý mạng lưới bến đón/trả và điểm dừng trung chuyển trên toàn quốc.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Thêm Trạm Mới (Bản đồ Leaflet)
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card card-custom mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="searchString" value="@ViewBag.CurrentSearch" class="form-control" placeholder="Tìm theo tên bến, địa chỉ..." />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="province" class="form-select">
+                <option value="">-- Tất cả Tỉnh / Thành --</option>
+                @foreach (var p in provinces)
+                {
+                    <option value="@p" selected="@(p == ViewBag.CurrentProvince)">@p</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100">
+                <i class="bi bi-funnel me-1"></i> Lọc
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Station Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">#</th>
+                    <th>Tên Bến / Trạm</th>
+                    <th>Tỉnh / Thành</th>
+                    <th>Địa Chỉ Chi Tiết</th>
+                    <th>Tọa Độ (Lat, Lng)</th>
+                    <th class="text-center">Số Tuyến Đi Qua</th>
+                    <th class="text-end" style="width: 150px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-geo-alt fs-1 d-block text-secondary mb-2"></i>
+                            Không tìm thấy trạm dừng nào phù hợp.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-muted fw-bold">@item.StationId</td>
+                            <td>
+                                <div class="fw-bold text-dark">@item.Name</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-geo me-1 text-danger"></i>@item.Province
+                                </span>
+                            </td>
+                            <td>
+                                <span class="small text-secondary">@item.Address</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-dark font-monospace">
+                                    @item.Latitude.ToString("0.000000"), @item.Longitude.ToString("0.000000")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info-subtle text-info border">
+                                    @item.RouteStations.Count tuyến
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@item.StationId" class="btn btn-outline-secondary" title="Xem vị trí bản đồ">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.StationId" class="btn btn-outline-primary" title="Sửa thông tin / tọa độ">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.StationId" class="btn btn-outline-danger" title="Xóa trạm">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,148 @@
+@model WebVanTai.Models.Station
+@{
+    ViewData["Title"] = $"Chi Tiết Trạm: {Model.Name}";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Trạm dừng</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-geo-alt-fill text-danger me-2"></i>@Model.Name
+            </h3>
+            <span class="badge bg-light text-secondary border mt-1">Mã trạm: #@Model.StationId</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.StationId" class="btn btn-futa btn-sm">
+                <i class="bi bi-pencil-square me-1"></i> Chỉnh Sửa
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quay Lại</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Details & Connected Routes -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-info-circle text-primary me-2"></i>Thông Tin Chi Tiết
+            </h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted">Tên Bến / Trạm:</dt>
+                <dd class="col-sm-8 fw-bold text-dark">@Model.Name</dd>
+
+                <dt class="col-sm-4 text-muted">Tỉnh / Thành:</dt>
+                <dd class="col-sm-8"><span class="badge bg-light text-dark border">@Model.Province</span></dd>
+
+                <dt class="col-sm-4 text-muted">Địa Chỉ:</dt>
+                <dd class="col-sm-8">@Model.Address</dd>
+
+                <dt class="col-sm-4 text-muted">Vĩ Độ (Lat):</dt>
+                <dd class="col-sm-8 font-monospace">@Model.Latitude.ToString("0.000000")</dd>
+
+                <dt class="col-sm-4 text-muted">Kinh Độ (Lng):</dt>
+                <dd class="col-sm-8 font-monospace">@Model.Longitude.ToString("0.000000")</dd>
+            </dl>
+        </div>
+
+        <div class="card card-custom p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-signpost-split text-warning me-2"></i>Các Tuyến Đi Qua Trạm (@Model.RouteStations.Count)
+            </h5>
+            @if (!Model.RouteStations.Any())
+            {
+                <p class="text-muted small mb-0">Chưa có tuyến xe nào đăng ký dừng tại trạm này.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var rs in Model.RouteStations)
+                    {
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">
+                                    <a asp-controller="Routes" asp-action="Details" asp-route-id="@rs.RouteId" class="text-decoration-none">
+                                        @rs.Route?.StartProvince <i class="bi bi-arrow-right text-muted small"></i> @rs.Route?.EndProvince
+                                    </a>
+                                </div>
+                                <div class="small text-muted">
+                                    Thứ tự dừng: #@rs.StopOrder &bull; Bù: +@rs.OffsetMinutes phút
+                                </div>
+                            </div>
+                            <span class="badge bg-light text-secondary border">@rs.StationType</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: Leaflet Map -->
+    <div class="col-lg-7">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-pin-map text-success me-2"></i>Bản Đồ Vị Trí Leaflet
+                </h5>
+                <span class="badge bg-light text-secondary border">OpenStreetMap / CARTO</span>
+            </div>
+            <div id="stationMap" class="map-box flex-grow-1" style="min-height: 420px; border-radius: 8px;"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var lat = @Model.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var lng = @Model.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        var map = L.map('stationMap', {
+            center: [lat, lng],
+            zoom: 15
+        });
+
+        // Layer 1: CartoDB Voyager (dựa trên OpenStreetMap, không bị chặn DNS tại VN)
+        var cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Layer 2: Google Maps
+        var googleStreet = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            attribution: '&copy; Google Maps',
+            maxZoom: 20
+        });
+
+        // Layer 3: Esri WorldStreetMap
+        var esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri &mdash; National Geographic, DeLorme, NAVTEQ',
+            maxZoom: 19
+        });
+
+        // Layer switcher
+        L.control.layers({
+            "Bản đồ OpenStreetMap (CARTO)": cartoVoyager,
+            "Bản đồ Google Maps": googleStreet,
+            "Bản đồ Esri StreetMap": esriStreet
+        }).addTo(map);
+
+        var marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup("<b>@Html.Raw(Model.Name)</b><br>@Html.Raw(Model.Address)").openPopup();
+
+        // Tự động tính toán lại kích thước khung bản đồ khi giao diện tải xong
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 200);
+
+        window.addEventListener('resize', function() {
+            map.invalidateSize();
+        });
+    </script>
+}

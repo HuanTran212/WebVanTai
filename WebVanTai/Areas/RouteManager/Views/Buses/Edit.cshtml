@@ -1,0 +1,93 @@
+@model WebVanTai.Models.Bus
+@{
+    ViewData["Title"] = $"Chỉnh Sửa Xe: {Model.LicensePlate}";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Xe khách</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-dark">
+        <i class="bi bi-pencil-square text-primary me-2"></i>Chỉnh Sửa Xe: @Model.LicensePlate
+    </h3>
+    <p class="text-muted small">Cập nhật biển số, loại xe hoặc trạng thái bảo dưỡng của xe.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="BusId" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                <div class="mb-3">
+                    <label asp-for="LicensePlate" class="form-label fw-semibold">Biển Số Xe <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-card-text"></i></span>
+                        <input asp-for="LicensePlate" class="form-control text-uppercase font-monospace fw-bold" required />
+                    </div>
+                    <span asp-validation-for="LicensePlate" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BusTypeId" class="form-label fw-semibold">Loại Xe / Sơ Đồ Ghế <span class="text-danger">*</span></label>
+                    <select asp-for="BusTypeId" class="form-select" asp-items="ViewBag.BusTypeId" required>
+                        <option value="">-- Chọn loại xe --</option>
+                    </select>
+                    <span asp-validation-for="BusTypeId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Amenities" class="form-label fw-semibold">Tiện Ích Trang Bị Trên Xe</label>
+                    <textarea asp-for="Amenities" id="amenitiesInput" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Amenities" class="text-danger small"></span>
+
+                    <!-- Quick Tag Buttons -->
+                    <div class="mt-2">
+                        <small class="text-muted d-block mb-1">Nhấp nhanh để thêm tiện ích:</small>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Wifi tốc độ cao">+ Wifi</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Nước suối">+ Nước suối</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Khăn lạnh">+ Khăn lạnh</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Cổng sạc Type-C/USB">+ Cổng sạc</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Màn hình giải trí riêng">+ Màn hình riêng</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Ghế massage">+ Ghế massage</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary amenity-tag" data-val="Chăn gối diệt khuẩn">+ Chăn gối</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
+                    <label class="form-check-label fw-semibold" for="isActiveSwitch">Xe sẵn sàng hoạt động (Active)</label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-futa flex-grow-1">
+                        <i class="bi bi-save me-1"></i> Cập Nhật Thay Đổi
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy Bỏ</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $('.amenity-tag').on('click', function() {
+            var val = $(this).data('val');
+            var cur = $('#amenitiesInput').val().trim();
+            if (cur.length === 0) {
+                $('#amenitiesInput').val(val);
+            } else if (!cur.includes(val)) {
+                $('#amenitiesInput').val(cur + ', ' + val);
+            }
+        });
+    </script>
+}

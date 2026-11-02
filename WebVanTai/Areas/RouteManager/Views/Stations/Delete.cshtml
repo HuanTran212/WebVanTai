@@ -1,0 +1,75 @@
+@model WebVanTai.Models.Station
+@{
+    ViewData["Title"] = $"Xóa Trạm: {Model.Name}";
+    int inUseRoutes = ViewBag.InUseRoutesCount ?? 0;
+    int inUseBookings = ViewBag.InUseBookingsCount ?? 0;
+    bool canDelete = inUseRoutes == 0 && inUseBookings == 0;
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Trạm dừng</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Xác nhận xóa</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác Nhận Xóa Trạm Dừng
+    </h3>
+    <p class="text-muted small">Vui lòng kiểm tra kỹ ràng buộc dữ liệu trước khi xóa trạm khỏi hệ thống.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4">
+            @if (!canDelete)
+            {
+                <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-slash-circle-fill fs-3 me-3"></i>
+                    <div>
+                        <strong class="d-block mb-1">Không thể xóa trạm dừng này!</strong>
+                        Trạm này đang được liên kết trong <strong>@inUseRoutes tuyến xe</strong> và <strong>@inUseBookings vé đặt của hành khách</strong>.
+                        Bạn phải gỡ trạm khỏi các tuyến đường trước khi xóa.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-question-circle-fill fs-3 me-3"></i>
+                    <div>
+                        Bạn có chắc chắn muốn xóa trạm dừng <strong>@Model.Name</strong>? Thao tác này không thể hoàn tác.
+                    </div>
+                </div>
+            }
+
+            <dl class="row mb-4">
+                <dt class="col-sm-4 text-muted">Mã trạm:</dt>
+                <dd class="col-sm-8 fw-bold">#@Model.StationId</dd>
+
+                <dt class="col-sm-4 text-muted">Tên trạm:</dt>
+                <dd class="col-sm-8 fw-bold text-dark">@Model.Name</dd>
+
+                <dt class="col-sm-4 text-muted">Tỉnh / Thành:</dt>
+                <dd class="col-sm-8"><span class="badge bg-light text-dark border">@Model.Province</span></dd>
+
+                <dt class="col-sm-4 text-muted">Địa chỉ:</dt>
+                <dd class="col-sm-8">@Model.Address</dd>
+
+                <dt class="col-sm-4 text-muted">Tọa độ:</dt>
+                <dd class="col-sm-8 font-monospace">@Model.Latitude, @Model.Longitude</dd>
+            </dl>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="StationId" />
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger" disabled="@(!canDelete)">
+                        <i class="bi bi-trash-fill me-1"></i> Xác Nhận Xóa
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy Bỏ & Quay Lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

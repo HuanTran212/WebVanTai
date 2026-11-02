@@ -1,0 +1,160 @@
+@model WebVanTai.Models.BusType
+@{
+    ViewData["Title"] = $"Chi Tiết Loại Xe: {Model.Name}";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Loại xe</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chi tiết sơ đồ</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-grid-3x3-gap-fill text-success me-2"></i>@Model.Name
+            </h3>
+            <span class="badge bg-light text-secondary border mt-1">Mã loại xe: #@Model.BusTypeId</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.BusTypeId" class="btn btn-futa btn-sm">
+                <i class="bi bi-pencil-square me-1"></i> Chỉnh Sửa
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quay Lại</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Specs & Fleet using this BusType -->
+    <div class="col-lg-4">
+        <div class="card card-custom p-4 mb-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-info-circle text-primary me-2"></i>Thông Số Kỹ Thuật
+            </h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-5 text-muted">Tên loại xe:</dt>
+                <dd class="col-sm-7 fw-bold text-dark">@Model.Name</dd>
+
+                <dt class="col-sm-5 text-muted">Số chỗ ngồi:</dt>
+                <dd class="col-sm-7"><span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">@Model.TotalSeats ghế</span></dd>
+
+                <dt class="col-sm-5 text-muted">Số tầng:</dt>
+                <dd class="col-sm-7"><span class="badge bg-light text-dark border">@Model.TotalDecks tầng</span></dd>
+
+                <dt class="col-sm-5 text-muted">Số lượng xe:</dt>
+                <dd class="col-sm-7"><span class="badge bg-info-subtle text-info border">@Model.Buses.Count xe</span></dd>
+            </dl>
+        </div>
+
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-truck text-info me-2"></i>Các Xe Đang Dùng (@Model.Buses.Count)
+                </h5>
+                <a asp-controller="Buses" asp-action="Create" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus"></i> Thêm xe
+                </a>
+            </div>
+
+            @if (!Model.Buses.Any())
+            {
+                <p class="text-muted small mb-0">Chưa có xe nào thuộc loại này.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var bus in Model.Buses)
+                    {
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-dark">@bus.LicensePlate</span>
+                                <div class="small text-muted text-truncate" style="max-width: 180px;">@bus.Amenities</div>
+                            </div>
+                            <a asp-controller="Buses" asp-action="Details" asp-route-id="@bus.BusId" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: Visual Seating Chart -->
+    <div class="col-lg-8">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-dark">
+                <i class="bi bi-layout-text-window-reverse text-success me-2"></i>Trực Quan Sơ Đồ Ma Trận Ghế Ngồi
+            </h5>
+
+            <div id="seatVisualContainer" class="d-flex flex-wrap gap-4 justify-content-center py-3">
+                <!-- Dynamically rendered via JS -->
+            </div>
+
+            <div class="mt-4 border-top pt-3">
+                <h6 class="fw-semibold text-muted small text-uppercase mb-2">Mã cấu hình JSON gốc:</h6>
+                <pre class="bg-light p-3 rounded font-monospace small" style="max-height: 200px; overflow-y: auto;">@Model.SeatLayoutJson</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var layoutJson = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SeatLayoutJson));
+        
+        try {
+            var layout = JSON.parse(layoutJson);
+            var container = document.getElementById('seatVisualContainer');
+            
+            if (layout.decks && Array.isArray(layout.decks)) {
+                layout.decks.forEach(function(deck) {
+                    var deckCard = document.createElement('div');
+                    deckCard.className = 'border rounded p-3 bg-white shadow-sm';
+                    deckCard.style.minWidth = '220px';
+                    
+                    var deckTitle = document.createElement('h6');
+                    deckTitle.className = 'fw-bold text-center border-bottom pb-2 mb-3 text-secondary';
+                    deckTitle.innerText = deck.deckName || ('Tầng ' + deck.deckNumber);
+                    deckCard.appendChild(deckTitle);
+
+                    // Driver indicator
+                    if (deck.deckNumber === 1) {
+                        var driver = document.createElement('div');
+                        driver.className = 'text-center small text-muted mb-2 p-1 bg-light rounded';
+                        driver.innerHTML = '<i class="bi bi-person-wheelchair me-1"></i> Bác tài';
+                        deckCard.appendChild(driver);
+                    }
+
+                    // Organize seats into rows & cols
+                    var grid = document.createElement('div');
+                    grid.style.display = 'grid';
+                    grid.style.gridTemplateColumns = 'repeat(' + (deck.cols || 3) + ', 1fr)';
+                    grid.style.gap = '8px';
+
+                    if (deck.seats && Array.isArray(deck.seats)) {
+                        deck.seats.forEach(function(seat) {
+                            var seatBox = document.createElement('div');
+                            seatBox.className = 'text-center p-2 rounded border bg-light text-dark fw-bold';
+                            seatBox.style.fontSize = '0.8rem';
+                            seatBox.style.cursor = 'default';
+                            seatBox.title = 'Ghế ' + seat.code + ' (Hàng ' + seat.row + ', Cột ' + seat.col + ')';
+                            seatBox.innerHTML = '<i class="bi bi-display d-block text-warning mb-1"></i>' + seat.code;
+                            grid.appendChild(seatBox);
+                        });
+                    }
+
+                    deckCard.appendChild(grid);
+                    container.appendChild(deckCard);
+                });
+            } else {
+                container.innerHTML = '<div class="alert alert-info">Chưa có dữ liệu decks trong JSON.</div>';
+            }
+        } catch (e) {
+            document.getElementById('seatVisualContainer').innerHTML = 
+                '<div class="alert alert-danger">Không thể hiển thị sơ đồ trực quan do lỗi phân tích JSON: ' + e.message + '</div>';
+        }
+    </script>
+}

@@ -1,0 +1,126 @@
+@model IEnumerable<WebVanTai.Models.Bus>
+@{
+    ViewData["Title"] = "Quản Lý Xe Khách";
+    var busTypes = ViewBag.BusTypes as SelectList ?? new SelectList(Enumerable.Empty<object>());
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-truck-front-fill text-info me-2"></i>Danh Sách Xe Khách (Fleet Management)
+        </h3>
+        <p class="text-muted mb-0 small">Quản lý toàn bộ phương tiện vận chuyển, biển số xe, loại xe và tiện ích đi kèm.</p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Đăng Ký Xe Mới
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card card-custom mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="searchLicensePlate" value="@ViewBag.SearchLicensePlate" class="form-control" placeholder="Tìm theo biển số xe (VD: 51B-234.56)..." />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="busTypeId" class="form-select" asp-items="busTypes">
+                <option value="">-- Tất cả loại xe --</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100">
+                <i class="bi bi-funnel me-1"></i> Lọc
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Buses Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Mã</th>
+                    <th>Biển Số Xe</th>
+                    <th>Loại Xe & Số Chỗ</th>
+                    <th>Tiện Ích Trang Bị</th>
+                    <th class="text-center">Số Chuyến Đã Xếp</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end" style="width: 150px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-truck fs-1 d-block text-secondary mb-2"></i>
+                            Không tìm thấy phương tiện nào phù hợp.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var bus in Model)
+                    {
+                        <tr>
+                            <td class="text-muted fw-bold">#@bus.BusId</td>
+                            <td>
+                                <div class="d-inline-flex align-items-center bg-white border border-2 border-dark rounded px-2 py-1 shadow-xs">
+                                    <i class="bi bi-truck text-danger me-2"></i>
+                                    <span class="fw-bold font-monospace text-dark fs-6">@bus.LicensePlate</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@bus.BusType?.Name</div>
+                                <small class="text-muted">@bus.BusType?.TotalSeats chỗ &bull; @bus.BusType?.TotalDecks tầng</small>
+                            </td>
+                            <td>
+                                <span class="small text-secondary text-truncate d-inline-block" style="max-width: 280px;" title="@bus.Amenities">
+                                    @bus.Amenities
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    @bus.Trips.Count chuyến
+                                </span>
+                            </td>
+                            <td>
+                                @if (bus.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Sẵn sàng</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border">Bảo dưỡng</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@bus.BusId" class="btn btn-outline-secondary" title="Chi tiết lịch sử xe">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@bus.BusId" class="btn btn-outline-primary" title="Sửa thông tin">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@bus.BusId" class="btn btn-outline-danger" title="Xóa xe">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
