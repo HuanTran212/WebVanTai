@@ -1,0 +1,153 @@
+@model List<WebVanTai.Areas.Admin.ViewModels.StaffUserListItem>
+@{
+    ViewData["Title"] = "Tài Khoản Nhân Sự";
+    var search = (string?)ViewBag.Search;
+    var selectedRole = (string?)ViewBag.SelectedRole ?? "Staff";
+    var staffRoles = (string[])ViewBag.StaffRoles!;
+
+    string RoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "bg-danger-subtle text-danger border border-danger-subtle",
+        "RouteManager" => "bg-primary-subtle text-primary border border-primary-subtle",
+        "TicketInspector" => "bg-success-subtle text-success border border-success-subtle",
+        "Customer" => "bg-secondary-subtle text-secondary border border-secondary-subtle",
+        _ => "bg-light text-secondary border"
+    };
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-people-fill text-warning me-2"></i>Quản Lý Tài Khoản Nhân Sự
+        </h3>
+        <p class="text-muted mb-0 small">Cấp quyền RouteManager / TicketInspector, khóa &amp; mở khóa tài khoản nhân viên.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-futa shadow-sm">
+        <i class="bi bi-person-plus me-1"></i> Thêm Nhân Sự Mới
+    </a>
+</div>
+
+<!-- Bộ lọc -->
+<div class="card-custom p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+            <label class="form-label small fw-semibold text-muted">Tìm kiếm</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="search" value="@search"
+                       placeholder="Tên, email hoặc số điện thoại..." />
+            </div>
+        </div>
+        <div class="col-8 col-md-4">
+            <label class="form-label small fw-semibold text-muted">Vai trò</label>
+            <select class="form-select" name="role">
+                <option value="Staff" selected="@(selectedRole == "Staff")">Tất cả nhân sự</option>
+                <option value="All" selected="@(selectedRole == "All")">Tất cả tài khoản (kể cả khách)</option>
+                @foreach (var r in staffRoles)
+                {
+                    <option value="@r" selected="@(selectedRole == r)">@r</option>
+                }
+            </select>
+        </div>
+        <div class="col-4 col-md-3">
+            <button type="submit" class="btn btn-futa w-100"><i class="bi bi-funnel me-1"></i>Lọc</button>
+        </div>
+    </form>
+</div>
+
+<!-- Bảng nhân sự -->
+<div class="card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nhân sự</th>
+                    <th>Vai trò</th>
+                    <th class="d-none d-md-table-cell">Liên hệ</th>
+                    <th class="d-none d-lg-table-cell">Ngày tạo</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy tài khoản nào phù hợp.</td></tr>
+                }
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                                     style="width:38px;height:38px;background:var(--futa-orange); flex-shrink:0">
+                                    @(string.IsNullOrEmpty(u.FullName) ? "?" : u.FullName.Trim().Substring(0, 1).ToUpper())
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark">
+                                        @u.FullName
+                                        @if (u.IsCurrentUser)
+                                        {
+                                            <span class="badge bg-light text-secondary border ms-1">bạn</span>
+                                        }
+                                    </div>
+                                    <div class="small text-muted">@u.Email</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if (u.Roles.Count == 0)
+                            {
+                                <span class="badge bg-light text-secondary border">Chưa phân quyền</span>
+                            }
+                            @foreach (var role in u.Roles)
+                            {
+                                <span class="badge rounded-pill @RoleBadgeClass(role)">@role</span>
+                            }
+                        </td>
+                        <td class="d-none d-md-table-cell small">
+                            @(string.IsNullOrEmpty(u.PhoneNumber) ? "—" : u.PhoneNumber)
+                        </td>
+                        <td class="d-none d-lg-table-cell small text-muted">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (u.IsLockedOut)
+                            {
+                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-lock-fill me-1"></i>Đã khóa
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-unlock-fill me-1"></i>Hoạt động
+                                </span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-light border" title="Chỉnh sửa / cấp quyền">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                @if (!u.IsCurrentUser)
+                                {
+                                    <form asp-action="ToggleLock" asp-route-id="@u.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('@(u.IsLockedOut ? $"Mở khóa tài khoản {u.Email}?" : $"KHÓA tài khoản {u.Email}? Nhân sự sẽ không thể đăng nhập.")');">
+                                        <button type="submit" class="btn btn-sm @(u.IsLockedOut ? "btn-outline-success" : "btn-outline-danger")"
+                                                title="@(u.IsLockedOut ? "Mở khóa" : "Khóa tài khoản")">
+                                            <i class="bi @(u.IsLockedOut ? "bi-unlock" : "bi-lock")"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="small text-muted mt-3">
+    <i class="bi bi-shield-check text-success me-1"></i>
+    Tài khoản bị khóa sẽ không thể đăng nhập vào bất kỳ phân hệ nào (bao gồm app soát vé trên điện thoại) cho đến khi được mở khóa.
+</div>
