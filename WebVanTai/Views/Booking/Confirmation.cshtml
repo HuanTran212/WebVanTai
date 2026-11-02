@@ -1,0 +1,204 @@
+@model WebVanTai.Models.ViewModels.BookingConfirmationViewModel
+@{
+    ViewData["Title"] = $"Xác nhận giữ chỗ #{Model.BookingId}";
+}
+
+<style>
+    :root {
+        --futa-orange: #F26522;
+        --futa-dark-orange: #d9531e;
+        --futa-light-orange: #fff2eb;
+    }
+
+    .confirm-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        border: none;
+        overflow: hidden;
+    }
+
+    .confirm-header {
+        background: linear-gradient(135deg, var(--futa-orange), #ff7e40);
+        color: white;
+        padding: 24px;
+        text-align: center;
+    }
+
+    .timer-badge {
+        background: #fff;
+        color: var(--futa-orange);
+        border-radius: 50px;
+        padding: 8px 20px;
+        font-weight: 800;
+        font-size: 1.25rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .ticket-badge {
+        background: var(--futa-light-orange);
+        color: var(--futa-orange);
+        border: 1px solid rgba(242, 101, 34, 0.3);
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        display: inline-block;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .btn-futa {
+        background: var(--futa-orange);
+        border: none;
+        color: white;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: 14px 28px;
+        transition: all 0.2s;
+    }
+
+    .btn-futa:hover {
+        background: var(--futa-dark-orange);
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="container py-4" style="max-width: 680px;">
+    <div class="confirm-card">
+        <div class="confirm-header">
+            <div class="mb-2">
+                <i class="bi bi-clock-history fs-1 text-white"></i>
+            </div>
+            <h4 class="fw-bold mb-1">Giữ chỗ thành công!</h4>
+            <p class="mb-3 text-white-50">Mã đơn đặt vé: <strong>#@Model.BookingId</strong></p>
+
+            <div class="timer-badge" id="countdownTimer">
+                <i class="bi bi-stopwatch"></i>
+                <span id="timerText">10:00</span>
+            </div>
+            <small class="d-block text-white-50 mt-2">Vui lòng thanh toán trước khi thời gian giữ chỗ kết thúc</small>
+        </div>
+
+        <div class="card-body p-4">
+            <h5 class="fw-bold text-dark mb-3">Thông tin chuyến đi</h5>
+            <div class="p-3 bg-light rounded-3 mb-4">
+                <div class="info-row">
+                    <span class="text-muted">Tuyến xe</span>
+                    <strong class="text-dark">@Model.RouteName</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Loại xe</span>
+                    <strong>@Model.BusTypeName (@Model.LicensePlate)</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Giờ khởi hành</span>
+                    <strong class="text-primary">@Model.DepartureTime.ToString("HH:mm - dd/MM/yyyy")</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Vị trí ghế</span>
+                    <div>
+                        @foreach (var seat in Model.SeatCodes)
+                        {
+                            <span class="ticket-badge">Ghế @seat</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold text-dark mb-3">Lộ trình đón & trả</h5>
+            <div class="p-3 bg-light rounded-3 mb-4">
+                <div class="mb-3">
+                    <small class="text-muted fw-bold d-block"><i class="bi bi-geo-alt-fill text-success"></i> ĐIỂM ĐÓN KHÁCH</small>
+                    <strong>@Model.PickupStationName</strong>
+                    <div class="small text-muted">@Model.PickupStationAddress</div>
+                </div>
+                <div>
+                    <small class="text-muted fw-bold d-block"><i class="bi bi-geo-alt-fill text-danger"></i> ĐIỂM TRẢ KHÁCH</small>
+                    <strong>@Model.DropoffStationName</strong>
+                    <div class="small text-muted">@Model.DropoffStationAddress</div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold text-dark mb-3">Thông tin hành khách</h5>
+            <div class="p-3 bg-light rounded-3 mb-4">
+                <div class="info-row">
+                    <span class="text-muted">Họ và tên</span>
+                    <strong>@Model.PassengerName</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Số điện thoại</span>
+                    <strong>@Model.PassengerPhone</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Tổng số lượng vé</span>
+                    <strong>@Model.SeatCodes.Count vé</strong>
+                </div>
+                <div class="info-row">
+                    <span class="text-muted">Tổng tiền thanh toán</span>
+                    <strong class="fs-4 text-danger">@Model.TotalAmount.ToString("N0") đ</strong>
+                </div>
+            </div>
+
+            <div class="d-grid gap-3">
+                <a href="/Payment/Pay?bookingId=@Model.BookingId" class="btn btn-futa shadow fs-5">
+                    <i class="bi bi-credit-card-2-front"></i> Thanh toán qua VNPay
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary py-3 rounded-3">
+                    <i class="bi bi-house-door"></i> Quay về trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Thời gian hết hạn từ máy chủ
+            const expiredAt = new Date('@Model.ExpiredAt.ToString("o")').getTime();
+            const timerText = document.getElementById('timerText');
+            const countdownTimer = document.getElementById('countdownTimer');
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = expiredAt - now;
+
+                if (distance <= 0) {
+                    clearInterval(interval);
+                    timerText.innerText = "00:00 (Hết hạn)";
+                    countdownTimer.style.color = "#dc3545";
+                    alert("Thời gian giữ chỗ 10 phút đã kết thúc. Vé của bạn đã được giải phóng để hành khách khác có thể đặt!");
+                    window.location.href = "/Booking/SelectSeats?tripId=@Model.TripId";
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                const formattedMin = minutes < 10 ? "0" + minutes : minutes;
+                const formattedSec = seconds < 10 ? "0" + seconds : seconds;
+
+                timerText.innerText = `${formattedMin}:${formattedSec}`;
+            }
+
+            updateCountdown();
+            const interval = setInterval(updateCountdown, 1000);
+        });
+    </script>
+}
+
