@@ -1,0 +1,542 @@
+@model WebVanTai.Controllers.TripDetailsViewModel
+@{
+    ViewData["Title"] = $"Chi Tiết Chuyến Xe & Lộ Trình: {Model.StartProvince} đi {Model.EndProvince}";
+    var stationsJson = System.Text.Json.JsonSerializer.Serialize(Model.Stations.Select(s => new
+    {
+        stationId = s.StationId,
+        name = s.Name,
+        province = s.Province,
+        address = s.Address,
+        lat = (double)s.Latitude,
+        lng = (double)s.Longitude,
+        stopOrder = s.StopOrder,
+        stationType = (int)s.StationType,
+        typeName = s.StationType == WebVanTai.Models.Enums.StationType.Pickup ? "Điểm đón khách" : 
+                   (s.StationType == WebVanTai.Models.Enums.StationType.Dropoff ? "Điểm trả khách" : "Điểm đón & trả"),
+        estTime = s.EstimatedTime.ToString("HH:mm - dd/MM/yyyy")
+    }));
+}
+
+<!-- Leaflet.js CSS from CDN -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<style>
+    :root {
+        --futa-orange: #F26522;
+        --futa-orange-hover: #d85415;
+        --futa-orange-light: #fff5ee;
+        --futa-orange-subtle: #ffeedd;
+    }
+
+    /* Map Container */
+    #routeMap {
+        height: 480px;
+        width: 100%;
+        border-radius: 16px;
+        z-index: 1;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #dee2e6;
+    }
+
+    @@media (max-width: 768px) {
+        #routeMap {
+            height: 360px;
+        }
+    }
+
+    /* Custom Leaflet Marker Pins */
+    .custom-marker-pin {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        border: 2.5px solid #ffffff;
+        transition: transform 0.2s ease;
+    }
+
+    .custom-marker-pin:hover {
+        transform: scale(1.15);
+    }
+
+    .marker-pickup {
+        background: #198754;
+    }
+
+    .marker-dropoff {
+        background: var(--futa-orange);
+    }
+
+    .marker-both {
+        background: #0d6efd;
+    }
+
+    /* Timeline Stepper */
+    .station-timeline {
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .station-timeline::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        bottom: 15px;
+        left: 31px;
+        width: 3px;
+        background: #e9ecef;
+    }
+
+    .station-timeline-item {
+        position: relative;
+        padding-left: 32px;
+        margin-bottom: 24px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .station-timeline-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .station-timeline-badge {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        border: 2px solid white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .station-timeline-card {
+        background: #ffffff;
+        border: 1px solid #edf0f2;
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.2s ease;
+    }
+
+    .station-timeline-item:hover .station-timeline-card {
+        border-color: var(--futa-orange);
+        box-shadow: 0 6px 15px rgba(242, 101, 34, 0.12);
+        transform: translateX(4px);
+    }
+
+    .station-timeline-item.active .station-timeline-card {
+        border-color: var(--futa-orange);
+        background: var(--futa-orange-light);
+    }
+
+    .btn-futa-primary {
+        background: var(--futa-orange);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-futa-primary:hover {
+        background: var(--futa-orange-hover);
+        color: #ffffff;
+        box-shadow: 0 8px 20px rgba(242, 101, 34, 0.35);
+    }
+</style>
+
+<!-- HEADER & NAVIGATION -->
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách chuyến xe
+    </a>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-dark">
+                Chuyến xe: <span style="color: var(--futa-orange);">@Model.StartProvince</span> 
+                <i class="bi bi-arrow-right text-warning mx-1"></i> 
+                <span style="color: var(--futa-orange);">@Model.EndProvince</span>
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar3 text-primary me-1"></i> Khởi hành: <strong>@Model.DepartureTime.ToString("HH:mm - dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN"))</strong>
+                <span class="mx-2">•</span>
+                <i class="bi bi-clock me-1"></i> Dự kiến chạy: <strong>~@Model.DurationHours.ToString("0.#") giờ (@Model.DistanceKm km)</strong>
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            @if (Model.AvailableSeats > 0)
+            {
+                <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
+                   class="btn btn-futa-primary fw-bold px-4 py-2 shadow-sm">
+                    <i class="bi bi-ticket-perforated-fill me-1"></i> ĐẶT VÉ CHUYẾN NÀY
+                </a>
+            }
+            else
+            {
+                <button class="btn btn-secondary fw-bold px-4 py-2" disabled>HẾT CHỖ</button>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- CỘT BÊN TRÁI: BẢN ĐỒ LEAFLET.JS VÀ LỘ TRÌNH -->
+    <div class="col-12 col-lg-8">
+        <!-- CARD BẢN ĐỒ -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle p-2" style="background: var(--futa-orange-light); color: var(--futa-orange);">
+                        <i class="bi bi-geo-alt-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="h6 fw-bold mb-0 text-dark">Bản Đồ Lộ Trình Di Chuyển & Điểm Đón / Trả</h2>
+                        <span class="text-muted small">Tích hợp OpenStreetMap & Leaflet.js</span>
+                    </div>
+                </div>
+
+                <!-- CHÚ THÍCH (LEGEND) -->
+                <div class="d-flex align-items-center gap-3 small">
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="d-inline-block rounded-circle" style="width: 12px; height: 12px; background: #198754;"></span>
+                        Điểm đón
+                    </span>
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="d-inline-block rounded-circle" style="width: 12px; height: 12px; background: var(--futa-orange);"></span>
+                        Điểm trả
+                    </span>
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="d-inline-block" style="width: 20px; height: 3px; background: var(--futa-orange);"></span>
+                        Tuyến đường
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body p-2 p-md-3">
+                <!-- LEAFLET MAP CONTAINER -->
+                <div id="routeMap"></div>
+                <div class="text-muted small mt-2 d-flex justify-content-between align-items-center px-1">
+                    <span><i class="bi bi-info-circle me-1"></i> Nhấp vào từng điểm Marker trên bản đồ hoặc danh sách bên dưới để xem vị trí chi tiết.</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btnFitMap">
+                        <i class="bi bi-arrows-fullscreen me-1"></i> Xem toàn bộ lộ trình
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DANH SÁCH CÁC TRẠM DỌC LỘ TRÌNH (TIMELINE) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h3 class="h6 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-signpost-split text-danger"></i>
+                Danh Sách Các Điểm Dừng & Giờ Dự Kiến (@Model.Stations.Count trạm)
+            </h3>
+
+            @if (Model.Stations.Any())
+            {
+                <div class="station-timeline">
+                    @foreach (var station in Model.Stations)
+                    {
+                        var badgeClass = station.StationType == WebVanTai.Models.Enums.StationType.Pickup ? "marker-pickup" : 
+                                         (station.StationType == WebVanTai.Models.Enums.StationType.Dropoff ? "marker-dropoff" : "marker-both");
+                        var badgeLabel = station.StationType == WebVanTai.Models.Enums.StationType.Pickup ? "ĐÓN KHÁCH" : 
+                                         (station.StationType == WebVanTai.Models.Enums.StationType.Dropoff ? "TRẢ KHÁCH" : "ĐÓN & TRẢ");
+                        var badgeColor = station.StationType == WebVanTai.Models.Enums.StationType.Pickup ? "bg-success" : 
+                                         (station.StationType == WebVanTai.Models.Enums.StationType.Dropoff ? "bg-warning text-dark" : "bg-primary");
+
+                        <div class="station-timeline-item" data-stop-order="@station.StopOrder" data-lat="@station.Latitude" data-lng="@station.Longitude">
+                            <div class="station-timeline-badge @badgeClass">
+                                @station.StopOrder
+                            </div>
+                            <div class="station-timeline-card">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-1 mb-1">
+                                    <h4 class="h6 fw-bold mb-0 text-dark">
+                                        @station.Name
+                                    </h4>
+                                    <span class="badge @badgeColor" style="font-size: 0.72rem;">
+                                        @badgeLabel
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    <i class="bi bi-geo-alt text-danger me-1"></i> @station.Address (@station.Province)
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center text-muted small pt-2 border-top">
+                                    <span>
+                                        <i class="bi bi-clock-history text-primary me-1"></i> Dự kiến: <strong>@station.EstimatedTime.ToString("HH:mm - dd/MM/yyyy")</strong>
+                                    </span>
+                                    <span class="text-primary fw-semibold" style="font-size: 0.78rem;">
+                                        <i class="bi bi-cursor-fill me-1"></i> Xem trên bản đồ
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light border text-center my-2">
+                    <i class="bi bi-info-circle me-1"></i> Tuyến xe này chưa có dữ liệu trạm trung gian.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CỘT BÊN PHẢI: THÔNG TIN CHUYẾN XE & ĐẶT VÉ -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 85px;">
+            <h2 class="h5 fw-bold mb-3 text-dark pb-2 border-bottom">
+                Thông Tin Chuyến Xe
+            </h2>
+
+            <!-- GIÁ VÉ -->
+            <div class="mb-3 p-3 rounded-3" style="background: var(--futa-orange-light); border: 1px dashed var(--futa-orange);">
+                <div class="text-muted small">Giá vé chính thức</div>
+                <div class="d-flex align-items-baseline gap-1">
+                    <span class="display-6 fw-bold" style="color: var(--futa-orange);">
+                        @Model.BasePrice.ToString("N0")
+                    </span>
+                    <span class="fw-bold text-muted">VNĐ / ghế</span>
+                </div>
+                <div class="small text-success mt-1">
+                    <i class="bi bi-check-circle-fill me-1"></i> Đã bao gồm bảo hiểm hành khách & phí cầu đường
+                </div>
+            </div>
+
+            <!-- THÔNG SỐ XE -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-bus-front me-2"></i>Loại xe</span>
+                    <strong class="text-dark">@Model.BusTypeName</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-card-text me-2"></i>Biển kiểm soát</span>
+                    <strong class="text-dark">@Model.LicensePlate</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-people me-2"></i>Tổng số ghế</span>
+                    <strong class="text-dark">@Model.TotalSeats chỗ</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-ticket-detailed me-2"></i>Chỗ trống hiện tại</span>
+                    @if (Model.AvailableSeats > 5)
+                    {
+                        <strong class="text-success">Còn @Model.AvailableSeats chỗ</strong>
+                    }
+                    else if (Model.AvailableSeats > 0)
+                    {
+                        <strong class="text-danger">Chỉ còn @Model.AvailableSeats chỗ!</strong>
+                    }
+                    else
+                    {
+                        <strong class="text-secondary">Hết chỗ</strong>
+                    }
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>Quãng đường</span>
+                    <strong class="text-dark">@Model.DistanceKm km</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted"><i class="bi bi-hourglass-split me-2"></i>Thời gian chạy</span>
+                    <strong class="text-dark">~@Model.DurationHours.ToString("0.#") tiếng</strong>
+                </div>
+            </div>
+
+            <!-- TIỆN ÍCH -->
+            @if (!string.IsNullOrEmpty(Model.Amenities))
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold small text-uppercase text-muted mb-2">Tiện ích kèm theo</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var am in Model.Amenities.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                            <span class="badge bg-light text-dark border py-2 px-2 fw-normal">
+                                <i class="bi bi-check2 text-success me-1"></i>@am
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- CHÍNH SÁCH -->
+            <div class="mb-4 small text-muted bg-light p-3 rounded-3">
+                <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-exclamation text-warning me-1"></i> Quy định & Lưu ý:</div>
+                <ul class="ps-3 mb-0">
+                    <li>Có mặt tại trạm đón ít nhất 15-30 phút trước giờ khởi hành.</li>
+                    <li>Giữ chỗ trực tuyến tự động trong vòng 10 phút.</li>
+                    <li>Chính sách hủy vé: Trước giờ khởi hành ít nhất 4 tiếng.</li>
+                </ul>
+            </div>
+
+            <!-- CTA BUTTON -->
+            @if (Model.AvailableSeats > 0)
+            {
+                <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
+                   class="btn btn-futa-primary btn-lg w-100 fw-bold py-3 shadow">
+                    <i class="bi bi-arrow-right-circle-fill me-2"></i> CHỌN GHẾ VÀ TIẾP TỤC
+                </a>
+            }
+            else
+            {
+                <button class="btn btn-secondary btn-lg w-100 fw-bold py-3" disabled>
+                    CHUYẾN XE ĐÃ HẾT CHỖ
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<!-- Leaflet.js JS from CDN -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Dữ liệu danh sách trạm từ Controller (Razor JSON)
+        const stations = @Html.Raw(stationsJson);
+
+        if (!stations || stations.length === 0) {
+            console.warn('Không có dữ liệu trạm để hiển thị bản đồ.');
+            return;
+        }
+
+        // 1. Khởi tạo bản đồ Leaflet
+        // Tọa độ trung tâm mặc định (trạm đầu tiên)
+        const defaultCenter = [stations[0].lat, stations[0].lng];
+        const map = L.map('routeMap', {
+            scrollWheelZoom: false
+        }).setView(defaultCenter, 11);
+
+        // 2. Tải bản đồ OpenStreetMap (miễn phí)
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | FutaBus'
+        }).addTo(map);
+
+        // Bật cuộn chuột khi người dùng click vào bản đồ
+        map.on('focus', () => { map.scrollWheelZoom.enable(); });
+        map.on('blur', () => { map.scrollWheelZoom.disable(); });
+
+        // 3. Tạo các Markers cho từng trạm
+        const markerGroup = L.featureGroup().addTo(map);
+        const markersMap = new Map();
+        const routeCoords = [];
+
+        stations.forEach((st, idx) => {
+            const latLng = [st.lat, st.lng];
+            routeCoords.push(latLng);
+
+            // Phân loại màu marker theo StationType (0: Pickup, 1: Dropoff, 2: Both)
+            let pinClass = 'marker-pickup';
+            let pinIcon = st.stopOrder;
+            if (st.stationType === 1) {
+                pinClass = 'marker-dropoff';
+            } else if (st.stationType === 2) {
+                pinClass = 'marker-both';
+            }
+
+            const customDivIcon = L.divIcon({
+                className: 'custom-leaflet-icon',
+                html: `<div class="custom-marker-pin ${pinClass}">${pinIcon}</div>`,
+                iconSize: [34, 34],
+                iconAnchor: [17, 17],
+                popupAnchor: [0, -18]
+            });
+
+            // Nội dung Popup chi tiết khi click marker
+            const popupContent = `
+                <div style="min-width: 220px; font-family: inherit;">
+                    <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: ${st.stationType === 1 ? '#F26522' : '#198754'}; margin-bottom: 4px;">
+                        <i class="bi bi-geo-alt-fill"></i> Trạm số ${st.stopOrder} • ${st.typeName}
+                    </div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #212529; margin-bottom: 4px;">
+                        ${st.name}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #6c757d; margin-bottom: 6px;">
+                        ${st.address} (${st.province})
+                    </div>
+                    <div style="font-size: 0.78rem; font-weight: 600; color: #0d6efd; background: #f0f7ff; padding: 4px 8px; border-radius: 6px;">
+                        <i class="bi bi-clock-fill"></i> Dự kiến: ${st.estTime}
+                    </div>
+                </div>
+            `;
+
+            const marker = L.marker(latLng, { icon: customDivIcon })
+                .bindPopup(popupContent)
+                .addTo(markerGroup);
+
+            markersMap.set(st.stopOrder, marker);
+        });
+
+        // 4. Vẽ Polyline lộ trình di chuyển nối các trạm theo thứ tự
+        if (routeCoords.length >= 2) {
+            // Lớp đổ bóng mờ bên dưới đường line
+            L.polyline(routeCoords, {
+                color: '#ffffff',
+                weight: 8,
+                opacity: 0.8,
+                lineJoin: 'round'
+            }).addTo(map);
+
+            // Đường lộ trình chính màu cam FutaBus #F26522
+            const polyline = L.polyline(routeCoords, {
+                color: '#F26522',
+                weight: 5,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }).addTo(map);
+
+            // Tự động căn chỉnh bản đồ vừa vặn toàn bộ lộ trình
+            map.fitBounds(polyline.getBounds(), {
+                padding: [40, 40]
+            });
+
+            // Nút xem toàn bộ lộ trình
+            const btnFitMap = document.getElementById('btnFitMap');
+            if (btnFitMap) {
+                btnFitMap.addEventListener('click', () => {
+                    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+                });
+            }
+        } else if (routeCoords.length === 1) {
+            map.setView(routeCoords[0], 13);
+        }
+
+        // 5. Tương tác khi click vào từng trạm trong danh sách Timeline
+        const timelineItems = document.querySelectorAll('.station-timeline-item');
+        timelineItems.forEach(item => {
+            item.addEventListener('click', function () {
+                const stopOrder = parseInt(this.dataset.stopOrder);
+                const lat = parseFloat(this.dataset.lat);
+                const lng = parseFloat(this.dataset.lng);
+
+                timelineItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                // Di chuyển bản đồ đến trạm được chọn và mở popup
+                map.flyTo([lat, lng], 15, { duration: 1.2 });
+
+                const targetMarker = markersMap.get(stopOrder);
+                if (targetMarker) {
+                    setTimeout(() => {
+                        targetMarker.openPopup();
+                    }, 800);
+                }
+            });
+        });
+    });
+</script>
+}
