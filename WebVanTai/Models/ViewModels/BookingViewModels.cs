@@ -3,6 +3,37 @@ using WebVanTai.Models.Enums;
 
 namespace WebVanTai.Models.ViewModels
 {
+    // ── Payment / Ticket History ViewModels ─────────────────────────────────
+
+    public class TicketItemViewModel
+    {
+        public int TicketId { get; set; }
+        public string SeatCode { get; set; } = string.Empty;
+        public string PassengerName { get; set; } = string.Empty;
+        public string? QrToken { get; set; }
+        public TicketStatus Status { get; set; }
+        public DateTime? CheckedInAt { get; set; }
+    }
+
+    public class TicketHistoryViewModel
+    {
+        public int BookingId { get; set; }
+        public BookingStatus Status { get; set; }
+        public decimal TotalAmount { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        public string RouteName { get; set; } = string.Empty;
+        public DateTime DepartureTime { get; set; }
+        public string PickupStationName { get; set; } = string.Empty;
+        public string DropoffStationName { get; set; } = string.Empty;
+
+        /// <summary>true nếu được phép hủy (Paid &amp; còn ≥ 4 tiếng đến giờ xuất bến)</summary>
+        public bool CanCancel { get; set; }
+
+        public List<TicketItemViewModel> Tickets { get; set; } = new();
+    }
+
+
     public class SeatItemViewModel
     {
         public string Code { get; set; } = string.Empty;
