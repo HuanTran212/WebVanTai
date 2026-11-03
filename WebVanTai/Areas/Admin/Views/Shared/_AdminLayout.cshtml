@@ -1,0 +1,297 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản Trị | WebVanTai</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        :root {
+            --futa-orange: #F26522;
+            --futa-orange-hover: #D95413;
+            --futa-dark: #1E293B;
+            --futa-sidebar: #0F172A;
+            --futa-active: rgba(242, 101, 34, 0.15);
+        }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #334155;
+            min-height: 100vh;
+        }
+        /* Sidebar */
+        #sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background-color: var(--futa-sidebar);
+            color: #E2E8F0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .sidebar-brand i {
+            color: var(--futa-orange);
+            font-size: 1.6rem;
+        }
+        .sidebar-brand span {
+            color: var(--futa-orange);
+        }
+        .sidebar-menu {
+            padding: 1rem 0;
+            list-style: none;
+            margin: 0;
+        }
+        .sidebar-section-title {
+            padding: 0.75rem 1.5rem 0.35rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            font-weight: 600;
+        }
+        .sidebar-item {
+            margin: 2px 0.75rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.7rem 1rem;
+            color: #94A3B8;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.925rem;
+            transition: all 0.2s;
+        }
+        .sidebar-link i {
+            font-size: 1.15rem;
+            width: 24px;
+            text-align: center;
+        }
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+        .sidebar-link.active {
+            color: var(--futa-orange);
+            background-color: var(--futa-active);
+            font-weight: 600;
+            border-left: 3px solid var(--futa-orange);
+        }
+        /* Main wrapper */
+        #content-wrapper {
+            flex-grow: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .top-navbar {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 0.75rem 1.5rem;
+        }
+        .role-badge {
+            background-color: #FFF7ED;
+            color: var(--futa-orange);
+            border: 1px solid #FED7AA;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .btn-futa {
+            background-color: var(--futa-orange);
+            color: #FFFFFF;
+            border: none;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-futa:hover {
+            background-color: var(--futa-orange-hover);
+            color: #FFFFFF;
+        }
+        .card-custom {
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            background-color: #FFFFFF;
+        }
+        .table thead th {
+            background-color: #F8FAFC;
+            color: #475569;
+            font-weight: 600;
+            border-bottom: 2px solid #E2E8F0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        @@media (max-width: 991.98px) {
+            #sidebar {
+                position: fixed;
+                margin-left: -260px;
+            }
+            #sidebar.show {
+                margin-left: 0;
+            }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
+            <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="sidebar-brand">
+                <i class="bi bi-shield-lock-fill"></i>
+                <div>
+                    <div>Web<span>VanTai</span></div>
+                    <small style="font-size: 0.7rem; font-weight: 400; color: #94A3B8; display: block;">Quản Trị Hệ Thống</small>
+                </div>
+            </a>
+
+            <div class="sidebar-section-title">Quản trị</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"
+                       class="sidebar-link @(currentController == "Dashboard" ? "active" : "")">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Doanh Thu & Lấp Đầy</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a asp-area="Admin" asp-controller="Users" asp-action="Index"
+                       class="sidebar-link @(currentController == "Users" ? "active" : "")">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Tài Khoản Nhân Sự</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-section-title">Liên kết phân hệ</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index" class="sidebar-link">
+                        <i class="bi bi-bus-front-fill"></i>
+                        <span>Điều Hành Tuyến</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index" class="sidebar-link">
+                        <i class="bi bi-qr-code-scan"></i>
+                        <span>Soát Vé Mobile</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="mt-auto p-3 border-top border-secondary border-opacity-25">
+                <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-outline-light w-100 btn-sm text-start">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Trang khách hàng
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <div id="content-wrapper">
+            <header class="top-navbar d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" id="sidebarToggle">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+                    <div class="d-none d-sm-block text-muted small">
+                        <i class="bi bi-shield-fill-check text-success me-1"></i>
+                        Phân hệ Quản Trị Hệ Thống (Area: Admin)
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <span class="role-badge">
+                        <i class="bi bi-person-gear me-1"></i>Quản trị viên
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2" type="button"
+                                id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle text-secondary"></i>
+                            <span class="fw-medium">@User.Identity?.Name</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">Tài khoản quản trị</h6></li>
+                            <li><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Trang chủ hệ thống</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-area="RouteManager" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-grow-1 p-3 p-md-4">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                        <div>@TempData["SuccessMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                        <div>@TempData["ErrorMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @RenderBody()
+            </main>
+
+            <footer class="bg-white border-top py-3 px-4 text-muted small text-center text-md-start d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <div>
+                    &copy; 2026 <strong>WebVanTai</strong> - Hệ thống quản lý vận tải và vé xe khách chuẩn 3NF
+                </div>
+                <div>
+                    <span class="badge bg-secondary-subtle text-secondary border">Thành viên 5: Admin & TicketInspector</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        document.getElementById('sidebarToggle')?.addEventListener('click', function () {
+            document.getElementById('sidebar')?.classList.toggle('show');
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

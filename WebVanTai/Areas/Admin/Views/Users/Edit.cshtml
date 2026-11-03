@@ -1,0 +1,215 @@
+@model WebVanTai.Areas.Admin.ViewModels.StaffEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh Sửa Nhân Sự";
+    var staffRoles = (string[])ViewBag.StaffRoles!;
+    var isCurrentUser = (bool)ViewBag.IsCurrentUser;
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Index" class="btn btn-light border" title="Quay lại danh sách">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-person-gear text-warning me-2"></i>Chỉnh Sửa: @Model.FullName
+        </h3>
+        <p class="text-muted small mb-0">@Model.Email</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Thông tin & vai trò -->
+    <div class="col-lg-7">
+        <div class="card-custom">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-pencil-square me-1" style="color:var(--futa-orange)"></i>Thông Tin & Cấp Quyền</h6>
+            </div>
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="card-body p-4">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Email đăng nhập</label>
+                        <input class="form-control" value="@Model.Email" disabled />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="FullName" class="form-control" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label fw-semibold">Số điện thoại</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input asp-for="PhoneNumber" class="form-control" />
+                        </div>
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-2">
+                        <label asp-for="Role" class="form-label fw-semibold">Vai trò <span class="text-danger">*</span></label>
+                        <div class="row g-2">
+                            @foreach (var role in staffRoles)
+                            {
+                                var desc = role switch
+                                {
+                                    "Admin" => "Toàn quyền hệ thống + thống kê doanh thu",
+                                    "RouteManager" => "Quản lý bến bãi, tuyến xe, lịch chạy",
+                                    "TicketInspector" => "Soát vé QR trên di động tại bến",
+                                    _ => ""
+                                };
+                                <div class="col-md-4">
+                                    <label class="d-block h-100">
+                                        <input type="radio" asp-for="Role" value="@role" class="d-none role-radio"
+                                               disabled="@(isCurrentUser && role != "Admin")" />
+                                        <div class="role-card p-3 h-100 @(Model.Role == role ? "selected" : "")" data-role="@role">
+                                            <i class="bi @(role switch { "Admin" => "bi-shield-lock-fill", "RouteManager" => "bi-bus-front-fill", "TicketInspector" => "bi-qr-code-scan", _ => "bi-person" }) fs-3 d-block mb-2"></i>
+                                            <div class="fw-bold">@role</div>
+                                            <div class="small text-muted">@desc</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
+                        @if (isCurrentUser)
+                        {
+                            <div class="small text-muted mt-1">
+                                <i class="bi bi-info-circle me-1"></i>Bạn không thể thay đổi vai trò Admin của chính mình.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="small text-muted">
+                        Vai trò hiện tại: @foreach (var r in Model.CurrentRoles) { <span class="badge bg-light text-secondary border me-1">@r</span> }
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top p-3 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-light border">Hủy</a>
+                    <button type="submit" class="btn btn-futa px-4">
+                        <i class="bi bi-check2 me-1"></i>Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bảo mật -->
+    <div class="col-lg-5">
+        <div class="card-custom mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-lock me-1" style="color:var(--futa-orange)"></i>Khóa / Mở Khóa Tài Khoản</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    Trạng thái hiện tại:
+                    @if (Model.IsLockedOut)
+                    {
+                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="bi bi-lock-fill me-1"></i>Đã khóa
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-unlock-fill me-1"></i>Hoạt động
+                        </span>
+                    }
+                </div>
+                <p class="small text-muted">
+                    Khóa tài khoản sẽ chặn toàn bộ phiên đăng nhập mới của nhân sự này (bao gồm app soát vé trên điện thoại).
+                    Tài khoản hiện đang đăng nhập không bị đẩy ra ngay lập tức.
+                </p>
+                @if (isCurrentUser)
+                {
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Bạn không thể tự khóa tài khoản của chính mình.
+                    </div>
+                }
+                else if (Model.IsLockedOut)
+                {
+                    <form asp-action="ToggleLock" asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('MỞ KHÓA tài khoản @Model.Email?');">
+                        <button type="submit" class="btn w-100 btn-outline-success">
+                            <i class="bi bi-unlock-fill me-1"></i>Mở khóa tài khoản
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="ToggleLock" asp-route-id="@Model.Id" method="post"
+                          onsubmit="return confirm('KHÓA tài khoản @Model.Email? Nhân sự sẽ không thể đăng nhập.');">
+                        <button type="submit" class="btn w-100 btn-outline-danger">
+                            <i class="bi bi-lock-fill me-1"></i>Khóa tài khoản này
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card-custom">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-key me-1" style="color:var(--futa-orange)"></i>Đặt Lại Mật Khẩu</h6>
+            </div>
+            <form asp-action="ResetPassword" asp-route-id="@Model.Id" method="post">
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            <input type="password" class="form-control" name="newPassword" minlength="6" required
+                                   placeholder="Tối thiểu 6 ký tự" />
+                        </div>
+                        <div class="small text-muted mt-1">Nhân sự sẽ dùng mật khẩu này ở lần đăng nhập kế tiếp.</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top p-3 text-end">
+                    <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('Đặt lại mật khẩu cho @Model.Email?');">
+                        <i class="bi bi-arrow-repeat me-1"></i>Đặt lại mật khẩu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .role-card {
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            color: #475569;
+        }
+        .role-card:hover {
+            border-color: #FDBA74;
+            background: #FFFBF7;
+        }
+        .role-card.selected {
+            border-color: var(--futa-orange);
+            background: #FFF7ED;
+            color: var(--futa-orange);
+        }
+        .role-card.selected .text-muted {
+            color: #C2410C !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.role-radio:not(:disabled)').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('.role-card').forEach(function (card) {
+                    card.classList.toggle('selected', card.getAttribute('data-role') === radio.value);
+                });
+            });
+        });
+    </script>
+}

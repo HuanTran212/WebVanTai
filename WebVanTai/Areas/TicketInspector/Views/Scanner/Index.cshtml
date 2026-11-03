@@ -1,0 +1,366 @@
+@model WebVanTai.Areas.TicketInspector.ViewModels.ScannerPageViewModel
+@{
+    ViewData["Title"] = $"Soát vé - {Model.RouteName}";
+}
+
+<!-- Tóm tắt chuyến đang soát -->
+<div class="card-mobile p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h6 class="fw-bold text-dark mb-1">@Model.RouteName</h6>
+            <div class="small text-muted">
+                <i class="bi bi-clock me-1"></i>@Model.DepartureTime.ToString("HH:mm") – @Model.ArrivalTime.ToString("HH:mm")
+                <span class="mx-1">·</span>
+                <i class="bi bi-truck-front me-1"></i>@Model.LicensePlate
+            </div>
+            <div class="small text-muted">@Model.BusTypeName</div>
+        </div>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-sm btn-light border" title="Đổi chuyến">
+            <i class="bi bi-arrow-repeat"></i>
+        </a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-2" id="counterBar">
+        <span class="pill-count"><i class="bi bi-ticket-perforated" style="color:var(--futa-orange)"></i>Đã bán: <b id="cntSold">@((Model.ValidTickets + Model.CheckedInTickets))</b>/@Model.TotalSeats</span>
+        <span class="pill-count"><i class="bi bi-person-check" style="color:#16A34A"></i>Đã lên xe: <b id="cntCheckedIn">@Model.CheckedInTickets</b></span>
+        <span class="pill-count"><i class="bi bi-person-standing" style="color:#94A3B8"></i>Chờ lên: <b id="cntWaiting">@Model.ValidTickets</b></span>
+    </div>
+</div>
+
+<!-- Thẻ kết quả quét (xanh/đỏ) -->
+<div id="scanResult" class="scan-result mb-3" role="alert" aria-live="assertive">
+    <div class="d-flex align-items-start gap-3">
+        <i id="resultIcon" class="bi fs-1"></i>
+        <div class="flex-grow-1">
+            <h5 id="resultTitle" class="fw-bold mb-1"></h5>
+            <p id="resultMessage" class="mb-2 small"></p>
+            <div id="resultDetail" class="d-none">
+                <div class="bg-white bg-opacity-25 rounded-3 p-2">
+                    <div class="d-flex justify-content-between">
+                        <span class="small"><i class="bi bi-person me-1"></i>Hành khách</span>
+                        <b id="resultName"></b>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small"><i class="bi bi-geo me-1"></i>Số ghế</span>
+                        <b id="resultSeat" style="font-size:1.1rem"></b>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small"><i class="bi bi-telephone me-1"></i>Điện thoại</span>
+                        <b id="resultPhone"></b>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" id="resultClose" aria-label="Đóng"></button>
+    </div>
+</div>
+
+<!-- Camera quét QR -->
+<div class="card-mobile p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-camera-video me-1" style="color:var(--futa-orange)"></i>Camera soát vé</h6>
+        <button id="btnToggleCamera" class="btn btn-futa btn-sm" type="button">
+            <i class="bi bi-camera-video-off me-1"></i>Bật camera
+        </button>
+    </div>
+    <div id="qr-reader" class="mb-2"></div>
+    <div class="text-muted small mb-2" id="cameraHint">
+        <i class="bi bi-info-circle me-1"></i>Đưa mã QR trên vé của khách vào khung để tự động soát.
+    </div>
+
+    <hr class="my-2" />
+    <!-- Nhập tay khi camera lỗi / mã bệt -->
+    <div class="input-group input-group-sm">
+        <input type="text" id="manualToken" class="form-control" placeholder="Nhập mã vé (QrToken) nếu camera lỗi..." autocomplete="off" />
+        <button id="btnManualCheck" class="btn btn-outline-secondary" type="button">
+            <i class="bi bi-arrow-right-square"></i> Kiểm tra
+        </button>
+    </div>
+</div>
+
+<!-- Sơ đồ ghế thời gian thực -->
+<div class="card-mobile p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-grid-3x3-gap me-1" style="color:var(--futa-orange)"></i>Sơ đồ ghế trực tiếp</h6>
+        <span class="small text-muted" id="seatMapUpdated" title="Cập nhật tự động mỗi 4 giây"><i class="bi bi-arrow-repeat"></i> <span>vn</span></span>
+    </div>
+
+    <div class="bus-outline">
+        <div class="text-center small text-muted mb-1"><i class="bi bi-steering-wheel"></i> Tài xế</div>
+        @foreach (var deck in Model.Decks)
+        {
+            <div class="deck-title"><i class="bi bi-layers"></i>@deck.DeckName</div>
+            <div class="seat-grid" style="grid-template-columns: repeat(@(deck.Cols), minmax(42px, 62px));"
+                 data-deck="@deck.DeckNumber">
+                @foreach (var seat in deck.Seats.OrderBy(s => s.Row).ThenBy(s => s.Col))
+                {
+                    <div class="seat-box" data-seat="@seat.Code" title="Ghế @seat.Code">
+                        <span>@seat.Code</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="d-flex flex-wrap gap-3 justify-content-center mt-3 small text-muted">
+        <span><span class="seat-box d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Trống</span>
+        <span><span class="seat-box sold d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Đã bán</span>
+        <span><span class="seat-box checkedin d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Đã lên xe</span>
+        <span><span class="seat-box void d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Vô hiệu</span>
+    </div>
+</div>
+
+<form class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script src="~/lib/html5-qrcode/html5-qrcode.min.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            var tripId = @Model.TripId;
+            var scanner = null;            // Html5Qrcode instance
+            var cameraOn = false;
+            var cameraStarting = false;    // chặn bấm đúp trong lúc camera đang khởi động
+            var lastToken = null;
+            var lastTokenAt = 0;
+            var processing = false;
+            var seatPollTimer = null;
+            var lastSeatStates = {};       // code -> status, để phát hiện thay đổi & flash
+
+            var antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            // ====== Âm thanh & rung phản hồi ======
+            function beep(success) {
+                try {
+                    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.type = success ? 'sine' : 'square';
+                    osc.frequency.value = success ? 880 : 330;
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (success ? 0.25 : 0.45));
+                    osc.start();
+                    osc.stop(ctx.currentTime + (success ? 0.25 : 0.45));
+                    setTimeout(function () { ctx.close(); }, 600);
+                } catch (e) { /* thiết bị không hỗ trợ */ }
+                if (navigator.vibrate) navigator.vibrate(success ? [80] : [160, 80, 160]);
+            }
+
+            // ====== Thẻ kết quả quét ======
+            var resultBox = document.getElementById('scanResult');
+            function showResult(data) {
+                var isSuccess = data.isSuccess === true || data.resultType === 'success';
+                resultBox.classList.remove('success', 'danger');
+                resultBox.classList.add(isSuccess ? 'success' : 'danger', 'show');
+
+                document.getElementById('resultIcon').className = 'bi fs-1 ' +
+                    (isSuccess ? 'bi-check-circle-fill' :
+                        (data.resultType === 'already' ? 'bi-exclamation-circle-fill' : 'bi-x-octagon-fill'));
+
+                document.getElementById('resultTitle').textContent = data.title || '';
+                document.getElementById('resultMessage').textContent = data.message || '';
+                document.getElementById('resultName').textContent = data.passengerName || '—';
+                document.getElementById('resultSeat').textContent = data.seatCode || '—';
+                document.getElementById('resultPhone').textContent = data.passengerPhone || '—';
+                document.getElementById('resultDetail').classList.toggle('d-none', !data.seatCode);
+
+                // Cuộn lên đầu để NV nhìn thấy ngay kết quả
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                beep(isSuccess);
+
+                // Tự ẩn thẻ lỗi sau 7 giây (thẻ thành công giữ để NV xác nhận với khách)
+                clearTimeout(resultBox._hideTimer);
+                if (!isSuccess) {
+                    resultBox._hideTimer = setTimeout(function () { resultBox.classList.remove('show'); }, 7000);
+                }
+            }
+            document.getElementById('resultClose').addEventListener('click', function () {
+                resultBox.classList.remove('show');
+            });
+
+            // ====== Gọi API CheckIn ======
+            function submitCheckIn(rawToken) {
+                if (processing) return;
+                var now = Date.now();
+                if (rawToken === lastToken && now - lastTokenAt < 2500) return; // chống quét lặp liên tục
+
+                processing = true;
+                lastToken = rawToken;
+                lastTokenAt = now;
+
+                if (cameraOn && scanner) scanner.pause(true);
+
+                fetch('@Url.Action("CheckIn", "InspectorApi", new { area = "TicketInspector" })', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    body: JSON.stringify({ tripId: tripId, token: rawToken })
+                })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        showResult(data);
+                        refreshSeatMap(true); // cập nhật sơ đồ + đồng hồ đếm ngay lập tức
+                    })
+                    .catch(function () {
+                        showResult({ resultType: 'invalid', title: 'Lỗi kết nối', message: 'Không gọi được máy chủ. Kiểm tra mạng và thử lại.' });
+                    })
+                    .finally(function () {
+                        processing = false;
+                        setTimeout(function () {
+                            if (cameraOn && scanner) {
+                                try { scanner.resume(); } catch (e) { /* đã dừng */ }
+                            }
+                        }, 800);
+                    });
+            }
+
+            // ====== Camera html5-qrcode ======
+            var btnToggle = document.getElementById('btnToggleCamera');
+            btnToggle.addEventListener('click', function () {
+                if (!cameraOn) startCamera(); else stopCamera();
+            });
+
+            function setCameraHint(icon, cssClass, text) {
+                document.getElementById('cameraHint').innerHTML =
+                    '<i class="bi ' + icon + ' ' + cssClass + ' me-1"></i>' + text;
+            }
+
+            function startCamera() {
+                if (cameraOn || cameraStarting) return;
+                if (!window.Html5Qrcode) {
+                    setCameraHint('bi-exclamation-triangle', 'text-danger', 'Không tải được thư viện html5-qrcode. Dùng ô nhập mã vé bên dưới.');
+                    return;
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    setCameraHint('bi-exclamation-triangle', 'text-danger',
+                        'Thiết bị/trình duyệt này không hỗ trợ truy cập camera (cần HTTPS hoặc localhost). Vui lòng dùng ô nhập mã vé bên dưới.');
+                    return;
+                }
+
+                cameraStarting = true;
+                btnToggle.disabled = true;
+                setCameraHint('bi-hourglass-split', 'text-muted', 'Đang khởi động camera...');
+
+                // Phòng ngừa: một số thiết bị treo promise getUserMedia -> báo lỗi sau 12 giây
+                var startTimeout = setTimeout(function () {
+                    if (!cameraOn && cameraStarting) {
+                        cameraStarting = false;
+                        btnToggle.disabled = false;
+                        setCameraHint('bi-exclamation-triangle', 'text-danger',
+                            'Camera không phản hồi sau 12 giây. Vui lòng dùng ô nhập mã vé bên dưới.');
+                    }
+                }, 12000);
+
+                scanner = new Html5Qrcode('qr-reader');
+                var config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
+                scanner.start(
+                    { facingMode: 'environment' },
+                    config,
+                    function (decodedText) { submitCheckIn(decodedText); },
+                    function () { /* lỗi khung hình đơn lẻ: bỏ qua */ }
+                ).then(function () {
+                    clearTimeout(startTimeout);
+                    cameraOn = true;
+                    btnToggle.innerHTML = '<i class="bi bi-camera-video-off me-1"></i>Tắt camera';
+                    btnToggle.classList.remove('btn-futa');
+                    btnToggle.classList.add('btn-outline-secondary');
+                    setCameraHint('bi-check-circle', 'text-success', 'Camera đang bật — đưa mã QR của khách vào khung.');
+                }).catch(function (err) {
+                    clearTimeout(startTimeout);
+                    cameraOn = false;
+                    var denied = err && (err.name === 'NotAllowedError' || String(err).indexOf('Permission') >= 0);
+                    setCameraHint('bi-exclamation-triangle', 'text-danger',
+                        (denied
+                            ? 'Truy cập camera bị từ chối. Vào cài đặt trình duyệt cho phép camera, hoặc dùng ô nhập mã vé bên dưới.'
+                            : 'Không mở được camera trên thiết bị này. Dùng ô nhập mã vé bên dưới.') +
+                        '<br/><small class="text-muted">Lưu ý: camera chỉ hoạt động qua HTTPS hoặc localhost.</small>');
+                    try { scanner.clear(); } catch (e) { /* bỏ qua */ }
+                    scanner = null;
+                }).finally(function () {
+                    cameraStarting = false;
+                    btnToggle.disabled = false;
+                });
+            }
+
+            function stopCamera() {
+                if (scanner) {
+                    var s = scanner;
+                    scanner = null;
+                    s.stop().then(function () {
+                        s.clear();
+                        cameraOn = false;
+                        btnToggle.innerHTML = '<i class="bi bi-camera-video me-1"></i>Bật camera';
+                        btnToggle.classList.add('btn-futa');
+                        btnToggle.classList.remove('btn-outline-secondary');
+                    }).catch(function () { cameraOn = false; /* bỏ qua */ });
+                }
+            }
+
+            // Dừng camera khi rời trang (tiết kiệm pin + giải phóng camera)
+            window.addEventListener('pagehide', function () { if (cameraOn) stopCamera(); });
+
+            // ====== Nhập mã tay ======
+            document.getElementById('btnManualCheck').addEventListener('click', function () {
+                var input = document.getElementById('manualToken');
+                if (input.value.trim()) submitCheckIn(input.value.trim());
+            });
+            document.getElementById('manualToken').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnManualCheck').click(); }
+            });
+
+            // ====== Sơ đồ ghế thời gian thực (polling) ======
+            var seatBoxes = {};
+            document.querySelectorAll('.seat-box[data-seat]').forEach(function (el) {
+                seatBoxes[el.getAttribute('data-seat')] = el;
+            });
+
+            function applySeatStatus(code, info) {
+                var el = seatBoxes[code];
+                if (!el) return;
+                var st = (info && info.status) ? info.status : 'available';
+                var cls = 'seat-box';
+                if (st === 'sold') cls += ' sold';
+                else if (st === 'checkedin') cls += ' checkedin';
+                else if (st === 'void') cls += ' void';
+
+                var changed = el.className !== cls;
+                el.className = cls;
+                el.title = 'Ghế ' + code + (info && info.passengerName ? ' - ' + info.passengerName : '') +
+                    (st === 'checkedin' ? ' (đã lên xe)' : st === 'sold' ? ' (đã bán)' : st === 'void' ? ' (vé vô hiệu)' : '');
+                if (changed && st === 'checkedin' && lastSeatStates[code] && lastSeatStates[code] !== 'checkedin') {
+                    el.classList.add('flash');                      // khách vừa lên xe -> nháy ghế
+                    setTimeout(function () { el.classList.remove('flash'); }, 1300);
+                }
+                lastSeatStates[code] = st;
+            }
+
+            function refreshSeatMap(instantTick) {
+                fetch('@Url.Action("SeatMap", "InspectorApi", new { area = "TicketInspector" })?tripId=' + tripId)
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        Object.keys(seatBoxes).forEach(function (code) {
+                            applySeatStatus(code, data.seats ? data.seats[code] : null);
+                        });
+                        // Đồng bộ đếm
+                        document.getElementById('cntSold').textContent = data.validTickets;
+                        document.getElementById('cntCheckedIn').textContent = data.checkedInTickets;
+                        document.getElementById('cntWaiting').textContent = data.soldTickets;
+                        var tick = document.getElementById('seatMapUpdated');
+                        if (tick) {
+                            tick.querySelector('span').textContent = new Date().toLocaleTimeString('vi-VN');
+                        }
+                    })
+                    .catch(function () { /* bỏ qua lỗi polling đơn lẻ */ });
+            }
+
+            // Khởi động polling + tick hiển thị
+            refreshSeatMap();
+            seatPollTimer = setInterval(refreshSeatMap, 4000);
+        })();
+    </script>
+}

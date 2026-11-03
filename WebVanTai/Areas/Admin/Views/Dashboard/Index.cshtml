@@ -1,11 +1,309 @@
+@model WebVanTai.Areas.Admin.ViewModels.RevenueDashboardViewModel
 @{
-    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Title"] = "Thống Kê Doanh Thu";
 }
 
-<div class="container-fluid py-4">
-    <h2 class="mb-4 text-primary">Admin Dashboard</h2>
-    <div class="alert alert-info">
-        Chào mừng Quản trị viên hệ thống đến với trung tâm điều hành WebVanTai.
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-graph-up-arrow text-warning me-2"></i>Thống Kê Doanh Thu & Lấp Đầy Ghế
+        </h3>
+        <p class="text-muted mb-0 small">Doanh thu theo tuyến đường, tỷ lệ lấp đầy ghế và tiến độ soát vé toàn hệ thống.</p>
     </div>
 </div>
 
+<!-- Bộ lọc thời gian -->
+<div class="card-custom p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold text-muted">Từ ngày</label>
+            <input type="date" class="form-control" name="from" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold text-muted">Đến ngày</label>
+            <input type="date" class="form-control" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-futa flex-grow-1"><i class="bi bi-funnel me-1"></i>Lọc</button>
+        </div>
+        <div class="col-12 col-md-3 d-flex flex-wrap gap-2 justify-content-md-end">
+            <a class="btn btn-sm btn-light border"
+               asp-action="Index" asp-route-from="@DateTime.Today.ToString("yyyy-MM-dd")" asp-route-to="@DateTime.Today.ToString("yyyy-MM-dd")">Hôm nay</a>
+            <a class="btn btn-sm btn-light border"
+               asp-action="Index" asp-route-from="@DateTime.Today.AddDays(-6).ToString("yyyy-MM-dd")" asp-route-to="@DateTime.Today.ToString("yyyy-MM-dd")">7 ngày</a>
+            <a class="btn btn-sm btn-light border"
+               asp-action="Index" asp-route-from="@Model.ToDate.AddDays(-29).ToString("yyyy-MM-dd")" asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">30 ngày</a>
+        </div>
+    </form>
+    <div class="small text-muted mt-2">
+        <i class="bi bi-info-circle me-1"></i>Kỳ thống kê: <b>@Model.RangeLabel</b> — doanh thu tính theo ngày tạo đặt chỗ đã thanh toán; lấp đầy tính theo ngày chuyến khởi hành.
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tổng Doanh Thu</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalRevenue.ToString("N0")<span class="fs-5">₫</span></h2>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle mt-1">@Model.TotalPaidBookings đặt chỗ đã trả</span>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="bi bi-cash-stack fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Vé Đã Bán</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalTicketsSold</h2>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle mt-1">@Model.TotalCheckedIn đã soát lên xe</span>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="bi bi-ticket-perforated fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4" style="border-color: var(--futa-orange) !important;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tỷ Lệ Lấp Đầy</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.OverallOccupancyPercent%</h2>
+                    <span class="badge bg-light text-secondary border mt-1">@Model.TotalSeatsAvailable ghế tổng</span>
+                </div>
+                <div class="p-3 rounded-circle" style="background:#FFF7ED; color:var(--futa-orange)">
+                    <i class="bi bi-person-seat fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-custom h-100 p-3 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Chuyến Xe Trong Kỳ</div>
+                    <h2 class="fw-bold text-dark mt-1 mb-0">@Model.TotalTripsInRange</h2>
+                    <span class="badge bg-light text-secondary border mt-1">@Model.RouteRevenues.Count tuyến hoạt động</span>
+                </div>
+                <div class="bg-info-subtle text-info p-3 rounded-circle">
+                    <i class="bi bi-bus-front fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-fill me-2" style="color:var(--futa-orange)"></i>Doanh Thu Theo Tuyến Đường</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueByRouteChart" height="130"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-pie-chart-fill me-2" style="color:var(--futa-orange)"></i>Tỷ Lệ Lấp Đầy Ghế Tổng</h6>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <canvas id="occupancyChart" style="max-height:240px"></canvas>
+                <div class="small text-muted mt-2">
+                    @Model.TotalTicketsSold vé đã bán / @Model.TotalSeatsAvailable ghế (@Model.OverallOccupancyPercent%)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5 order-lg-2">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2" style="color:var(--futa-orange)"></i>Doanh Thu Theo Ngày</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyRevenueChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7 order-lg-1">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-2" style="color:var(--futa-orange)"></i>Chi Tiết Theo Tuyến</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tuyến đường</th>
+                            <th class="text-end">Chuyến</th>
+                            <th class="text-end">Vé bán</th>
+                            <th class="text-end">Lấp đầy</th>
+                            <th class="text-end">Doanh thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RouteRevenues.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-4">Không có dữ liệu trong kỳ thống kê.</td></tr>
+                        }
+                        @foreach (var r in Model.RouteRevenues)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@r.RouteName</td>
+                                <td class="text-end">@r.TripCount</td>
+                                <td class="text-end">@r.TicketsSold/@r.SeatsTotal</td>
+                                <td class="text-end" style="min-width:130px">
+                                    <div class="d-flex align-items-center gap-2 justify-content-end">
+                                        <div class="progress flex-grow-1" style="height:6px; min-width:60px; border-radius:99px">
+                                            <div class="progress-bar" role="progressbar"
+                                                 style="width:@(Math.Min(r.OccupancyPercent, 100))%; background:var(--futa-orange)"
+                                                 aria-valuenow="@r.OccupancyPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="small fw-semibold">@r.OccupancyPercent%</span>
+                                    </div>
+                                </td>
+                                <td class="text-end fw-bold text-success">@r.Revenue.ToString("N0") ₫</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            var futaOrange = '#F26522';
+
+            // ===== Biểu đồ doanh thu theo tuyến =====
+            var routeLabels = @Html.Raw(Json.Serialize(Model.RouteRevenues.Select(r => r.RouteName)));
+            var routeRevenues = @Html.Raw(Json.Serialize(Model.RouteRevenues.Select(r => r.Revenue)));
+            new Chart(document.getElementById('revenueByRouteChart'), {
+                type: 'bar',
+                data: {
+                    labels: routeLabels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: routeRevenues,
+                        backgroundColor: 'rgba(242, 101, 34, 0.75)',
+                        borderColor: futaOrange,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        maxBarThickness: 56
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return new Intl.NumberFormat('vi-VN').format(ctx.parsed.y) + ' ₫';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (v) {
+                                    return v >= 1000000 ? (v / 1000000) + ' tr'
+                                         : v >= 1000 ? (v / 1000) + 'k' : v;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // ===== Biểu đồ tròn tỷ lệ lấp đầy =====
+            var sold = @Model.TotalTicketsSold;
+            var total = @Model.TotalSeatsAvailable;
+            new Chart(document.getElementById('occupancyChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Đã bán', 'Còn trống'],
+                    datasets: [{
+                        data: [sold, Math.max(total - sold, 0)],
+                        backgroundColor: [futaOrange, '#E2E8F0'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '68%',
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // ===== Biểu đồ đường doanh thu theo ngày =====
+            var dailyLabels = @Html.Raw(Json.Serialize(Model.DailyRevenues.Select(d => d.Date.ToString("dd/MM"))));
+            var dailyRevenues = @Html.Raw(Json.Serialize(Model.DailyRevenues.Select(d => d.Revenue)));
+            new Chart(document.getElementById('dailyRevenueChart'), {
+                type: 'line',
+                data: {
+                    labels: dailyLabels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: dailyRevenues,
+                        borderColor: futaOrange,
+                        backgroundColor: 'rgba(242, 101, 34, 0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: futaOrange
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return new Intl.NumberFormat('vi-VN').format(ctx.parsed.y) + ' ₫';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (v) {
+                                    return v >= 1000000 ? (v / 1000000) + ' tr'
+                                         : v >= 1000 ? (v / 1000) + 'k' : v;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+}
