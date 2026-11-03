@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebVanTai.Models;
@@ -34,7 +34,8 @@ namespace WebVanTai.Data
                 new { Email = "admin@webvantai.vn", FullName = "Quản Trị Viên Hệ Thống", Role = "Admin" },
                 new { Email = "routemanager@webvantai.vn", FullName = "Điều Hành Tuyến Xe", Role = "RouteManager" },
                 new { Email = "inspector@webvantai.vn", FullName = "Nhân Viên Soát Vé", Role = "TicketInspector" },
-                new { Email = "customer@webvantai.vn", FullName = "Khách Hàng Mẫu", Role = "Customer" }
+                new { Email = "customer@webvantai.vn", FullName = "Khách Hàng Mẫu", Role = "Customer" },
+                new { Email = "customer@futabus.vn", FullName = "Khách Hàng Futa", Role = "Customer" }
             };
 
             foreach (var u in defaultUsers)
@@ -327,7 +328,7 @@ namespace WebVanTai.Data
                 await context.SaveChangesAsync();
             }
 
-            // 8. Bookings & Tickets Seed (Demo tr?c quan: 3 don Paid v?i 5 Ticket c� QrToken cho ng�y mai)
+            // 8. Bookings & Tickets Seed (Demo trực quan: 3 đơn Paid với 5 Ticket có QrToken cho ngày mai)
             if (!await context.Bookings.AnyAsync())
             {
                 var customer = await userManager.FindByEmailAsync("customer@futabus.vn")
@@ -357,7 +358,7 @@ namespace WebVanTai.Data
                         var p3 = await context.RouteStations.Where(rs => rs.RouteId == trip3.RouteId && rs.StopOrder == 1).Select(rs => rs.StationId).FirstOrDefaultAsync();
                         var d3 = await context.RouteStations.Where(rs => rs.RouteId == trip3.RouteId).OrderByDescending(rs => rs.StopOrder).Select(rs => rs.StationId).FirstOrDefaultAsync();
 
-                        // �on 1: 2 v� tuy?n HCM - �� L?t
+                        // Đơn 1: 2 vé tuyến HCM - Đà Lạt
                         var booking1 = new Booking
                         {
                             UserId = customer.Id,
@@ -383,13 +384,13 @@ namespace WebVanTai.Data
                         {
                             TripId = trip1.TripId,
                             SeatCode = "A02",
-                            PassengerName = "Tr?n Th? Mai",
+                            PassengerName = "Trần Thị Mai",
                             PassengerPhone = "0909123457",
                             QrToken = Guid.NewGuid().ToString("N"),
                             Status = TicketStatus.Valid
                         });
 
-                        // �on 2: 2 v� tuy?n HCM - Nha Trang
+                        // Đơn 2: 2 vé tuyến HCM - Nha Trang
                         var booking2 = new Booking
                         {
                             UserId = customer.Id,
@@ -415,13 +416,13 @@ namespace WebVanTai.Data
                         {
                             TripId = trip2.TripId,
                             SeatCode = "A04",
-                            PassengerName = "L� Van H�ng",
+                            PassengerName = "Lê Văn Hùng",
                             PassengerPhone = "0909888999",
                             QrToken = Guid.NewGuid().ToString("N"),
                             Status = TicketStatus.Valid
                         });
 
-                        // �on 3: 1 v� tuy?n HCM - Vung T�u
+                        // Đơn 3: 1 vé tuyến HCM - Vũng Tàu
                         var booking3 = new Booking
                         {
                             UserId = customer.Id,
@@ -446,7 +447,7 @@ namespace WebVanTai.Data
 
                         await context.Bookings.AddRangeAsync(booking1, booking2, booking3);
 
-                        // �?ng th?i n?p don tuong t? cho t�i kho?n customer c�n l?i n?u c? 2 c�ng t?n t?i
+                        // Đồng thời nạp đơn tương tự cho tài khoản customer còn lại nếu cả 2 cùng tồn tại
                         var altEmail = customer.Email == "customer@futabus.vn" ? "customer@webvantai.vn" : "customer@futabus.vn";
                         var altCustomer = await userManager.FindByEmailAsync(altEmail);
                         if (altCustomer != null)
@@ -476,7 +477,7 @@ namespace WebVanTai.Data
                             {
                                 TripId = trip1.TripId,
                                 SeatCode = "B02",
-                                PassengerName = "Ph?m H?ng Nhung",
+                                PassengerName = "Phạm Hồng Nhung",
                                 PassengerPhone = "0909123458",
                                 QrToken = Guid.NewGuid().ToString("N"),
                                 Status = TicketStatus.Valid
@@ -507,7 +508,7 @@ namespace WebVanTai.Data
                             {
                                 TripId = trip2.TripId,
                                 SeatCode = "B04",
-                                PassengerName = "�? Minh Qu�n",
+                                PassengerName = "Đỗ Minh Quân",
                                 PassengerPhone = "0909777888",
                                 QrToken = Guid.NewGuid().ToString("N"),
                                 Status = TicketStatus.Valid

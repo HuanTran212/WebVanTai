@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -12,6 +12,9 @@
         :root {
             --futa-orange: #F26522;
             --futa-orange-hover: #D95413;
+        }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         .text-futa { color: var(--futa-orange) !important; }
         .bg-futa { background-color: var(--futa-orange) !important; }
@@ -53,30 +56,30 @@
                     <ul class="navbar-nav flex-grow-1 align-items-lg-center">
                         <li class="nav-item">
                             <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="bi bi-house me-1"></i> Trang ch?
+                                <i class="bi bi-house me-1"></i> Trang chủ
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Trips" asp-action="Index">
-                                <i class="bi bi-search me-1"></i> Tra c?u l?ch tr�nh
+                                <i class="bi bi-search me-1"></i> Tra cứu lịch trình
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-futa fw-semibold" asp-area="" asp-controller="Booking" asp-action="Index">
-                                <i class="bi bi-ticket-perforated"></i> �?t v� ngay
+                                <i class="bi bi-ticket-perforated me-1"></i> Đặt vé ngay
                             </a>
                         </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
-                                    <i class="bi bi-ticket-detailed me-1 text-primary"></i> V� c?a t�i
+                                    <i class="bi bi-ticket-detailed me-1 text-primary"></i> Vé của tôi
                                 </a>
                             </li>
                         }
                     </ul>
 
-                    <!-- Ph�m t?t vai tr� qu?n tr? (Khi dang nh?p) -->
+                    <!-- Phím tắt vai trò quản trị (Khi đăng nhập) -->
                     <div class="d-flex align-items-center flex-wrap gap-2 me-lg-3 my-2 my-lg-0">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
@@ -89,31 +92,31 @@
                             @if (User.IsInRole("RouteManager") || User.IsInRole("Admin"))
                             {
                                 <a class="btn btn-sm btn-outline-warning text-dark fw-semibold d-inline-flex align-items-center" asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index">
-                                    <i class="bi bi-speedometer2 me-1 text-warning"></i> �i?u H�nh
+                                    <i class="bi bi-speedometer2 me-1 text-warning"></i> Điều Hành
                                 </a>
                             }
                             @if (User.IsInRole("TicketInspector") || User.IsInRole("Admin"))
                             {
                                 <a class="btn btn-sm btn-outline-primary fw-semibold d-inline-flex align-items-center" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
-                                    <i class="bi bi-qr-code-scan me-1"></i> So�t V�
+                                    <i class="bi bi-qr-code-scan me-1"></i> Soát Vé
                                 </a>
                             }
                         }
                     </div>
 
-                    <!-- G�c �ang Nh?p & Qu?n Tr? H? Th?ng -->
+                    <!-- Góc Đăng Nhập & Quản Trị Hệ Thống -->
                     <ul class="navbar-nav align-items-lg-center gap-2">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark fw-semibold d-flex align-items-center gap-1" href="#" id="userNavDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-person-circle fs-5 text-futa"></i>
-                                    <span>@(User.Identity.Name ?? "T�i kho?n")</span>
+                                    <span>@(User.Identity.Name ?? "Tài khoản")</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userNavDropdown">
                                     <li>
                                         <a class="dropdown-item py-2 fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
-                                            <i class="bi bi-ticket-detailed me-2 text-warning"></i>V� c?a t�i
+                                            <i class="bi bi-ticket-detailed me-2 text-warning"></i>Vé của tôi
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
@@ -121,7 +124,7 @@
                                     {
                                         <li>
                                             <a class="dropdown-item py-2 text-primary fw-semibold" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
-                                                <i class="bi bi-qr-code-scan me-2"></i>So�t V� Mobile (TicketInspector)
+                                                <i class="bi bi-qr-code-scan me-2"></i>Soát Vé Mobile (TicketInspector)
                                             </a>
                                         </li>
                                     }
@@ -158,7 +161,7 @@
                         {
                             <li class="nav-item dropdown">
                                 <a class="btn btn-outline-futa btn-sm fw-semibold dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-shield-lock me-1"></i> Qu?n Tr? & �ang Nh?p
+                                    <i class="bi bi-shield-lock me-1"></i> Quản Trị & Đăng Nhập
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="loginDropdown" style="min-width: 250px;">
                                     <li><h6 class="dropdown-header text-uppercase small">Khu v?c di?u h�nh</h6></li>
@@ -177,30 +180,40 @@
                                             <i class="bi bi-shield-lock me-2"></i>Qu?n Tr? H? Th?ng
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-primary" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-qr-code-scan me-2"></i>Soát Vé Trực Tuyến
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-danger" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-shield-lock me-2"></i>Quản Trị Hệ Thống
+                                        </a>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item py-2 text-primary" href="/Identity/Account/Login">
-                                            <i class="bi bi-box-arrow-in-right me-2"></i>M�n h�nh �ang Nh?p
+                                            <i class="bi bi-box-arrow-in-right me-2"></i>Màn hình Đăng Nhập
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Admin">
-                                            <i class="bi bi-lightning-charge-fill text-danger me-2"></i>V�o nhanh: <strong>Admin</strong>
+                                            <i class="bi bi-lightning-charge-fill text-danger me-2"></i>Vào nhanh: <strong>Admin</strong>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=RouteManager">
-                                            <i class="bi bi-lightning-charge-fill text-warning me-2"></i>V�o nhanh: <strong>RouteManager</strong>
+                                            <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Vào nhanh: <strong>RouteManager</strong>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=TicketInspector">
-                                            <i class="bi bi-lightning-charge-fill text-primary me-2"></i>V�o nhanh: <strong>TicketInspector</strong>
+                                            <i class="bi bi-lightning-charge-fill text-primary me-2"></i>Vào nhanh: <strong>TicketInspector</strong>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Customer">
-                                            <i class="bi bi-lightning-charge-fill text-success me-2"></i>V�o nhanh: <strong>Kh�ch h�ng m?u</strong>
+                                            <i class="bi bi-lightning-charge-fill text-success me-2"></i>Vào nhanh: <strong>Khách hàng mẫu</strong>
                                         </a>
                                     </li>
                                 </ul>
