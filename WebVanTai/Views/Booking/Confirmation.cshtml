@@ -95,6 +95,21 @@
         </div>
 
         <div class="card-body p-4">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
             <h5 class="fw-bold text-dark mb-3">Thông tin chuyến đi</h5>
             <div class="p-3 bg-light rounded-3 mb-4">
                 <div class="info-row">
@@ -169,17 +184,18 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Thời gian hết hạn từ máy chủ
-            const expiredAt = new Date('@Model.ExpiredAt.ToString("o")').getTime();
+            // ExpiredAt lưu theo UTC — gửi epoch milliseconds để không phụ thuộc múi giờ trình duyệt
+            const expiredAt = @(new DateTimeOffset(DateTime.SpecifyKind(Model.ExpiredAt, DateTimeKind.Utc)).ToUnixTimeMilliseconds());
             const timerText = document.getElementById('timerText');
             const countdownTimer = document.getElementById('countdownTimer');
+            let interval = null;
 
             function updateCountdown() {
                 const now = new Date().getTime();
                 const distance = expiredAt - now;
 
                 if (distance <= 0) {
-                    clearInterval(interval);
+                    if (interval) clearInterval(interval);
                     timerText.innerText = "00:00 (Hết hạn)";
                     countdownTimer.style.color = "#dc3545";
                     alert("Thời gian giữ chỗ 10 phút đã kết thúc. Vé của bạn đã được giải phóng để hành khách khác có thể đặt!");
@@ -197,7 +213,7 @@
             }
 
             updateCountdown();
-            const interval = setInterval(updateCountdown, 1000);
+            interval = setInterval(updateCountdown, 1000);
         });
     </script>
 }

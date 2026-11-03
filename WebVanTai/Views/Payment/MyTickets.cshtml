@@ -46,6 +46,18 @@
     .status-paid     { background: #d4edda; color: #155724; }
     .status-cancelled { background: #f8d7da; color: #721c24; }
     .status-expired  { background: #fff3cd; color: #856404; }
+    .status-pending  { background: #cff4fc; color: #055160; }
+
+    .btn-pay {
+        background: var(--futa-orange);
+        border: 2px solid var(--futa-orange);
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 8px 18px;
+        transition: all .2s;
+    }
+    .btn-pay:hover { background: var(--futa-dark); border-color: var(--futa-dark); color: #fff; }
 
     .ticket-row {
         display: flex;
@@ -104,6 +116,7 @@
     .ticket-status-valid     { color: #28a745; }
     .ticket-status-checkedin { color: #0d6efd; }
     .ticket-status-void      { color: #dc3545; }
+    .ticket-status-pending   { color: var(--futa-orange); }
 </style>
 
 <div class="container py-4" style="max-width: 800px;">
@@ -155,6 +168,7 @@
                         @{
                             var (badgeClass, badgeLabel) = booking.Status switch
                             {
+                                WebVanTai.Models.Enums.BookingStatus.Pending   => ("status-pending", "Đang giữ chỗ"),
                                 WebVanTai.Models.Enums.BookingStatus.Paid      => ("status-paid", "Đã thanh toán"),
                                 WebVanTai.Models.Enums.BookingStatus.Cancelled => ("status-cancelled", "Đã hủy"),
                                 WebVanTai.Models.Enums.BookingStatus.Expired   => ("status-expired", "Hết hạn"),
@@ -162,6 +176,14 @@
                             };
                         }
                         <span class="status-badge @badgeClass">@badgeLabel</span>
+
+                        @if (booking.Status == WebVanTai.Models.Enums.BookingStatus.Pending)
+                        {
+                            <a class="btn-pay btn" href="/Payment/Pay?bookingId=@booking.BookingId"
+                               title="Ghế được giữ tối đa 10 phút kể từ lúc đặt">
+                                <i class="bi bi-credit-card-2-front me-1"></i>Thanh toán ngay
+                            </a>
+                        }
 
                         @if (booking.CanCancel)
                         {
@@ -202,7 +224,8 @@
                 {
                     <div class="ticket-row">
                         <!-- QR Image -->
-                        @if (!string.IsNullOrEmpty(ticket.QrToken) && ticket.Status != WebVanTai.Models.Enums.TicketStatus.Void)
+                        @if (!string.IsNullOrEmpty(ticket.QrToken) && ticket.Status != WebVanTai.Models.Enums.TicketStatus.Void
+                             && booking.Status == WebVanTai.Models.Enums.BookingStatus.Paid)
                         {
                             <img src="/Payment/QrImage?token=@ticket.QrToken"
                                  alt="QR @ticket.SeatCode"
@@ -224,15 +247,17 @@
                             <div class="mb-1">
                                 <span class="seat-badge me-2">Ghế @ticket.SeatCode</span>
                                 @{
-                                    var (iconClass, statusText) = ticket.Status switch
-                                    {
-                                        WebVanTai.Models.Enums.TicketStatus.Valid     => ("ticket-status-valid bi-check-circle-fill", "Hợp lệ"),
-                                        WebVanTai.Models.Enums.TicketStatus.CheckedIn => ("ticket-status-checkedin bi-person-check-fill", "Đã lên xe"),
-                                        _                                              => ("ticket-status-void bi-x-circle-fill", "Đã hủy")
-                                    };
+                                    var (statusCss, iconGlyph, statusText) = booking.Status == WebVanTai.Models.Enums.BookingStatus.Pending
+                                        ? ("ticket-status-pending", "bi-clock-fill", "Chờ thanh toán")
+                                        : ticket.Status switch
+                                        {
+                                            WebVanTai.Models.Enums.TicketStatus.Valid     => ("ticket-status-valid", "bi-check-circle-fill", "Hợp lệ"),
+                                            WebVanTai.Models.Enums.TicketStatus.CheckedIn => ("ticket-status-checkedin", "bi-person-check-fill", "Đã lên xe"),
+                                            _                                              => ("ticket-status-void", "bi-x-circle-fill", "Đã hủy")
+                                        };
                                 }
-                                <i class="bi @iconClass me-1"></i>
-                                <small class="@(ticket.Status == WebVanTai.Models.Enums.TicketStatus.Valid ? "ticket-status-valid" : ticket.Status == WebVanTai.Models.Enums.TicketStatus.CheckedIn ? "ticket-status-checkedin" : "ticket-status-void")">@statusText</small>
+                                <i class="bi @iconGlyph me-1"></i>
+                                <small class="@statusCss">@statusText</small>
                             </div>
                             <div class="fw-semibold">@ticket.PassengerName</div>
                             @if (ticket.CheckedInAt.HasValue)

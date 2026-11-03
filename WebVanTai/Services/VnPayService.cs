@@ -1,4 +1,4 @@
-using System.Net;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using WebVanTai.Models;
@@ -7,7 +7,8 @@ namespace WebVanTai.Services
 {
     /// <summary>
     /// Dịch vụ tích hợp cổng thanh toán VNPay Sandbox.
-    /// Thuật toán ký: HMAC-SHA512 trên chuỗi query đã sắp xếp thứ tự key.
+    /// Thuật toán ký: HMAC-SHA512 trên chuỗi query đã sắp xếp thứ tự key (Ordinal),
+    /// value được URL-encode kiểu PHP urlencode (hex HOA) đúng chuẩn VNPay.
     /// </summary>
     public class VnPayService
     {
@@ -23,51 +24,41 @@ namespace WebVanTai.Services
         // ─── Tạo URL thanh toán ──────────────────────────────────────────────
 
         /// <summary>
-        /// Tạo URL chuyển hướng sang VNPay Sandbox từ một Booking đang Pending.
+        /// Sinh mã giao dịch duy nhất cho một lần thanh toán: "{bookingId}-{yyyyMMddHHmmss}".
+        /// Phần trước dấu '-' là BookingId để đối chiếu khi VNPay gọi về.
         /// </summary>
-        public string CreatePaymentUrl(Booking booking)
+        public static string CreateTxnRef(int bookingId)
+            => $"{bookingId}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+        /// <summary>
+        /// Tạo URL chuyển hướng sang VNPay Sandbox từ một Booking đang Pending.
+        /// <paramref name="txnRef"/> do caller sinh và lưu vào Booking trước khi gọi,
+        /// bảo đảm giá trị gửi đi trùng khớp với giá trị đối chiếu khi callback về.
+        /// </summary>
+        public string CreatePaymentUrl(Booking booking, string txnRef)
         {
+            if (string.IsNullOrWhiteSpace(txnRef))
+                throw new ArgumentException("vnp_TxnRef không được để trống.", nameof(txnRef));
+
             var cfg = _config.GetSection("VnPay");
-            var tmnCode   = cfg["TmnCode"] ?? "DEMOV210";
-            var version   = cfg["Version"] ?? "2.1.0";
-            var command   = cfg["Command"] ?? "pay";
-            var currCode  = cfg["CurrCode"] ?? "VND";
-            var locale    = cfg["Locale"] ?? "vn";
-            var returnUrl = cfg["ReturnUrl"] ?? "https://localhost:7164/Payment/VnPayReturn";
-            var baseUrl   = cfg["BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+            var tmnCode    = cfg["TmnCode"] ?? "DEMOV210";
+            var version    = cfg["Version"] ?? "2.1.0";
+            var command    = cfg["Command"] ?? "pay";
+            var currCode   = cfg["CurrCode"] ?? "VND";
+            var locale     = cfg["Locale"] ?? "vn";
+            var orderType  = cfg["OrderType"] ?? "other";
+            var returnUrl  = cfg["ReturnUrl"] ?? "https://localhost:7164/Payment/VnPayReturn";
+            var baseUrl    = cfg["BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
             var hashSecret = cfg["HashSecret"] ?? "RAOEXHYVSDDIIENYWSLDIIZTBI";
 
-            // vnp_TxnRef = mã đơn hàng phải là duy nhất mỗi lần gọi
-            var txnRef = $"{booking.BookingId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            // VNPay yêu cầu Amount là số nguyên, đã nhân 100 (VND không có phần thập phân)
+            var amount = ((long)Math.Round(booking.TotalAmount, MidpointRounding.AwayFromZero) * 100)
+                         .ToString(CultureInfo.InvariantCulture);
 
-            // Số tiền nhân 100 (VNPay yêu cầu không có dấu thập phân)
-            var amount = ((long)(booking.TotalAmount * 100)).ToString();
+            var createDate = ToVnPayDate(DateTime.UtcNow);
+            var expireDate = ToVnPayDate(booking.ExpiredAt);
 
-            // Lấy IP thực của client
-            var ipAddr = GetClientIpAddress();
-
-            // Thời gian tạo đơn (múi giờ Việt Nam +07:00)
-            TimeZoneInfo vnTimeZone;
-            try
-            {
-                vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            }
-            catch
-            {
-                try
-                {
-                    vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-                }
-                catch
-                {
-                    vnTimeZone = TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "VN", "VN");
-                }
-            }
-            var createDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone)
-                                         .ToString("yyyyMMddHHmmss");
-
-            // ── Xây dựng tập tham số (thứ tự alphabet không quan trọng,
-            //    ta sẽ sắp xếp khi ký) ──────────────────────────────────
+            // SortedDictionary + StringComparer.Ordinal ⇒ thứ tự key alphabet chuẩn VNPay
             var vnpParams = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 ["vnp_Version"]    = version,
@@ -77,29 +68,26 @@ namespace WebVanTai.Services
                 ["vnp_CurrCode"]   = currCode,
                 ["vnp_TxnRef"]     = txnRef,
                 ["vnp_OrderInfo"]  = $"Thanh toan ve xe BookingId {booking.BookingId}",
-                ["vnp_OrderType"]  = "other",
+                ["vnp_OrderType"]  = orderType,
                 ["vnp_Locale"]     = locale,
                 ["vnp_ReturnUrl"]  = returnUrl,
-                ["vnp_IpAddr"]     = ipAddr,
+                ["vnp_IpAddr"]     = GetClientIpAddress(),
                 ["vnp_CreateDate"] = createDate,
-                ["vnp_ExpireDate"] = TimeZoneInfo.ConvertTimeFromUtc(booking.ExpiredAt, vnTimeZone)
-                                                  .ToString("yyyyMMddHHmmss"),
+                ["vnp_ExpireDate"] = expireDate,
             };
 
-            // ── Tạo chuỗi raw hash (encode mềm, không encode key) ────────────
-            var rawHash = BuildRawHashData(vnpParams);
-            var secureHash = HmacSha512(hashSecret, rawHash);
-
-            // ── Tạo query string đầy đủ cho URL ─────────────────────────────
-            var queryString = BuildQueryString(vnpParams);
+            // Chuỗi dùng để ký chính là query string (value đã URL-encode) — chuẩn VNPay
+            var queryString = BuildQuery(vnpParams);
+            var secureHash  = HmacSha512(hashSecret, queryString);
             return $"{baseUrl}?{queryString}&vnp_SecureHash={secureHash}";
         }
 
         // ─── Xác thực chữ ký VNPay trả về ──────────────────────────────────
 
         /// <summary>
-        /// Kiểm tra vnp_SecureHash trong callback từ VNPay.
-        /// Trả về true nếu chữ ký hợp lệ.
+        /// Kiểm tra vnp_SecureHash trong callback từ VNPay (Return URL / IPN).
+        /// Loại bỏ vnp_SecureHash &amp; vnp_SecureHashType, sắp xếp lại tham số,
+        /// ký lại bằng HashSecret và so sánh không phân biệt hoa thường.
         /// </summary>
         public bool ValidateCallback(IQueryCollection query, out string responseCode)
         {
@@ -108,14 +96,14 @@ namespace WebVanTai.Services
 
             responseCode = query["vnp_ResponseCode"].ToString();
 
-            // Lấy hash từ VNPay gửi về
             var vnpSecureHash = query["vnp_SecureHash"].ToString();
+            if (string.IsNullOrEmpty(vnpSecureHash))
+                return false;
 
-            // Tái tạo sorted params — loại bỏ vnp_SecureHash và vnp_SecureHashType
             var vnpParams = new SortedDictionary<string, string>(StringComparer.Ordinal);
             foreach (var (key, value) in query)
             {
-                if (key.StartsWith("vnp_") &&
+                if (key.StartsWith("vnp_", StringComparison.Ordinal) &&
                     key != "vnp_SecureHash" &&
                     key != "vnp_SecureHashType" &&
                     !string.IsNullOrEmpty(value))
@@ -124,60 +112,102 @@ namespace WebVanTai.Services
                 }
             }
 
-            var rawHash   = BuildRawHashData(vnpParams);
+            var rawHash   = BuildQuery(vnpParams);
             var checkHash = HmacSha512(hashSecret, rawHash);
 
-            return string.Equals(vnpSecureHash, checkHash, StringComparison.OrdinalIgnoreCase);
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.ASCII.GetBytes(vnpSecureHash.ToLowerInvariant()),
+                Encoding.ASCII.GetBytes(checkHash));
         }
 
-        // ─── Helper: lấy TxnRef từ callback ────────────────────────────────
+        // ─── Helper: lấy BookingId từ TxnRef ───────────────────────────────
 
         /// <summary>
         /// Lấy BookingId từ vnp_TxnRef có dạng "{bookingId}-{timestamp}".
         /// </summary>
         public static int ExtractBookingId(string txnRef)
         {
-            var parts = txnRef.Split('-');
+            if (string.IsNullOrWhiteSpace(txnRef)) return 0;
+            var parts = txnRef.Split('-', 2);
             return int.TryParse(parts[0], out var id) ? id : 0;
         }
 
         // ─── Private helpers ─────────────────────────────────────────────────
 
         /// <summary>
-        /// Tạo chuỗi raw data để ký: "key1=val1&amp;key2=val2" (đã sort, URL-encode value).
+        /// Tạo chuỗi "key1=value1&amp;key2=value2" theo thứ tự key đã sắp xếp,
+        /// value được URL-encode theo chuẩn PHP urlencode của VNPay (space → '+',
+        /// hex %XX viết HOA — khác với HttpUtility.UrlEncode viết thường, gây "Sai chữ ký").
         /// </summary>
-        private static string BuildRawHashData(SortedDictionary<string, string> parameters)
+        private static string BuildQuery(SortedDictionary<string, string> parameters)
         {
             var sb = new StringBuilder();
             foreach (var (key, value) in parameters)
             {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    if (sb.Length > 0) sb.Append('&');
-                    sb.Append(key);
-                    sb.Append('=');
-                    sb.Append(WebUtility.UrlEncode(value));
-                }
+                if (string.IsNullOrEmpty(value)) continue;
+
+                if (sb.Length > 0) sb.Append('&');
+                sb.Append(key);
+                sb.Append('=');
+                sb.Append(PhpUrlEncode(value));
             }
             return sb.ToString();
         }
 
         /// <summary>
-        /// Tạo query string cho URL (giống BuildRawHashData nhưng dùng thêm khi gọi CreatePaymentUrl).
+        /// Tương đương hàm urlencode() của PHP: giữ nguyên A-Z a-z 0-9 - _ .,
+        /// space thành '+', còn lại thành %XX (hex HOA).
         /// </summary>
-        private static string BuildQueryString(SortedDictionary<string, string> parameters)
-            => BuildRawHashData(parameters);
+        private static string PhpUrlEncode(string value)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            var sb = new StringBuilder(bytes.Length);
+            foreach (var b in bytes)
+            {
+                if (b is >= (byte)'a' and <= (byte)'z' or
+                    >= (byte)'A' and <= (byte)'Z' or
+                    >= (byte)'0' and <= (byte)'9' or
+                    (byte)'-' or (byte)'_' or (byte)'.')
+                {
+                    sb.Append((char)b);
+                }
+                else if (b == (byte)' ')
+                {
+                    sb.Append('+');
+                }
+                else
+                {
+                    sb.Append('%').Append(b.ToString("X2", CultureInfo.InvariantCulture));
+                }
+            }
+            return sb.ToString();
+        }
 
-        /// <summary>
-        /// HMAC-SHA512 chuẩn VNPay — trả về chuỗi hex lowercase.
-        /// </summary>
+        /// <summary>HMAC-SHA512 chuẩn VNPay — trả về chuỗi hex lowercase.</summary>
         private static string HmacSha512(string key, string data)
         {
-            var keyBytes  = Encoding.UTF8.GetBytes(key);
-            var dataBytes = Encoding.UTF8.GetBytes(data);
-            using var hmac = new HMACSHA512(keyBytes);
-            var hash = hmac.ComputeHash(dataBytes);
+            using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(key));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
             return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        /// <summary>Định dạng thời gian yyyyMMddHHmmss theo múi giờ Việt Nam (UTC+7).</summary>
+        private static string ToVnPayDate(DateTime utcTime)
+        {
+            var vnTime = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(utcTime, DateTimeKind.Utc), GetVietnamTimeZone());
+            return vnTime.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        }
+
+        private static TimeZoneInfo GetVietnamTimeZone()
+        {
+            foreach (var id in new[] { "SE Asia Standard Time", "Asia/Ho_Chi_Minh" })
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+                catch (TimeZoneNotFoundException) { }
+                catch (InvalidTimeZoneException) { }
+            }
+            return TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "VN", "VN");
         }
 
         private string GetClientIpAddress()
@@ -185,12 +215,15 @@ namespace WebVanTai.Services
             var ctx = _httpContextAccessor.HttpContext;
             if (ctx == null) return "127.0.0.1";
 
-            // Hỗ trợ reverse proxy / load balancer
             var forwarded = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(forwarded))
+            if (!string.IsNullOrWhiteSpace(forwarded))
                 return forwarded.Split(',')[0].Trim();
 
-            return ctx.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            var ip = ctx.Connection.RemoteIpAddress;
+            if (ip == null) return "127.0.0.1";
+            if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
+            // VNPay Sandbox chỉ chấp nhận IPv4; localhost qua Kestrel thường trả về ::1
+            return ip.Equals(System.Net.IPAddress.IPv6Loopback) ? "127.0.0.1" : ip.ToString();
         }
     }
 }

@@ -18,17 +18,20 @@ namespace WebVanTai.Controllers
         private readonly ApplicationDbContext _context;
         private readonly VnPayService _vnPayService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _config;
         private readonly ILogger<PaymentController> _logger;
 
         public PaymentController(
             ApplicationDbContext context,
             VnPayService vnPayService,
             UserManager<ApplicationUser> userManager,
+            IConfiguration config,
             ILogger<PaymentController> logger)
         {
             _context     = context;
             _vnPayService = vnPayService;
             _userManager  = userManager;
+            _config       = config;
             _logger       = logger;
         }
 
@@ -38,8 +41,11 @@ namespace WebVanTai.Controllers
         /// Chỉ xử lý Booking đang ở trạng thái Pending và chưa hết hạn.
         /// </summary>
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Pay(int bookingId)
         {
+            var userId = _userManager.GetUserId(User)!;
+
             var booking = await _context.Bookings
                 .Include(b => b.Tickets)
                 .FirstOrDefaultAsync(b => b.BookingId == bookingId);
@@ -47,6 +53,12 @@ namespace WebVanTai.Controllers
             if (booking == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy đơn đặt vé.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (booking.UserId != userId && !User.IsInRole("Admin"))
+            {
+                TempData["ErrorMessage"] = "Bạn không có quyền thanh toán đơn đặt vé này.";
                 return RedirectToAction("Index", "Home");
             }
 
@@ -62,15 +74,13 @@ namespace WebVanTai.Controllers
                 return RedirectToAction("SelectSeats", "Booking", new { id = booking.TripId });
             }
 
-            // Lưu TxnRef để đối chiếu khi VNPay gọi về
-            var paymentUrl = _vnPayService.CreatePaymentUrl(booking);
-
-            // Ghi lại TxnRef vào DB (phần đầu trước dấu '-' là BookingId, VnPayService đã gắn timestamp)
-            // Ta lưu chính paymentUrl sẽ không chuẩn; thay vào đó ta parse lại từ URL
-            // Cách đơn giản hơn: lưu trực tiếp format "{bookingId}-{unix}" ngay tại đây
-            var txnRef = $"{booking.BookingId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            // Sinh TxnRef đúng một lần, lưu vào DB rồi mới ký URL
+            // để giá trị gửi VNPay trùng khớp với giá trị đối chiếu khi callback về.
+            var txnRef = VnPayService.CreateTxnRef(booking.BookingId);
             booking.VnPayTxnRef = txnRef;
             await _context.SaveChangesAsync();
+
+            var paymentUrl = _vnPayService.CreatePaymentUrl(booking, txnRef);
 
             _logger.LogInformation("Chuyển hướng Booking #{BookingId} sang VNPay, TxnRef={TxnRef}",
                                     booking.BookingId, txnRef);
@@ -87,7 +97,7 @@ namespace WebVanTai.Controllers
         [HttpGet]
         public async Task<IActionResult> VnPayReturn()
         {
-            // 1. Xác thực chữ ký
+            // 1. Xác thực chữ ký HMAC-SHA512
             if (!_vnPayService.ValidateCallback(Request.Query, out var responseCode))
             {
                 _logger.LogWarning("VNPay callback bị từ chối: chữ ký không hợp lệ.");
@@ -95,8 +105,8 @@ namespace WebVanTai.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // 2. Lấy BookingId từ vnp_TxnRef
-            var txnRef   = Request.Query["vnp_TxnRef"].ToString();
+            // 2. Lấy Booking từ vnp_TxnRef
+            var txnRef    = Request.Query["vnp_TxnRef"].ToString();
             var bookingId = VnPayService.ExtractBookingId(txnRef);
 
             var booking = await _context.Bookings
@@ -110,43 +120,75 @@ namespace WebVanTai.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // 3. Kiểm tra thời hạn giữ chỗ 10 phút
-            if (DateTime.UtcNow > booking.ExpiredAt && booking.Status == BookingStatus.Pending)
-            {
-                _logger.LogWarning("Booking #{BookingId} đã hết hạn khi VNPay gọi về.", bookingId);
-                TempData["ErrorMessage"] = "Thời gian giữ chỗ đã hết hạn. Giao dịch bị hủy.";
-                return RedirectToAction("Index", "Home");
-            }
-
-            // 4. Xử lý theo mã phản hồi
+            // 3. Thanh toán thành công
             if (responseCode == "00")
             {
-                // Thanh toán thành công
-                if (booking.Status != BookingStatus.Paid)
+                // Đối chiếu TxnRef đã lưu khi tạo URL (chống replay / ghép lệnh lạ)
+                if (!string.IsNullOrEmpty(booking.VnPayTxnRef) &&
+                    !string.Equals(booking.VnPayTxnRef, txnRef, StringComparison.Ordinal))
                 {
-                    booking.Status      = BookingStatus.Paid;
-                    booking.VnPayTxnRef = txnRef;
-
-                    // Sinh QrToken bảo mật (256-bit entropy) cho từng Ticket
-                    foreach (var ticket in booking.Tickets)
-                    {
-                        ticket.QrToken = GenerateSecureQrToken(ticket.TicketId, booking.TripId);
-                    }
-
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Booking #{BookingId} đã thanh toán thành công, {Count} QrToken được sinh.",
-                                            bookingId, booking.Tickets.Count);
+                    _logger.LogWarning("TxnRef không khớp cho Booking #{BookingId}: gửi {Sent}, lưu {Stored}.",
+                                        bookingId, txnRef, booking.VnPayTxnRef);
+                    TempData["ErrorMessage"] = "Giao dịch không khớp với đơn đặt vé. Vui lòng liên hệ hỗ trợ.";
+                    return RedirectToAction("Index", "Home");
                 }
+
+                // Đối chiếu số tiền VNPay trả về (đã nhân 100)
+                var expectedAmount = (long)Math.Round(booking.TotalAmount, MidpointRounding.AwayFromZero) * 100;
+                if (!long.TryParse(Request.Query["vnp_Amount"], out var vnpAmount) || vnpAmount != expectedAmount)
+                {
+                    _logger.LogWarning("Sai số tiền cho Booking #{BookingId}: VNPay={Vnp}, yêu cầu={Expected}.",
+                                        bookingId, Request.Query["vnp_Amount"].ToString(), expectedAmount);
+                    TempData["ErrorMessage"] = "Số tiền thanh toán không khớp. Vui lòng liên hệ hỗ trợ.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                // Đã xử lý trước đó → idempotent, hiển thị lại trang thành công
+                if (booking.Status == BookingStatus.Paid)
+                    return RedirectToAction(nameof(PaymentSuccess), new { bookingId });
+
+                // Kiểm tra thời hạn giữ chỗ 10 phút
+                if (booking.Status != BookingStatus.Pending)
+                {
+                    TempData["ErrorMessage"] = "Đơn đặt vé không còn ở trạng thái chờ thanh toán.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                if (DateTime.UtcNow > booking.ExpiredAt)
+                {
+                    _logger.LogWarning("Booking #{BookingId} đã hết hạn khi VNPay gọi về.", bookingId);
+                    TempData["ErrorMessage"] = "Thời gian giữ chỗ đã hết hạn. Giao dịch bị hủy.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                booking.Status      = BookingStatus.Paid;
+                booking.VnPayTxnRef = txnRef;
+
+                // Sinh QrToken bảo mật (HMAC-SHA256 + nonce ngẫu nhiên) cho từng vé còn hiệu lực
+                foreach (var ticket in booking.Tickets.Where(t => t.Status != TicketStatus.Void))
+                {
+                    ticket.QrToken = GenerateSecureQrToken(ticket.TicketId, booking.TripId);
+                }
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Booking #{BookingId} đã thanh toán thành công, {Count} QrToken được sinh.",
+                                        bookingId, booking.Tickets.Count);
 
                 return RedirectToAction(nameof(PaymentSuccess), new { bookingId });
             }
-            else
+
+            // 4. Thanh toán thất bại / bị hủy trên cổng VNPay
+            _logger.LogInformation("VNPay trả về mã #{Code} cho Booking #{BookingId}.", responseCode, bookingId);
+
+            if (booking.Status != BookingStatus.Pending || DateTime.UtcNow > booking.ExpiredAt)
             {
-                // Thanh toán thất bại / bị hủy
-                _logger.LogInformation("VNPay trả về lỗi #{Code} cho Booking #{BookingId}.", responseCode, bookingId);
-                TempData["ErrorMessage"] = $"Thanh toán không thành công (mã lỗi: {responseCode}). Vui lòng thử lại.";
-                return RedirectToAction("Confirmation", "Booking", new { bookingId });
+                TempData["ErrorMessage"] = $"Thanh toán không thành công (mã lỗi: {responseCode}) và thời gian giữ chỗ đã kết thúc. Vui lòng đặt lại vé.";
+                return RedirectToAction("SelectSeats", "Booking", new { id = booking.TripId });
             }
+
+            TempData["ErrorMessage"] =
+                $"Giao dịch chưa hoàn tất (mã lỗi: {responseCode}). Ghế vẫn được giữ trong thời gian đếm ngược, bạn có thể bấm thanh toán lại.";
+            return RedirectToAction("Confirmation", "Booking", new { bookingId });
         }
 
         // ─── GET /Payment/PaymentSuccess?bookingId=1 ────────────────────────
@@ -182,7 +224,11 @@ namespace WebVanTai.Controllers
             var userId = _userManager.GetUserId(User)!;
 
             var bookings = await _context.Bookings
-                .Where(b => b.UserId == userId && b.Status == BookingStatus.Paid)
+                .Where(b => b.UserId == userId &&
+                            (b.Status == BookingStatus.Pending ||
+                             b.Status == BookingStatus.Paid ||
+                             b.Status == BookingStatus.Cancelled ||
+                             b.Status == BookingStatus.Expired))
                 .Include(b => b.Tickets)
                 .Include(b => b.Trip)
                     .ThenInclude(t => t!.Route)
@@ -261,8 +307,12 @@ namespace WebVanTai.Controllers
             if (string.IsNullOrWhiteSpace(token))
                 return BadRequest();
 
-            // Kiểm tra token tồn tại trong DB trước khi trả ảnh
-            var exists = await _context.Tickets.AnyAsync(t => t.QrToken == token && t.Status != TicketStatus.Void);
+            // Kiểm tra token thuộc một vé hợp lệ của đơn đã thanh toán
+            var exists = await _context.Tickets.AnyAsync(t =>
+                t.QrToken == token &&
+                t.Status != TicketStatus.Void &&
+                t.Booking != null &&
+                t.Booking.Status == BookingStatus.Paid);
             if (!exists)
                 return NotFound();
 
@@ -271,21 +321,24 @@ namespace WebVanTai.Controllers
             using var qrCode      = new PngByteQRCode(qrData);
             var bytes             = qrCode.GetGraphic(6); // 6px mỗi module → ~200×200 px
 
+            Response.Headers.CacheControl = "private,max-age=600";
             return File(bytes, "image/png");
         }
 
         // ─── Private helpers ─────────────────────────────────────────────────
 
         /// <summary>
-        /// Sinh QrToken 64-ký-tự hex bảo mật: HMAC-SHA256(ticketId|tripId, secret ngẫu nhiên per-deploy).
-        /// Trong môi trường demo, ta dùng Guid kép + thông tin vé để đảm bảo duy nhất.
+        /// Sinh QrToken 64 ký tự hex cho một vé: HMAC-SHA256(ticketId|tripId|nonce, secret).
+        /// Nonce 128-bit ngẫu nhiên đảm bảo mỗi lần thanh toán tạo token không thể đoán/trùng.
         /// </summary>
-        private static string GenerateSecureQrToken(int ticketId, int tripId)
+        private string GenerateSecureQrToken(int ticketId, int tripId)
         {
-            // Kết hợp dữ liệu deterministic với entropy ngẫu nhiên
-            var entropy  = RandomNumberGenerator.GetBytes(16);
-            var payload  = $"ticket:{ticketId}|trip:{tripId}|{Convert.ToHexString(entropy)}";
-            var hash     = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
+            var secret  = _config.GetSection("QrToken")["Secret"] ?? "WebVanTai-QrToken-Secret-2026";
+            var nonce   = RandomNumberGenerator.GetBytes(16);
+            var payload = $"{ticketId}|{tripId}|{Convert.ToHexString(nonce)}";
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
             return Convert.ToHexString(hash).ToLowerInvariant(); // 64 ký tự hex
         }
 
