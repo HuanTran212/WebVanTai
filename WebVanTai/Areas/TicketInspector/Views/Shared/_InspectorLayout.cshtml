@@ -301,6 +301,8 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userMenu">
                 <li><h6 class="dropdown-header">Tài khoản soát vé</h6></li>
+                <li><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Trang chủ hệ thống</a></li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
                     <form asp-area="RouteManager" asp-controller="Account" asp-action="Logout" method="post">
                         <button type="submit" class="dropdown-item text-danger">
@@ -340,6 +342,9 @@
         <a asp-area="TicketInspector" asp-controller="Scanner" asp-action="Index"
            class="@(isScanner ? "active" : "")">
             <i class="bi bi-qr-code-scan"></i>Soát vé
+        </a>
+        <a asp-area="" asp-controller="Home" asp-action="Index">
+            <i class="bi bi-house"></i>Về trang chủ
         </a>
     </nav>
 

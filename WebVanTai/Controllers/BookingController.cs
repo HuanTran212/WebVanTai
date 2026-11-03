@@ -49,17 +49,23 @@ namespace WebVanTai.Controllers
             return await SelectSeats(tripId.Value);
         }
 
-        // GET: /Booking/SelectSeats/{id}
+        // GET: /Booking/SelectSeats/{id} hoặc /Booking/SelectSeats?tripId=1
         [HttpGet]
-        public async Task<IActionResult> SelectSeats(int id)
+        public async Task<IActionResult> SelectSeats(int? id = null, int? tripId = null)
         {
+            var targetId = id ?? tripId;
+            if (!targetId.HasValue || targetId.Value <= 0)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             var trip = await _context.Trips
                 .Include(t => t.Route)
                     .ThenInclude(r => r!.RouteStations)
                         .ThenInclude(rs => rs.Station)
                 .Include(t => t.Bus)
                     .ThenInclude(b => b!.BusType)
-                .FirstOrDefaultAsync(t => t.TripId == id);
+                .FirstOrDefaultAsync(t => t.TripId == targetId.Value);
 
             if (trip == null || trip.Bus?.BusType == null || trip.Route == null)
             {
@@ -69,7 +75,7 @@ namespace WebVanTai.Controllers
 
             // Lấy danh sách mã ghế đã có vé hợp lệ hoặc đang giữ chỗ (không tính Void)
             var occupiedSeats = await _context.Tickets
-                .Where(t => t.TripId == id && t.Status != TicketStatus.Void)
+                .Where(t => t.TripId == targetId.Value && t.Status != TicketStatus.Void)
                 .Select(t => t.SeatCode)
                 .ToListAsync();
 
@@ -239,7 +245,7 @@ namespace WebVanTai.Controllers
 
                 _logger.LogInformation("Đặt vé thành công cho Booking #{BookingId}, {SeatCount} ghế.", booking.BookingId, seatList.Count);
 
-                return RedirectToAction(nameof(Confirmation), new { bookingId = booking.BookingId });
+                return RedirectToAction("Pay", "Payment", new { bookingId = booking.BookingId });
             }
             catch (DbUpdateException ex)
             {

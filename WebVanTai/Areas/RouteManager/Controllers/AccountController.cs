@@ -48,11 +48,11 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 if (user != null)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
-                    if (!roles.Contains("RouteManager") && !roles.Contains("Admin"))
+                    if (returnUrl == "/RouteManager/Dashboard")
                     {
-                        await _signInManager.SignOutAsync();
-                        ModelState.AddModelError(string.Empty, "Tài khoản của bạn không có quyền truy cập vào phân hệ RouteManager (Cần vai trò RouteManager hoặc Admin).");
-                        return View();
+                        if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
+                        if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
+                        if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
                     }
                 }
                 return LocalRedirect(returnUrl);
@@ -67,13 +67,30 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> QuickLogin(string role = "RouteManager", string? returnUrl = null)
         {
-            var email = role == "Admin" ? "admin@webvantai.vn" : "routemanager@webvantai.vn";
+            var email = role switch
+            {
+                "Admin" => "admin@webvantai.vn",
+                "TicketInspector" => "inspector@webvantai.vn",
+                "Customer" => "customer@webvantai.vn",
+                _ => "routemanager@webvantai.vn"
+            };
             var user = await _userManager.FindByEmailAsync(email);
+            if (user == null && role == "Customer")
+            {
+                user = await _userManager.FindByEmailAsync("customer@futabus.vn");
+            }
             if (user != null)
             {
                 await _signInManager.SignInAsync(user, isPersistent: true);
-                TempData["SuccessMessage"] = $"Đăng nhập thành công với quyền [{role}] ({email})!";
-                return LocalRedirect(returnUrl ?? "/RouteManager/Dashboard");
+                TempData["SuccessMessage"] = $"Đăng nhập thành công với quyền [{role}] ({user.Email})!";
+                if (!string.IsNullOrEmpty(returnUrl)) return LocalRedirect(returnUrl);
+                return role switch
+                {
+                    "Admin" => LocalRedirect("/Admin/Dashboard"),
+                    "TicketInspector" => LocalRedirect("/TicketInspector/Dashboard"),
+                    "Customer" => LocalRedirect("/Payment/MyTickets"),
+                    _ => LocalRedirect("/RouteManager/Dashboard")
+                };
             }
 
             TempData["ErrorMessage"] = "Không tìm thấy tài khoản mẫu. Vui lòng đảm bảo database đã được seed.";

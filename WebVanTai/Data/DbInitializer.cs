@@ -326,6 +326,222 @@ namespace WebVanTai.Data
                 await context.Trips.AddRangeAsync(trips);
                 await context.SaveChangesAsync();
             }
+
+            // 8. Bookings & Tickets Seed (Demo tr?c quan: 3 don Paid v?i 5 Ticket có QrToken cho ngày mai)
+            if (!await context.Bookings.AnyAsync())
+            {
+                var customer = await userManager.FindByEmailAsync("customer@futabus.vn")
+                            ?? await userManager.FindByEmailAsync("customer@webvantai.vn");
+
+                if (customer != null)
+                {
+                    var tomorrow = DateTime.Today.AddDays(1);
+                    var tomorrowTrips = await context.Trips
+                        .Include(t => t.Route)
+                        .Where(t => t.DepartureTime >= tomorrow && t.DepartureTime < tomorrow.AddDays(1))
+                        .OrderBy(t => t.DepartureTime)
+                        .ToListAsync();
+
+                    if (tomorrowTrips.Count >= 3)
+                    {
+                        var trip1 = tomorrowTrips[0];
+                        var trip2 = tomorrowTrips[1];
+                        var trip3 = tomorrowTrips[2];
+
+                        var p1 = await context.RouteStations.Where(rs => rs.RouteId == trip1.RouteId && rs.StopOrder == 1).Select(rs => rs.StationId).FirstOrDefaultAsync();
+                        var d1 = await context.RouteStations.Where(rs => rs.RouteId == trip1.RouteId).OrderByDescending(rs => rs.StopOrder).Select(rs => rs.StationId).FirstOrDefaultAsync();
+
+                        var p2 = await context.RouteStations.Where(rs => rs.RouteId == trip2.RouteId && rs.StopOrder == 1).Select(rs => rs.StationId).FirstOrDefaultAsync();
+                        var d2 = await context.RouteStations.Where(rs => rs.RouteId == trip2.RouteId).OrderByDescending(rs => rs.StopOrder).Select(rs => rs.StationId).FirstOrDefaultAsync();
+
+                        var p3 = await context.RouteStations.Where(rs => rs.RouteId == trip3.RouteId && rs.StopOrder == 1).Select(rs => rs.StationId).FirstOrDefaultAsync();
+                        var d3 = await context.RouteStations.Where(rs => rs.RouteId == trip3.RouteId).OrderByDescending(rs => rs.StopOrder).Select(rs => rs.StationId).FirstOrDefaultAsync();
+
+                        // Ðon 1: 2 vé tuy?n HCM - Ðà L?t
+                        var booking1 = new Booking
+                        {
+                            UserId = customer.Id,
+                            TripId = trip1.TripId,
+                            PickupStationId = p1 > 0 ? p1 : 1,
+                            DropoffStationId = d1 > 0 ? d1 : 3,
+                            TotalAmount = trip1.BasePrice * 2,
+                            Status = BookingStatus.Paid,
+                            CreatedAt = DateTime.UtcNow.AddHours(-2),
+                            ExpiredAt = DateTime.UtcNow.AddHours(24),
+                            VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                        };
+                        booking1.Tickets.Add(new Ticket
+                        {
+                            TripId = trip1.TripId,
+                            SeatCode = "A01",
+                            PassengerName = customer.FullName,
+                            PassengerPhone = "0909123456",
+                            QrToken = Guid.NewGuid().ToString("N"),
+                            Status = TicketStatus.Valid
+                        });
+                        booking1.Tickets.Add(new Ticket
+                        {
+                            TripId = trip1.TripId,
+                            SeatCode = "A02",
+                            PassengerName = "Tr?n Th? Mai",
+                            PassengerPhone = "0909123457",
+                            QrToken = Guid.NewGuid().ToString("N"),
+                            Status = TicketStatus.Valid
+                        });
+
+                        // Ðon 2: 2 vé tuy?n HCM - Nha Trang
+                        var booking2 = new Booking
+                        {
+                            UserId = customer.Id,
+                            TripId = trip2.TripId,
+                            PickupStationId = p2 > 0 ? p2 : 1,
+                            DropoffStationId = d2 > 0 ? d2 : 4,
+                            TotalAmount = trip2.BasePrice * 2,
+                            Status = BookingStatus.Paid,
+                            CreatedAt = DateTime.UtcNow.AddHours(-1),
+                            ExpiredAt = DateTime.UtcNow.AddHours(24),
+                            VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                        };
+                        booking2.Tickets.Add(new Ticket
+                        {
+                            TripId = trip2.TripId,
+                            SeatCode = "A03",
+                            PassengerName = customer.FullName,
+                            PassengerPhone = "0909123456",
+                            QrToken = Guid.NewGuid().ToString("N"),
+                            Status = TicketStatus.Valid
+                        });
+                        booking2.Tickets.Add(new Ticket
+                        {
+                            TripId = trip2.TripId,
+                            SeatCode = "A04",
+                            PassengerName = "Lê Van Hùng",
+                            PassengerPhone = "0909888999",
+                            QrToken = Guid.NewGuid().ToString("N"),
+                            Status = TicketStatus.Valid
+                        });
+
+                        // Ðon 3: 1 vé tuy?n HCM - Vung Tàu
+                        var booking3 = new Booking
+                        {
+                            UserId = customer.Id,
+                            TripId = trip3.TripId,
+                            PickupStationId = p3 > 0 ? p3 : 2,
+                            DropoffStationId = d3 > 0 ? d3 : 5,
+                            TotalAmount = trip3.BasePrice,
+                            Status = BookingStatus.Paid,
+                            CreatedAt = DateTime.UtcNow.AddMinutes(-30),
+                            ExpiredAt = DateTime.UtcNow.AddHours(24),
+                            VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                        };
+                        booking3.Tickets.Add(new Ticket
+                        {
+                            TripId = trip3.TripId,
+                            SeatCode = "A05",
+                            PassengerName = customer.FullName,
+                            PassengerPhone = "0909123456",
+                            QrToken = Guid.NewGuid().ToString("N"),
+                            Status = TicketStatus.Valid
+                        });
+
+                        await context.Bookings.AddRangeAsync(booking1, booking2, booking3);
+
+                        // Ð?ng th?i n?p don tuong t? cho tài kho?n customer còn l?i n?u c? 2 cùng t?n t?i
+                        var altEmail = customer.Email == "customer@futabus.vn" ? "customer@webvantai.vn" : "customer@futabus.vn";
+                        var altCustomer = await userManager.FindByEmailAsync(altEmail);
+                        if (altCustomer != null)
+                        {
+                            var b1Alt = new Booking
+                            {
+                                UserId = altCustomer.Id,
+                                TripId = trip1.TripId,
+                                PickupStationId = booking1.PickupStationId,
+                                DropoffStationId = booking1.DropoffStationId,
+                                TotalAmount = booking1.TotalAmount,
+                                Status = BookingStatus.Paid,
+                                CreatedAt = DateTime.UtcNow.AddHours(-2),
+                                ExpiredAt = DateTime.UtcNow.AddHours(24),
+                                VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                            };
+                            b1Alt.Tickets.Add(new Ticket
+                            {
+                                TripId = trip1.TripId,
+                                SeatCode = "B01",
+                                PassengerName = altCustomer.FullName,
+                                PassengerPhone = "0909123456",
+                                QrToken = Guid.NewGuid().ToString("N"),
+                                Status = TicketStatus.Valid
+                            });
+                            b1Alt.Tickets.Add(new Ticket
+                            {
+                                TripId = trip1.TripId,
+                                SeatCode = "B02",
+                                PassengerName = "Ph?m H?ng Nhung",
+                                PassengerPhone = "0909123458",
+                                QrToken = Guid.NewGuid().ToString("N"),
+                                Status = TicketStatus.Valid
+                            });
+
+                            var b2Alt = new Booking
+                            {
+                                UserId = altCustomer.Id,
+                                TripId = trip2.TripId,
+                                PickupStationId = booking2.PickupStationId,
+                                DropoffStationId = booking2.DropoffStationId,
+                                TotalAmount = booking2.TotalAmount,
+                                Status = BookingStatus.Paid,
+                                CreatedAt = DateTime.UtcNow.AddHours(-1),
+                                ExpiredAt = DateTime.UtcNow.AddHours(24),
+                                VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                            };
+                            b2Alt.Tickets.Add(new Ticket
+                            {
+                                TripId = trip2.TripId,
+                                SeatCode = "B03",
+                                PassengerName = altCustomer.FullName,
+                                PassengerPhone = "0909123456",
+                                QrToken = Guid.NewGuid().ToString("N"),
+                                Status = TicketStatus.Valid
+                            });
+                            b2Alt.Tickets.Add(new Ticket
+                            {
+                                TripId = trip2.TripId,
+                                SeatCode = "B04",
+                                PassengerName = "Ð? Minh Quân",
+                                PassengerPhone = "0909777888",
+                                QrToken = Guid.NewGuid().ToString("N"),
+                                Status = TicketStatus.Valid
+                            });
+
+                            var b3Alt = new Booking
+                            {
+                                UserId = altCustomer.Id,
+                                TripId = trip3.TripId,
+                                PickupStationId = booking3.PickupStationId,
+                                DropoffStationId = booking3.DropoffStationId,
+                                TotalAmount = booking3.TotalAmount,
+                                Status = BookingStatus.Paid,
+                                CreatedAt = DateTime.UtcNow.AddMinutes(-30),
+                                ExpiredAt = DateTime.UtcNow.AddHours(24),
+                                VnPayTxnRef = $"DEMO-{Guid.NewGuid():N}".Substring(0, 20)
+                            };
+                            b3Alt.Tickets.Add(new Ticket
+                            {
+                                TripId = trip3.TripId,
+                                SeatCode = "B05",
+                                PassengerName = altCustomer.FullName,
+                                PassengerPhone = "0909123456",
+                                QrToken = Guid.NewGuid().ToString("N"),
+                                Status = TicketStatus.Valid
+                            });
+
+                            await context.Bookings.AddRangeAsync(b1Alt, b2Alt, b3Alt);
+                        }
+
+                        await context.SaveChangesAsync();
+                    }
+                }
+            }
         }
 
         private static string BuildSeatLayout(int totalDecks, int seatsPerDeck, string prefixDeckA, string prefixDeckB, int cols)
