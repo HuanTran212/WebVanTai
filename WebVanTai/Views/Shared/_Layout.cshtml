@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -8,56 +8,125 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebVanTai.styles.css" asp-append-version="true" />
+    <style>
+        :root {
+            --futa-orange: #F26522;
+            --futa-orange-hover: #D95413;
+        }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .text-futa { color: var(--futa-orange) !important; }
+        .bg-futa { background-color: var(--futa-orange) !important; }
+        .btn-futa {
+            background-color: var(--futa-orange);
+            color: #fff;
+            border: none;
+        }
+        .btn-futa:hover {
+            background-color: var(--futa-orange-hover);
+            color: #fff;
+        }
+        .btn-outline-futa {
+            border-color: var(--futa-orange);
+            color: var(--futa-orange);
+        }
+        .btn-outline-futa:hover {
+            background-color: var(--futa-orange);
+            color: #fff;
+        }
+        .nav-link.active {
+            color: var(--futa-orange) !important;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-3 sticky-top" style="border-top: 3px solid #F26522;">
             <div class="container">
-                <a class="navbar-brand fw-bold text-danger" asp-area="" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand fw-bold text-futa" asp-area="" asp-controller="Home" asp-action="Index">
                     <i class="bi bi-bus-front-fill me-1"></i> WebVanTai
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 align-items-lg-center">
                         <li class="nav-item">
-                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house me-1"></i> Trang chủ
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-danger fw-semibold" asp-area="" asp-controller="Booking" asp-action="Index">
-                                <i class="bi bi-ticket-perforated"></i> Đặt vé ngay
+                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Trips" asp-action="Index">
+                                <i class="bi bi-search me-1"></i> Tra cứu lịch trình
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-futa fw-semibold" asp-area="" asp-controller="Booking" asp-action="Index">
+                                <i class="bi bi-ticket-perforated me-1"></i> Đặt vé ngay
                             </a>
                         </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
-                                    <i class="bi bi-ticket-detailed"></i> Vé của tôi
+                                    <i class="bi bi-ticket-detailed me-1 text-primary"></i> Vé của tôi
                                 </a>
                             </li>
                         }
                     </ul>
 
+                    <!-- Phím tắt vai trò quản trị (Khi đăng nhập) -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 me-lg-3 my-2 my-lg-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a class="btn btn-sm btn-outline-danger fw-semibold d-inline-flex align-items-center" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi bi-shield-lock me-1"></i> Admin
+                                </a>
+                            }
+                            @if (User.IsInRole("RouteManager") || User.IsInRole("Admin"))
+                            {
+                                <a class="btn btn-sm btn-outline-warning text-dark fw-semibold d-inline-flex align-items-center" asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi bi-speedometer2 me-1 text-warning"></i> Điều Hành
+                                </a>
+                            }
+                            @if (User.IsInRole("TicketInspector") || User.IsInRole("Admin"))
+                            {
+                                <a class="btn btn-sm btn-outline-primary fw-semibold d-inline-flex align-items-center" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
+                                    <i class="bi bi-qr-code-scan me-1"></i> Soát Vé
+                                </a>
+                            }
+                        }
+                    </div>
+
                     <!-- Góc Đăng Nhập & Quản Trị Hệ Thống -->
-                    <ul class="navbar-nav align-items-center gap-2">
+                    <ul class="navbar-nav align-items-lg-center gap-2">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark fw-semibold d-flex align-items-center gap-1" href="#" id="userNavDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-person-circle text-primary fs-5"></i>
+                                    <i class="bi bi-person-circle fs-5 text-futa"></i>
                                     <span>@(User.Identity.Name ?? "Tài khoản")</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userNavDropdown">
-                                    @if (User.IsInRole("Customer"))
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
+                                            <i class="bi bi-ticket-detailed me-2 text-warning"></i>Vé của tôi
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    @if (User.IsInRole("TicketInspector") || User.IsInRole("Admin"))
                                     {
                                         <li>
-                                            <a class="dropdown-item py-2 fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
-                                                <i class="bi bi-ticket-detailed me-2 text-warning"></i>Vé của tôi
+                                            <a class="dropdown-item py-2 text-primary fw-semibold" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
+                                                <i class="bi bi-qr-code-scan me-2"></i>Soát Vé Mobile (TicketInspector)
                                             </a>
                                         </li>
-                                        <li><hr class="dropdown-divider"></li>
                                     }
                                     @if (User.IsInRole("RouteManager") || User.IsInRole("Admin"))
                                     {
@@ -91,7 +160,7 @@
                         else
                         {
                             <li class="nav-item dropdown">
-                                <a class="btn btn-outline-warning text-dark btn-sm fw-semibold dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="btn btn-outline-futa btn-sm fw-semibold dropdown-toggle" href="#" id="loginDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-shield-lock me-1"></i> Quản Trị & Đăng Nhập
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="loginDropdown" style="min-width: 250px;">
@@ -101,10 +170,25 @@
                                             <i class="bi bi-bus-front me-2"></i>Bảng Điều Hành Tuyến
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-primary" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-qr-code-scan me-2"></i>Soát Vé Trực Tuyến
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-danger" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-shield-lock me-2"></i>Quản Trị Hệ Thống
+                                        </a>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a class="dropdown-item py-2 text-primary" href="/Identity/Account/Login">
                                             <i class="bi bi-box-arrow-in-right me-2"></i>Màn hình Đăng Nhập
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Admin">
+                                            <i class="bi bi-lightning-charge-fill text-danger me-2"></i>Vào nhanh: <strong>Admin</strong>
                                         </a>
                                     </li>
                                     <li>
@@ -113,8 +197,13 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Admin">
-                                            <i class="bi bi-lightning-charge-fill text-danger me-2"></i>Vào nhanh: <strong>Admin</strong>
+                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=TicketInspector">
+                                            <i class="bi bi-lightning-charge-fill text-primary me-2"></i>Vào nhanh: <strong>TicketInspector</strong>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-dark small" href="/RouteManager/Account/QuickLogin?role=Customer">
+                                            <i class="bi bi-lightning-charge-fill text-success me-2"></i>Vào nhanh: <strong>Khách hàng mẫu</strong>
                                         </a>
                                     </li>
                                 </ul>

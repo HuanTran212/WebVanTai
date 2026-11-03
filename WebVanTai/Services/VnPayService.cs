@@ -28,14 +28,14 @@ namespace WebVanTai.Services
         public string CreatePaymentUrl(Booking booking)
         {
             var cfg = _config.GetSection("VnPay");
-            var tmnCode   = cfg["TmnCode"]!;
-            var version   = cfg["Version"]!;
-            var command   = cfg["Command"]!;
-            var currCode  = cfg["CurrCode"]!;
-            var locale    = cfg["Locale"]!;
-            var returnUrl = cfg["ReturnUrl"]!;
-            var baseUrl   = cfg["BaseUrl"]!;
-            var hashSecret = cfg["HashSecret"]!;
+            var tmnCode   = cfg["TmnCode"] ?? "DEMOV210";
+            var version   = cfg["Version"] ?? "2.1.0";
+            var command   = cfg["Command"] ?? "pay";
+            var currCode  = cfg["CurrCode"] ?? "VND";
+            var locale    = cfg["Locale"] ?? "vn";
+            var returnUrl = cfg["ReturnUrl"] ?? "https://localhost:7164/Payment/VnPayReturn";
+            var baseUrl   = cfg["BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+            var hashSecret = cfg["HashSecret"] ?? "RAOEXHYVSDDIIENYWSLDIIZTBI";
 
             // vnp_TxnRef = mã đơn hàng phải là duy nhất mỗi lần gọi
             var txnRef = $"{booking.BookingId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
@@ -47,7 +47,22 @@ namespace WebVanTai.Services
             var ipAddr = GetClientIpAddress();
 
             // Thời gian tạo đơn (múi giờ Việt Nam +07:00)
-            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            TimeZoneInfo vnTimeZone;
+            try
+            {
+                vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch
+            {
+                try
+                {
+                    vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                }
+                catch
+                {
+                    vnTimeZone = TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "VN", "VN");
+                }
+            }
             var createDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone)
                                          .ToString("yyyyMMddHHmmss");
 
@@ -89,7 +104,7 @@ namespace WebVanTai.Services
         public bool ValidateCallback(IQueryCollection query, out string responseCode)
         {
             var cfg = _config.GetSection("VnPay");
-            var hashSecret = cfg["HashSecret"]!;
+            var hashSecret = cfg["HashSecret"] ?? "RAOEXHYVSDDIIENYWSLDIIZTBI";
 
             responseCode = query["vnp_ResponseCode"].ToString();
 
