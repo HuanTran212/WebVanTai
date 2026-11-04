@@ -80,12 +80,12 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             return RedirectToAction("Login", "Account", new { area = "RouteManager", returnUrl });
         }
 
-        [HttpPost("/Identity/Account/Logout")]
         [HttpPost("/RouteManager/Account/Logout")]
+        [HttpPost("/Identity/Account/Logout")]
         [HttpPost("/Admin/Account/Logout")]
         [HttpPost("/Account/Logout")]
-        [HttpGet("/Identity/Account/Logout")]
         [HttpGet("/RouteManager/Account/Logout")]
+        [HttpGet("/Identity/Account/Logout")]
         [HttpGet("/Admin/Account/Logout")]
         [HttpGet("/Account/Logout")]
         [IgnoreAntiforgeryToken]
