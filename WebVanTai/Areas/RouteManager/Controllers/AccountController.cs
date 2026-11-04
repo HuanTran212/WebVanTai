@@ -82,12 +82,21 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
         [HttpPost("/Identity/Account/Logout")]
         [HttpPost("/RouteManager/Account/Logout")]
+        [HttpPost("/Admin/Account/Logout")]
+        [HttpPost("/Account/Logout")]
         [HttpGet("/Identity/Account/Logout")]
         [HttpGet("/RouteManager/Account/Logout")]
-        public async Task<IActionResult> Logout()
+        [HttpGet("/Admin/Account/Logout")]
+        [HttpGet("/Account/Logout")]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> Logout(string? returnUrl = null)
         {
             await _signInManager.SignOutAsync();
             TempData["SuccessMessage"] = "Đã đăng xuất thành công.";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
             return RedirectToAction("Index", "Home", new { area = "" });
         }
 
