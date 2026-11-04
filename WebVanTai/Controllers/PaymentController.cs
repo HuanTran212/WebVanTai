@@ -97,6 +97,8 @@ namespace WebVanTai.Controllers
         [HttpGet]
         public async Task<IActionResult> VnPayReturn()
         {
+            _logger.LogInformation("Nhận callback VNPay: {QueryString}", Request.QueryString.Value);
+
             // 1. Xác thực chữ ký HMAC-SHA512
             if (!_vnPayService.ValidateCallback(Request.Query, out var responseCode))
             {
