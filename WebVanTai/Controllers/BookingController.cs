@@ -88,6 +88,19 @@ namespace WebVanTai.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookSeats(TripBookingViewModel model)
         {
+            // Chưa đăng nhập thì không được giữ chỗ: không tạo Booking nào cả,
+            // đưa về trang đăng nhập rồi quay lại đúng chuyến.
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                TempData["ErrorMessage"] = "Vui lòng đăng nhập để giữ chỗ và thanh toán.";
+
+                return RedirectToPage("/Account/Login", new
+                {
+                    area = "Identity",
+                    returnUrl = Url.Action(nameof(SelectSeats), "Booking", new { id = model.TripId })
+                });
+            }
+
             // 1. Phân tích danh sách ghế đã chọn
             var seatList = (model.SelectedSeats ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -164,48 +177,8 @@ namespace WebVanTai.Controllers
                     return View("SelectSeats", reloadedModel);
                 }
 
-                // Xác định UserId khách hàng
-                string userId;
-                if (User.Identity?.IsAuthenticated == true)
-                {
-                    userId = _userManager.GetUserId(User)!;
-                }
-                else
-                {
-                    // Nếu là khách vãng lai (chưa đăng nhập), tìm hoặc tạo tài khoản khách hàng theo SĐT
-                    var existingCustomer = await _userManager.FindByNameAsync(model.PassengerPhone)
-                        ?? await _userManager.FindByEmailAsync("customer@webvantai.vn");
-
-                    if (existingCustomer != null)
-                    {
-                        userId = existingCustomer.Id;
-                    }
-                    else
-                    {
-                        var guestUser = new ApplicationUser
-                        {
-                            UserName = model.PassengerPhone,
-                            PhoneNumber = model.PassengerPhone,
-                            FullName = model.PassengerName,
-                            Email = $"{model.PassengerPhone}@customer.webvantai.vn",
-                            EmailConfirmed = true,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        var createResult = await _userManager.CreateAsync(guestUser, "P@ssword123");
-                        if (createResult.Succeeded)
-                        {
-                            await _userManager.AddToRoleAsync(guestUser, "Customer");
-                            userId = guestUser.Id;
-                        }
-                        else
-                        {
-                            // Fallback tài khoản admin nếu có lỗi tạo
-                            var fallbackAdmin = await _userManager.FindByEmailAsync("admin@webvantai.vn");
-                            userId = fallbackAdmin?.Id ?? Guid.NewGuid().ToString();
-                        }
-                    }
-                }
+                // Đã được guard ở đầu action bảo đảm đã đăng nhập
+                var userId = _userManager.GetUserId(User)!;
 
                 // 3. Tạo Booking với trạng thái Pending và thời hạn giữ chỗ 10 phút
                 var now = DateTime.UtcNow;
