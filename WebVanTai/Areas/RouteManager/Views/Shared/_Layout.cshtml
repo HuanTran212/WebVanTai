@@ -10,7 +10,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Điều Hành Tuyến Xe | WebVanTai</title>
+    <title>@ViewData["Title"] - Điều Hành Tuyến Xe | G-Trans</title>
     
     <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -18,6 +18,26 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- UI polish + Tailwind (prefix tw-, không reset Bootstrap) -->
+    <link rel="stylesheet" href="~/css/ui-polish.css" asp-append-version="true" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            prefix: 'tw-',
+            corePlugins: { preflight: false },
+            theme: {
+                extend: {
+                    colors: {
+                        futa: { DEFAULT: '#F26522', dark: '#D95413', light: '#FFF5EE', subtle: '#FFEEDD' },
+                        night: '#0F172A'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
     
     <style>
         :root {
@@ -181,10 +201,14 @@
         <!-- Sidebar Navigation -->
         <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
             <a asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index" class="sidebar-brand">
-                <i class="bi bi-bus-front-fill"></i>
-                <div>
-                    <div>Web<span>VanTai</span></div>
-                    <small style="font-size: 0.7rem; font-weight: 400; color: #94A3B8; display: block;">Điều Hành Tuyến</small>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-bus-front-fill text-white fs-6"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white fs-5">G-Trans Điều Hành</div>
+                        <small style="font-size: 0.7rem; font-weight: 400; color: #94A3B8; display: block;">Bảng Điều Khiển Tuyến</small>
+                    </div>
                 </div>
             </a>
 
@@ -264,7 +288,7 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
-                    <span class="role-badge">
+                    <span class="role-badge d-none d-sm-inline-flex align-items-center">
                         <i class="bi bi-person-badge me-1"></i>
                         @(User.IsInRole("Admin") ? "Admin" : "RouteManager")
                     </span>
@@ -291,34 +315,36 @@
 
             <!-- Page Body -->
             <main class="flex-grow-1 p-3 p-md-4">
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
-                        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
-                        <div>@TempData["SuccessMessage"]</div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
+                <div class="page-shell">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                            <div>@TempData["SuccessMessage"]</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
 
-                @if (TempData["ErrorMessage"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
-                        <div>@TempData["ErrorMessage"]</div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                            <div>@TempData["ErrorMessage"]</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
 
-                @RenderBody()
+                    @RenderBody()
+                </div>
             </main>
 
             <!-- Footer -->
             <footer class="bg-white border-top py-3 px-4 text-muted small text-center text-md-start d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
                 <div>
-                    &copy; 2026 <strong>WebVanTai</strong> - Hệ thống quản lý vận tải và vé xe khách chuẩn 3NF
+                    &copy; 2026 <strong>G-Trans</strong> - Hệ thống điều hành tuyến xe khách & vận tải cao cấp
                 </div>
                 <div>
-                    <span class="badge bg-secondary-subtle text-secondary border">Thành viên 4: RouteManager</span>
+                    <span class="badge bg-secondary-subtle text-secondary border">Điều hành tuyến</span>
                 </div>
             </footer>
         </div>
@@ -332,9 +358,40 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.getElementById('sidebar')?.classList.toggle('show');
-        });
+        // Sidebar off-canvas mobile: backdrop mờ + khoá cuộn + đóng khi bấm link
+        (function () {
+            var sidebar = document.getElementById('sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            if (!sidebar || !toggle) return;
+
+            var backdrop = document.querySelector('.sidebar-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'sidebar-backdrop';
+                document.body.appendChild(backdrop);
+            }
+
+            function openSidebar() {
+                sidebar.classList.add('show');
+                backdrop.classList.add('show');
+                document.body.classList.add('sidebar-open');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                backdrop.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+            }
+
+            toggle.addEventListener('click', function () {
+                if (sidebar.classList.contains('show')) closeSidebar();
+                else openSidebar();
+            });
+            backdrop.addEventListener('click', closeSidebar);
+            sidebar.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', closeSidebar);
+            });
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -8,12 +8,33 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Quản Trị | WebVanTai</title>
+    <title>@ViewData["Title"] - Quản Trị | G-Trans</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
 
     <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- UI polish + Tailwind (prefix tw-, không reset Bootstrap) -->
+    <link rel="stylesheet" href="~/css/ui-polish.css" asp-append-version="true" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            prefix: 'tw-',
+            corePlugins: { preflight: false },
+            theme: {
+                extend: {
+                    colors: {
+                        futa: { DEFAULT: '#F26522', dark: '#D95413', light: '#FFF5EE', subtle: '#FFEEDD' },
+                        night: '#0F172A'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
 
     <style>
         :root {
@@ -99,6 +120,9 @@
             font-weight: 600;
             border-left: 3px solid var(--futa-orange);
         }
+        .sidebar-link.active i {
+            color: var(--futa-orange);
+        }
         /* Main wrapper */
         #content-wrapper {
             flex-grow: 1;
@@ -164,10 +188,14 @@
         <!-- Sidebar -->
         <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
             <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="sidebar-brand">
-                <i class="bi bi-shield-lock-fill"></i>
-                <div>
-                    <div>Web<span>VanTai</span></div>
-                    <small style="font-size: 0.7rem; font-weight: 400; color: #94A3B8; display: block;">Quản Trị Hệ Thống</small>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-shield-lock-fill text-white fs-6"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white fs-5">G-Trans Admin</div>
+                        <small style="font-size: 0.7rem; font-weight: 400; color: #94A3B8; display: block;">Quản Trị Hệ Thống</small>
+                    </div>
                 </div>
             </a>
 
@@ -226,7 +254,7 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-3">
-                    <span class="role-badge">
+                    <span class="role-badge d-none d-sm-inline-flex align-items-center">
                         <i class="bi bi-person-gear me-1"></i>Quản trị viên
                     </span>
                     <div class="dropdown">
@@ -252,31 +280,33 @@
             </header>
 
             <main class="flex-grow-1 p-3 p-md-4">
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
-                        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
-                        <div>@TempData["SuccessMessage"]</div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-                @if (TempData["ErrorMessage"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
-                        <div>@TempData["ErrorMessage"]</div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-                @RenderBody()
+                <div class="page-shell">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                            <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                            <div>@TempData["SuccessMessage"]</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                            <div>@TempData["ErrorMessage"]</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    @RenderBody()
+                </div>
             </main>
 
             <footer class="bg-white border-top py-3 px-4 text-muted small text-center text-md-start d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
                 <div>
-                    &copy; 2026 <strong>WebVanTai</strong> - Hệ thống quản lý vận tải và vé xe khách chuẩn 3NF
+                    &copy; 2026 <strong>G-Trans</strong> - Hệ thống quản lý vận tải & vé xe khách cao cấp
                 </div>
                 <div>
-                    <span class="badge bg-secondary-subtle text-secondary border">Thành viên 5: Admin & TicketInspector</span>
+                    <span class="badge bg-secondary-subtle text-secondary border">Quản trị hệ thống</span>
                 </div>
             </footer>
         </div>
@@ -288,9 +318,40 @@
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
     <script>
-        document.getElementById('sidebarToggle')?.addEventListener('click', function () {
-            document.getElementById('sidebar')?.classList.toggle('show');
-        });
+        // Sidebar off-canvas mobile: backdrop mờ + khoá cuộn + đóng khi bấm link
+        (function () {
+            var sidebar = document.getElementById('sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            if (!sidebar || !toggle) return;
+
+            var backdrop = document.querySelector('.sidebar-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'sidebar-backdrop';
+                document.body.appendChild(backdrop);
+            }
+
+            function openSidebar() {
+                sidebar.classList.add('show');
+                backdrop.classList.add('show');
+                document.body.classList.add('sidebar-open');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                backdrop.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+            }
+
+            toggle.addEventListener('click', function () {
+                if (sidebar.classList.contains('show')) closeSidebar();
+                else openSidebar();
+            });
+            backdrop.addEventListener('click', closeSidebar);
+            sidebar.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', closeSidebar);
+            });
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

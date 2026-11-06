@@ -3,15 +3,18 @@
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
         <h4 class="h5 fw-bold mb-0 text-dark">
-            Kết quả: <span style="color: var(--futa-orange);">@Model.Trips.Count chuyến xe</span> phù hợp
+            Tìm thấy <span class="text-futa">@Model.Trips.Count chuyến xe</span> G-Trans
         </h4>
         @if (!string.IsNullOrEmpty(Model.Filter.StartProvince) && !string.IsNullOrEmpty(Model.Filter.EndProvince))
         {
-            <div class="text-muted small mt-1">
-                Tuyến: <strong>@Model.Filter.StartProvince</strong> <i class="bi bi-arrow-right text-warning"></i> <strong>@Model.Filter.EndProvince</strong>
+            <div class="text-muted small mt-1 d-flex align-items-center gap-1 flex-wrap">
+                <span>Chặng:</span>
+                <span class="badge bg-light text-dark border fw-bold">@Model.Filter.StartProvince</span>
+                <i class="bi bi-arrow-right text-warning"></i>
+                <span class="badge bg-light text-dark border fw-bold">@Model.Filter.EndProvince</span>
                 @if (Model.Filter.DepartureDate.HasValue)
                 {
-                    <span> • Ngày: <strong>@Model.Filter.DepartureDate.Value.ToString("dd/MM/yyyy")</strong></span>
+                    <span class="ms-1">• Ngày: <strong>@Model.Filter.DepartureDate.Value.ToString("dd/MM/yyyy")</strong></span>
                 }
             </div>
         }
@@ -19,7 +22,7 @@
 
     @if (Model.Filter.TimeRanges.Any() || Model.Filter.BusTypeIds.Any() || Model.Filter.MinPrice.HasValue || Model.Filter.MaxPrice.HasValue || Model.Filter.MinSeats > 0)
     {
-        <button type="button" class="btn btn-sm btn-outline-danger" id="btnClearAllFilters">
+        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" id="btnClearAllFilters">
             <i class="bi bi-x-circle me-1"></i> Xóa tất cả bộ lọc
         </button>
     }
@@ -27,125 +30,127 @@
 
 @if (Model.Trips.Any())
 {
-    <div class="trip-cards-list d-flex flex-column gap-3">
+    <div class="d-flex flex-column gap-3">
         @foreach (var trip in Model.Trips)
         {
-            <div class="card trip-card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-body p-3 p-md-4">
-                    <div class="row align-items-center g-3">
-                        <!-- Cột 1: Thông tin xe & Giờ chạy -->
-                        <div class="col-12 col-md-7 col-lg-8">
-                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                                <span class="badge" style="background: var(--futa-orange-subtle); color: var(--futa-orange); font-weight: 700; font-size: 0.82rem;">
-                                    <i class="bi bi-bus-front-fill me-1"></i> @trip.BusTypeName
-                                </span>
-                                <span class="badge bg-light text-secondary border">
-                                    <i class="bi bi-upc-scan me-1"></i> BKS: @trip.LicensePlate
-                                </span>
-                                @if (trip.AvailableSeats > 5)
-                                {
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                        <i class="bi bi-check-circle me-1"></i> Còn @trip.AvailableSeats chỗ
-                                    </span>
-                                }
-                                else if (trip.AvailableSeats > 0)
-                                {
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
-                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Chỉ còn @trip.AvailableSeats chỗ!
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary text-white">
-                                        <i class="bi bi-x-octagon me-1"></i> Hết chỗ
-                                    </span>
-                                }
-                            </div>
-
-                            <!-- Lộ trình & Giờ khởi hành -->
-                            <div class="row align-items-center g-2 my-2">
-                                <div class="col-auto text-start">
-                                    <div class="h4 fw-bold mb-0 text-dark">
-                                        @trip.DepartureTime.ToString("HH:mm")
-                                    </div>
-                                    <div class="text-muted small fw-semibold">
-                                        @trip.DepartureTime.ToString("dd/MM/yyyy")
-                                    </div>
-                                    <div class="fw-semibold text-truncate small text-dark mt-1" style="max-width: 140px;" title="@trip.FirstStationName">
-                                        <i class="bi bi-geo-alt text-danger me-1"></i>@trip.FirstStationName
-                                    </div>
-                                </div>
-
-                                <div class="col text-center px-2">
-                                    <div class="text-muted small mb-1" style="font-size: 0.78rem;">
-                                        <i class="bi bi-clock me-1"></i>~@trip.DurationHours.ToString("0.#") giờ
-                                    </div>
-                                    <div class="trip-line-indicator position-relative d-flex align-items-center justify-content-center">
-                                        <div class="trip-line-bar w-100"></div>
-                                        <div class="trip-line-icon bg-white px-1">
-                                            <i class="bi bi-chevron-right" style="color: var(--futa-orange);"></i>
-                                        </div>
-                                    </div>
-                                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">
-                                        @trip.DistanceKm km
-                                    </div>
-                                </div>
-
-                                <div class="col-auto text-end">
-                                    <div class="h4 fw-bold mb-0 text-dark">
-                                        @trip.ArrivalTime.ToString("HH:mm")
-                                    </div>
-                                    <div class="text-muted small fw-semibold">
-                                        @trip.ArrivalTime.ToString("dd/MM/yyyy")
-                                    </div>
-                                    <div class="fw-semibold text-truncate small text-dark mt-1" style="max-width: 140px;" title="@trip.LastStationName">
-                                        <i class="bi bi-flag text-warning me-1"></i>@trip.LastStationName
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tiện ích -->
-                            @if (!string.IsNullOrEmpty(trip.Amenities))
+            <div class="ticket-card p-3 p-md-4">
+                <div class="row align-items-center g-3">
+                    <!-- Cột 1: Thông tin lộ trình & Giờ khởi hành -->
+                    <div class="col-12 col-md-7 col-lg-8">
+                        <!-- Badges Header -->
+                        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                            <span class="badge bg-orange-50 text-futa border border-orange-200 fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.8rem; background: #FFF5EE;">
+                                <i class="bi bi-bus-front-fill me-1"></i> @trip.BusTypeName
+                            </span>
+                            <span class="badge bg-slate-50 text-slate-700 border fw-semibold px-2.5 py-1.5 rounded-pill" style="font-size: 0.8rem;">
+                                <i class="bi bi-upc-scan me-1 text-muted"></i> BKS: @trip.LicensePlate
+                            </span>
+                            @if (trip.AvailableSeats > 5)
                             {
-                                <div class="trip-amenities mt-2 text-muted small d-flex flex-wrap gap-2">
-                                    @foreach (var am in trip.Amenities.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(4))
-                                    {
-                                        <span class="badge bg-light text-muted fw-normal border">
-                                            <i class="bi bi-check2 text-success me-1"></i>@am
-                                        </span>
-                                    }
-                                </div>
+                                <span class="badge bg-emerald-50 text-success border border-success-subtle fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.8rem; background: #ECFDF5;">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Còn @trip.AvailableSeats chỗ
+                                </span>
+                            }
+                            else if (trip.AvailableSeats > 0)
+                            {
+                                <span class="badge bg-rose-50 text-danger border border-danger-subtle fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.8rem; background: #FFF1F2;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Sắp hết - Chỉ còn @trip.AvailableSeats chỗ!
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary text-white fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.8rem;">
+                                    <i class="bi bi-x-octagon me-1"></i> Hết chỗ
+                                </span>
                             }
                         </div>
 
-                        <!-- Cột 2: Giá vé & Nút Chọn Chuyến -->
-                        <div class="col-12 col-md-5 col-lg-4 text-md-end border-top border-md-top-0 pt-3 pt-md-0 border-start-md ps-md-4">
-                            <div class="text-muted small">Giá vé mỗi ghế</div>
-                            <div class="h3 fw-bold mb-2" style="color: var(--futa-orange);">
-                                @trip.BasePrice.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                        <!-- Lộ trình: Giờ đi -> Line -> Giờ đến -->
+                        <div class="row align-items-center g-2 my-1">
+                            <!-- Giờ đi -->
+                            <div class="col-auto text-start" style="min-width: 120px;">
+                                <div class="fs-3 fw-bold text-dark leading-none">
+                                    @trip.DepartureTime.ToString("HH:mm")
+                                </div>
+                                <div class="text-muted small fw-semibold">
+                                    @trip.DepartureTime.ToString("dd/MM/yyyy")
+                                </div>
+                                <div class="fw-bold text-truncate small text-dark mt-1" style="max-width: 150px;" title="@trip.FirstStationName">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>@trip.FirstStationName
+                                </div>
                             </div>
 
-                            <div class="d-flex flex-column gap-2">
-                                @if (trip.AvailableSeats > 0)
-                                {
-                                    <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@trip.TripId" 
-                                       class="btn btn-futa-select-trip fw-bold py-2 shadow-sm text-center">
-                                        <span>CHỌN CHUYẾN</span>
-                                        <i class="bi bi-arrow-right-circle-fill ms-1"></i>
-                                    </a>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-secondary fw-bold py-2" disabled>
-                                        HẾT CHỖ
-                                    </button>
-                                }
+                            <!-- Đường nối thời gian chạy -->
+                            <div class="col text-center px-2">
+                                <div class="text-muted small mb-1 fw-semibold" style="font-size: 0.76rem;">
+                                    <i class="bi bi-clock me-1 text-warning"></i>~@trip.DurationHours.ToString("0.#") giờ
+                                </div>
+                                <div class="position-relative d-flex align-items-center justify-content-center my-1">
+                                    <div class="w-100" style="height: 2px; background: #E2E8F0;"></div>
+                                    <div class="position-absolute bg-white px-2 text-futa fs-6">
+                                        <i class="bi bi-arrow-right-circle-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-1 fw-semibold" style="font-size: 0.74rem;">
+                                    @trip.DistanceKm km
+                                </div>
+                            </div>
 
-                                <a asp-controller="Trips" asp-action="Details" asp-route-id="@trip.TripId" 
-                                   class="btn btn-sm btn-outline-secondary py-1 text-center">
-                                    <i class="bi bi-map-fill text-danger me-1"></i> Lộ trình & Bản đồ trạm
+                            <!-- Giờ đến -->
+                            <div class="col-auto text-end" style="min-width: 120px;">
+                                <div class="fs-3 fw-bold text-dark leading-none">
+                                    @trip.ArrivalTime.ToString("HH:mm")
+                                </div>
+                                <div class="text-muted small fw-semibold">
+                                    @trip.ArrivalTime.ToString("dd/MM/yyyy")
+                                </div>
+                                <div class="fw-bold text-truncate small text-dark mt-1" style="max-width: 150px;" title="@trip.LastStationName">
+                                    <i class="bi bi-flag-fill text-warning me-1"></i>@trip.LastStationName
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tiện ích trên xe -->
+                        @if (!string.IsNullOrEmpty(trip.Amenities))
+                        {
+                            <div class="mt-3 text-muted small d-flex flex-wrap gap-1.5">
+                                @foreach (var am in trip.Amenities.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(4))
+                                {
+                                    <span class="badge bg-light text-muted fw-normal border rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-check2 text-success me-1"></i>@am
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Cột 2: Giá vé & Nút Chọn Chuyến -->
+                    <div class="col-12 col-md-5 col-lg-4 text-md-end pt-3 pt-md-0 ps-md-4 border-top border-md-top-0 border-md-start" style="border-color: #F1F5F9 !important;">
+                        <div class="text-muted small fw-semibold">Giá vé niêm yết</div>
+                        <div class="fs-2 fw-bold text-futa mb-2 tracking-tight">
+                            @trip.BasePrice.ToString("N0") <span class="fs-6 text-muted font-normal">đ/vé</span>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2">
+                            @if (trip.AvailableSeats > 0)
+                            {
+                                <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@trip.TripId" 
+                                   class="btn btn-futa fw-bold py-2.5 rounded-pill shadow-sm text-center d-flex align-items-center justify-content-center gap-2">
+                                    <span>CHỌN CHUYẾN</span>
+                                    <i class="bi bi-arrow-right-circle-fill fs-5"></i>
                                 </a>
-                            </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary fw-bold py-2.5 rounded-pill" disabled>
+                                    TẠM HẾT CHỖ
+                                </button>
+                            }
+
+                            <a asp-controller="Trips" asp-action="Details" asp-route-id="@trip.TripId" 
+                               class="btn btn-sm btn-outline-secondary py-1.5 rounded-pill text-center fw-semibold">
+                                <i class="bi bi-map-fill text-danger me-1"></i> Lộ trình & Bản đồ trạm
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -155,20 +160,20 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4">
+    <div class="modern-card p-5 text-center my-3">
         <div class="py-4">
-            <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-muted">
-                <i class="bi bi-bus-front fs-1" style="color: var(--futa-orange);"></i>
+            <div class="w-20 h-20 rounded-full bg-orange-100 text-futa mx-auto d-flex align-items-center justify-content-center fs-1 mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                <i class="bi bi-bus-front"></i>
             </div>
             <h3 class="h5 fw-bold text-dark mb-2">Không tìm thấy chuyến xe phù hợp</h3>
-            <p class="text-muted mb-4" style="max-width: 480px; margin: 0 auto;">
+            <p class="text-muted mb-4 mx-auto" style="max-width: 480px;">
                 Rất tiếc, hiện tại không có chuyến xe nào thỏa mãn các điều kiện lọc bạn đã chọn. Vui lòng thay đổi khung giờ, loại xe hoặc chọn ngày đi khác.
             </p>
-            <div class="d-flex justify-content-center gap-2">
-                <button type="button" class="btn btn-futa-primary" id="btnResetFiltersEmpty">
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-futa rounded-pill px-4 fw-bold" id="btnResetFiltersEmpty">
                     <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại bộ lọc
                 </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">
+                <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
                     Xem tất cả chuyến xe
                 </a>
             </div>

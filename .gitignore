@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local tool / environment files
+.zcode/
+e2e_test.py
+

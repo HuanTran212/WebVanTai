@@ -1,6 +1,6 @@
 @model WebVanTai.Models.ViewModels.TripBookingViewModel
 @{
-    ViewData["Title"] = $"Chọn ghế - {Model.StartProvince} đi {Model.EndProvince}";
+    ViewData["Title"] = $"Chọn ghế - {Model.StartProvince} đi {Model.EndProvince} | G-Trans";
 }
 
 <style>
@@ -14,84 +14,72 @@
         --seat-occupied-color: #94a3b8;
     }
 
-    .booking-header {
-        background: linear-gradient(135deg, var(--futa-orange), #ff7e40);
-        color: white;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 15px rgba(242, 101, 34, 0.2);
-    }
-
-    .route-badge {
-        background: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(4px);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-    }
-
+    /* Seat Grid Modern */
     .bus-container {
-        background: #f8fafc;
-        border: 2px dashed #cbd5e1;
+        background: #F8FAFC;
+        border: 2px dashed #CBD5E1;
         border-radius: 24px;
-        padding: 20px;
-        position: relative;
-    }
-
-    .bus-driver {
-        background: #e2e8f0;
-        border-radius: 12px;
-        padding: 8px 16px;
-        text-align: center;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 20px;
+        padding: 20px 14px;
+        margin: 0 auto;
+        max-width: 340px;
     }
 
     .seat-grid {
         display: grid;
-        gap: 12px;
         justify-content: center;
         margin: 0 auto;
     }
 
     .seat-btn {
-        width: 58px;
-        height: 58px;
-        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         user-select: none;
         position: relative;
+        border: 2px solid transparent;
+        flex-shrink: 0;
     }
 
     .seat-btn.available {
         background: #ffffff;
-        border: 2px solid var(--seat-available-border);
-        color: var(--futa-orange);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+        border-color: var(--seat-available-border);
+        color: var(--seat-available-border);
+        box-shadow: 0 2px 6px rgba(242, 101, 34, 0.15);
     }
 
     .seat-btn.available:hover {
-        background: var(--futa-light-orange);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(242, 101, 34, 0.15);
+        background: #FFF5EE;
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
     }
 
     .seat-btn.selected {
         background: var(--seat-selected-bg);
-        border: 2px solid var(--futa-dark-orange);
+        border-color: var(--seat-selected-bg);
         color: #ffffff;
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(242, 101, 34, 0.4);
+        box-shadow: 0 4px 14px rgba(242, 101, 34, 0.4);
+    }
+
+    .seat-btn.selected::after {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: 12px;
+        border: 2px solid var(--futa-orange);
+        animation: pulse-ring 1.5s ease-out infinite;
+    }
+
+    @@keyframes pulse-ring {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(1.3); opacity: 0; }
     }
 
     .seat-btn.occupied {
@@ -102,132 +90,263 @@
         opacity: 0.8;
     }
 
-    .seat-legend {
+    .seat-btn.occupied small {
+        font-size: 0.55rem;
+    }
+
+    /* Deck Switcher Segmented */
+    .deck-switcher {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 4px;
+        border-radius: 9999px;
+        gap: 2px;
+    }
+
+    .deck-switcher input[type="radio"] {
+        display: none;
+    }
+
+    .deck-switcher label {
+        padding: 8px 20px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #64748B;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin: 0;
+    }
+
+    .deck-switcher input[type="radio"]:checked + label {
+        background: #FFFFFF;
+        color: var(--futa-orange);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Bus Driver Area */
+    .bus-driver-area {
+        background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+        border: 2px dashed #CBD5E1;
+        border-radius: 16px;
+        padding: 14px;
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .bus-driver-area::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 8px;
+        background: #E2E8F0;
+        border-radius: 4px 4px 0 0;
+    }
+
+    /* Legend Modern */
+    .seat-legend-v2 {
         display: flex;
         justify-content: center;
-        gap: 18px;
+        gap: 24px;
         flex-wrap: wrap;
-        padding: 12px;
+        padding: 16px 20px;
         background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+        border: 1px solid #F1F5F9;
+        margin-bottom: 24px;
     }
 
-    .legend-item {
+    .legend-item-v2 {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 0.85rem;
-        font-weight: 500;
+        gap: 10px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #334155;
     }
 
-    .legend-box {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
+    .legend-box-v2 {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 800;
     }
 
-    .floating-bar {
+    /* Floating Mobile Sticky Bar */
+    .floating-bar-v2 {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         background: #ffffff;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.12);
         padding: 14px 20px;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
         z-index: 1040;
+        border-top: 1px solid #F1F5F9;
     }
 
-    .price-text {
+    .price-text-v2 {
         color: var(--futa-orange);
         font-weight: 800;
-        font-size: 1.25rem;
+        font-size: 1.35rem;
     }
 
-    .btn-futa {
-        background: var(--futa-orange);
-        border: none;
-        color: white;
+    /* Form Modern */
+    .form-control-modern {
+        background: #F8FAFC;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0F172A;
+        transition: all 0.2s ease;
+    }
+
+    .form-control-modern:focus {
+        background: #FFFFFF;
+        border-color: var(--futa-orange);
+        box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.12);
+    }
+
+    .form-select-modern {
+        background: #F8FAFC;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0F172A;
+        transition: all 0.2s ease;
+    }
+
+    .form-select-modern:focus {
+        background: #FFFFFF;
+        border-color: var(--futa-orange);
+        box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.12);
+    }
+
+    .form-label-modern {
+        font-size: 0.75rem;
         font-weight: 700;
-        border-radius: 12px;
-        padding: 12px 24px;
-        transition: all 0.2s;
+        text-transform: uppercase;
+        color: #94A3B8;
+        letter-spacing: 0.03em;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .btn-futa:hover {
-        background: var(--futa-dark-orange);
-        color: white;
-        transform: translateY(-1px);
+    /* Desktop Sticky Card */
+    .sticky-checkout-card {
+        position: sticky;
+        top: 95px;
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #F1F5F9;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        padding: 24px;
     }
 
-    /* Padding for floating bar */
-    .pb-floating {
-        padding-bottom: 100px;
+    /* Modern Card Container */
+    .gtrans-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #F1F5F9;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
     }
 </style>
 
-<div class="container pb-floating py-3">
-    <!-- Header Thông tin chuyến -->
-    <div class="booking-header">
-        <div class="d-flex justify-content-between align-items-start mb-2">
+<div class="app-container pb-5 pt-3">
+    <!-- MODERN HEADER -->
+    <div class="mb-4 p-4 p-md-5 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, var(--futa-orange) 0%, #EA580C 60%, #C2410C 100%);">
+        <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
+        <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-3 position-relative">
             <div>
-                <span class="route-badge mb-2 d-inline-block">Tuyến xe</span>
-                <h3 class="fw-bold mb-0">@Model.StartProvince <i class="bi bi-arrow-right"></i> @Model.EndProvince</h3>
+                <span class="badge bg-white/20 backdrop-blur-md text-white fw-bold px-3 py-1.5 rounded-pill mb-2 d-inline-block" style="font-size: 0.75rem;">
+                    <i class="bi bi-bus-front-fill me-1"></i> @Model.BusTypeName
+                </span>
+                <h2 class="fw-bold text-white mb-0" style="font-size: 1.75rem;">
+                    @Model.StartProvince <i class="bi bi-arrow-right text-warning mx-2"></i> @Model.EndProvince
+                </h2>
+                <small class="d-block mt-1 text-white-50">Biển số xe: <strong class="text-white">@Model.LicensePlate</strong></small>
             </div>
             <div class="text-end">
-                <div class="route-badge">@Model.BusTypeName</div>
-                <small class="d-block mt-1 text-white-50">Biển số: @Model.LicensePlate</small>
+                <div class="text-white-50 small">Giá vé / ghế</div>
+                <div class="fw-bold text-white fs-4">@Model.BasePrice.ToString("N0") đ</div>
             </div>
         </div>
-        <hr class="my-2 border-white opacity-25" />
-        <div class="row g-2 mt-1">
+        <hr class="my-3 border-white opacity-25" />
+        <div class="row g-2 align-items-center position-relative">
             <div class="col-6 col-md-3">
                 <small class="text-white-50 d-block">Khởi hành</small>
-                <strong>@Model.DepartureTime.ToString("HH:mm - dd/MM/yyyy")</strong>
+                <strong class="text-white">@Model.DepartureTime.ToString("HH:mm")</strong>
             </div>
             <div class="col-6 col-md-3">
-                <small class="text-white-50 d-block">Đến dự kiến</small>
-                <strong>@Model.ArrivalTime.ToString("HH:mm - dd/MM/yyyy")</strong>
+                <small class="text-white-50 d-block">Ngày</small>
+                <strong class="text-white">@Model.DepartureTime.ToString("dd/MM/yyyy")</strong>
             </div>
-            <div class="col-12 col-md-6 text-md-end">
-                <small class="text-white-50 d-block">Giá vé niêm yết</small>
-                <span class="fs-5 fw-bold">@Model.BasePrice.ToString("N0") đ / vé</span>
+            <div class="col-12 col-md-3">
+                <small class="text-white-50 d-block">Đến dự kiến</small>
+                <strong class="text-white">@Model.ArrivalTime.ToString("HH:mm")</strong>
+            </div>
+            <div class="col-6 col-md-3 text-md-end">
+                <small class="text-white-50 d-block">Thời gian chạy</small>
+                <strong class="text-white">~@((Model.ArrivalTime - Model.DepartureTime).TotalHours.ToString("0.#")) giờ</strong>
             </div>
         </div>
     </div>
 
+    <!-- VALIDATION ALERTS -->
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-warning alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <div class="alert alert-warning alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert" style="background: #FFFDF5; border-color: #FED7AA;">
+            <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>@TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <!-- Alert thông báo lỗi -->
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
-            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Có lỗi xảy ra:</h6>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert" style="background: #FFF1F2; border-color: #FECACA;">
+            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Có lỗi xảy ra:</h6>
             <div asp-validation-summary="All" class="text-danger mb-0 small"></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <!-- Chú thích ghế (Legend) -->
-    <div class="seat-legend">
-        <div class="legend-item">
-            <div class="legend-box" style="border: 2px solid var(--seat-available-border); background: #fff;"></div>
+    <!-- SEAT LEGEND -->
+    <div class="seat-legend-v2">
+        <div class="legend-item-v2">
+            <div class="legend-box-v2" style="background: #FFFFFF; border: 2px solid var(--seat-available-border); color: var(--seat-available-border);">
+            </div>
             <span>Ghế trống</span>
         </div>
-        <div class="legend-item">
-            <div class="legend-box" style="background: var(--seat-selected-bg);"></div>
+        <div class="legend-item-v2">
+            <div class="legend-box-v2" style="background: var(--seat-selected-bg); color: #FFFFFF;">
+                <i class="bi bi-check"></i>
+            </div>
             <span>Đang chọn (tối đa 5)</span>
         </div>
-        <div class="legend-item">
-            <div class="legend-box" style="background: var(--seat-occupied-bg); border: 2px solid #cbd5e1;"></div>
-            <span>Đã đặt / Đang giữ chỗ</span>
+        <div class="legend-item-v2">
+            <div class="legend-box-v2" style="background: var(--seat-occupied-bg); border: 2px solid #cbd5e1;">
+                <i class="bi bi-lock-fill" style="color: var(--seat-occupied-color);"></i>
+            </div>
+            <span>Đã đặt / Giữ chỗ</span>
         </div>
     </div>
 
@@ -237,16 +356,20 @@
         <input type="hidden" asp-for="SelectedSeats" id="selectedSeatsInput" />
 
         <div class="row g-4">
-            <!-- Cột chọn ghế (Responsive 2 tầng) -->
-            <div class="col-lg-7">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-white border-0 pt-3 px-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="fw-bold text-dark mb-0">Sơ đồ vị trí ghế ngồi</h5>
-                            <span class="badge bg-light text-dark border" id="seatCountBadge">Đã chọn: 0/5</span>
+            <!-- LEFT COLUMN: SEAT MAP -->
+            <div class="col-12 col-lg-7">
+                <div class="gtrans-card">
+                    <div class="p-4 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                                <i class="bi bi-grid-3x3-gap-fill text-futa"></i> Sơ đồ ghế ngồi
+                            </h5>
+                            <span class="badge bg-light text-futa border fw-semibold px-3 py-1.5 rounded-pill" id="seatCountBadge" style="font-size: 0.8rem;">
+                                Đã chọn: 0/5
+                            </span>
                         </div>
                     </div>
-                    <div class="card-body px-4 pb-4">
+                    <div class="p-3 p-md-4">
                         @if (Model.Decks.Count > 1)
                         {
                             <!-- Tab điều hướng 2 tầng trên thiết bị di động -->
@@ -255,7 +378,7 @@
                                 {
                                     var deck = Model.Decks[i];
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link @(i == 0 ? "active" : "") fw-bold py-2" 
+                                        <button class="nav-link @(i == 0 ? "active" : "") fw-bold py-2 rounded-pill" 
                                                 id="tab-deck-@deck.DeckNumber" 
                                                 data-bs-toggle="pill" 
                                                 data-bs-target="#deck-content-@deck.DeckNumber" 
@@ -268,29 +391,34 @@
                             </ul>
                         }
 
-                        <div class="tab-content row g-4" id="deckTabsContent">
+                        <div class="tab-content row g-4 justify-content-center" id="deckTabsContent">
                             @for (int i = 0; i < Model.Decks.Count; i++)
                             {
                                 var deck = Model.Decks[i];
-                                <div class="tab-pane fade @(i == 0 ? "show active" : "") col-md-6 d-md-block" 
+                                <div class="col-12 @(Model.Decks.Count > 1 ? "col-md-6" : "") tab-pane fade @(i == 0 ? "show active" : "") d-md-block" 
                                      id="deck-content-@deck.DeckNumber" 
-                                     role="tabpanel">
+                                     role="tabpanel" 
+                                     aria-labelledby="tab-deck-@deck.DeckNumber">
                                     <div class="bus-container">
-                                        <div class="bus-driver">
-                                            <i class="bi bi-steering-wheel"></i> Vị trí Bác Tài (@deck.DeckName)
+                                        <div class="bus-driver-area">
+                                            <i class="bi bi-steering-wheel me-1"></i> Vị trí Bác Tài (@deck.DeckName)
                                         </div>
-                                        <div class="seat-grid" style="grid-template-columns: repeat(@deck.Cols, 58px);">
+                                        <div class="seat-grid" style="display: grid; grid-template-columns: repeat(@(deck.Cols > 0 ? deck.Cols : 3), 48px); gap: 10px; justify-content: center; width: fit-content; margin: 0 auto;">
                                             @foreach (var seat in deck.Seats)
                                             {
                                                 var isOccupiedClass = seat.IsOccupied ? "occupied" : "available";
                                                 <div class="seat-btn @isOccupiedClass" 
                                                      data-seat-code="@seat.Code" 
                                                      data-occupied="@(seat.IsOccupied ? "true" : "false")"
-                                                     title="@(seat.IsOccupied ? $"Ghế {seat.Code} đã có người đặt" : $"Ghế {seat.Code}")">
+                                                     role="button"
+                                                     tabindex="@(seat.IsOccupied ? "-1" : "0")"
+                                                     aria-label="Ghế @seat.Code@(seat.IsOccupied ? " đã có người đặt" : " - trống")"
+                                                     aria-pressed="false"
+                                                     title="@(seat.IsOccupied ? $"Ghế {seat.Code} đã có người đặt" : $"Ghế {seat.Code} - Click để chọn")">
                                                     <span>@seat.Code</span>
                                                     @if (seat.IsOccupied)
                                                     {
-                                                        <small style="font-size: 0.65rem;"><i class="bi bi-lock-fill"></i></small>
+                                                        <small><i class="bi bi-lock-fill"></i></small>
                                                     }
                                                 </div>
                                             }
@@ -303,88 +431,120 @@
                 </div>
             </div>
 
-            <!-- Cột thông tin hành khách & Điểm đón trả -->
-            <div class="col-lg-5">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-white border-0 pt-3 px-4">
-                        <h5 class="fw-bold text-dark mb-0">Điểm đón và trả</h5>
+            <!-- RIGHT COLUMN: PASSENGER INFO & CHECKOUT -->
+            <div class="col-12 col-lg-5">
+                <!-- PICKUP/DROPOFF STATIONS -->
+                <div class="gtrans-card mb-4">
+                    <div class="p-4 border-bottom">
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-geo-alt-fill text-futa"></i> Điểm đón & trả khách
+                        </h5>
                     </div>
-                    <div class="card-body px-4 pb-4">
-                        <div class="mb-3">
-                            <label asp-for="PickupStationId" class="form-label fw-bold small text-muted">ĐIỂM ĐÓN KHÁCH</label>
-                            <select asp-for="PickupStationId" class="form-select form-select-lg rounded-3 fs-6">
+                    <div class="p-4">
+                        <div class="mb-4">
+                            <label asp-for="PickupStationId" class="form-label-modern">
+                                <i class="bi bi-geo-alt-fill text-danger"></i> ĐIỂM ĐÓN KHÁCH <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="PickupStationId" class="form-select-modern">
                                 @foreach (var station in Model.PickupStations)
                                 {
                                     <option value="@station.StationId">@station.Name - @station.Address</option>
                                 }
                             </select>
-                            <span asp-validation-for="PickupStationId" class="text-danger small"></span>
+                            <span asp-validation-for="PickupStationId" class="text-danger small d-block mt-1"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="DropoffStationId" class="form-label fw-bold small text-muted">ĐIỂM TRẢ KHÁCH</label>
-                            <select asp-for="DropoffStationId" class="form-select form-select-lg rounded-3 fs-6">
+                        <div class="mb-0">
+                            <label asp-for="DropoffStationId" class="form-label-modern">
+                                <i class="bi bi-flag-fill text-warning"></i> ĐIỂM TRẢ KHÁCH <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="DropoffStationId" class="form-select-modern">
                                 @foreach (var station in Model.DropoffStations)
                                 {
                                     <option value="@station.StationId">@station.Name - @station.Address</option>
                                 }
                             </select>
-                            <span asp-validation-for="DropoffStationId" class="text-danger small"></span>
+                            <span asp-validation-for="DropoffStationId" class="text-danger small d-block mt-1"></span>
                         </div>
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-white border-0 pt-3 px-4">
-                        <h5 class="fw-bold text-dark mb-0">Thông tin người liên hệ</h5>
+                <!-- PASSENGER INFO -->
+                <div class="gtrans-card mb-4">
+                    <div class="p-4 border-bottom">
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-person-fill text-futa"></i> Thông tin hành khách
+                        </h5>
                     </div>
-                    <div class="card-body px-4 pb-4">
+                    <div class="p-4">
                         <div class="mb-3">
-                            <label asp-for="PassengerName" class="form-label fw-bold small text-muted">HỌ VÀ TÊN HÀNH KHÁCH <span class="text-danger">*</span></label>
-                            <input asp-for="PassengerName" class="form-control form-control-lg rounded-3 fs-6" placeholder="Nguyễn Văn A" />
-                            <span asp-validation-for="PassengerName" class="text-danger small"></span>
+                            <label asp-for="PassengerName" class="form-label-modern">
+                                <i class="bi bi-person-badge"></i> HỌ VÀ TÊN <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="PassengerName" class="form-control-modern" placeholder="Nguyễn Văn A" autocomplete="name" />
+                            <span asp-validation-for="PassengerName" class="text-danger small d-block mt-1"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="PassengerPhone" class="form-label fw-bold small text-muted">SỐ ĐIỆN THOẠI NHẬN VÉ <span class="text-danger">*</span></label>
-                            <input asp-for="PassengerPhone" class="form-control form-control-lg rounded-3 fs-6" placeholder="0912345678" />
-                            <span asp-validation-for="PassengerPhone" class="text-danger small"></span>
+                        <div class="mb-0">
+                            <label asp-for="PassengerPhone" class="form-label-modern">
+                                <i class="bi bi-telephone-fill"></i> SỐ ĐIỆN THOẠI <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="PassengerPhone" class="form-control-modern" placeholder="0912 345 678" autocomplete="tel" />
+                            <span asp-validation-for="PassengerPhone" class="text-danger small d-block mt-1"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tóm tắt chi phí trên màn hình lớn -->
-                <div class="card border-0 shadow-sm rounded-4 d-none d-lg-block">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Ghế đã chọn:</span>
-                            <strong id="desktopSelectedSeatsText">Chưa chọn ghế nào</strong>
+                <!-- DESKTOP STICKY CHECKOUT CARD -->
+                <div class="sticky-checkout-card d-none d-lg-block">
+                    <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+                        <i class="bi bi-receipt text-futa"></i> Tóm tắt đặt vé
+                    </h6>
+
+                    <div class="mb-3 p-3 rounded-3 bg-slate-50">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">Ghế đã chọn:</span>
+                            <strong class="text-futa" id="desktopSelectedSeatsText">Chưa chọn ghế nào</strong>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted">Tổng tạm tính:</span>
-                            <span class="price-text" id="desktopTotalPrice">0 đ</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Tổng tạm tính:</span>
+                            <span class="price-text-v2" id="desktopTotalPrice">0 đ</span>
                         </div>
-                        <button type="submit" class="btn btn-futa w-100 py-3 fs-6 shadow">
-                            <i class="bi bi-shield-check"></i> Xác nhận & Giữ chỗ (10 phút)
-                        </button>
+                    </div>
+
+                    <div id="noSeatAlertDesktop" class="alert alert-warning py-2 small mb-3 d-none rounded-3" style="background: #FFFDF5; border-color: #FED7AA;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Vui lòng chọn ít nhất 1 ghế trước khi tiếp tục.
+                    </div>
+
+                    <button type="submit" class="btn btn-futa w-100 py-3.5 fs-5 fw-bold shadow-lg rounded-pill d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-shield-check fs-4"></i>
+                        <span>XÁC NHẬN & GIỮ CHỖ (10 PHÚT)</span>
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted d-flex align-items-center justify-content-center gap-1">
+                            <i class="bi bi-shield-lock-fill text-success"></i>
+                            <span>Thanh toán an toàn qua VNPay • Hủy miễn phí trước 4h</span>
+                        </small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Thanh nổi cố định chân màn hình cho thiết bị di động (Floating Mobile Sticky Bar) -->
-        <div class="floating-bar d-lg-none">
-            <div class="container p-0">
-                <div class="d-flex justify-content-between align-items-center mb-2">
+        <!-- MOBILE FLOATING STICKY BAR -->
+        <div class="floating-bar-v2 d-lg-none">
+            <div class="d-flex justify-content-between align-items-center">
+                <div id="noSeatAlertMobile" class="alert alert-warning py-1.5 small px-3 mb-2 d-none w-100 text-center rounded-3" style="background: #FFFDF5; border-color: #FED7AA;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Vui lòng chọn ít nhất 1 ghế.
+                </div>
+                <div class="d-flex justify-content-between align-items-center w-100">
                     <div>
                         <small class="text-muted d-block" id="mobileSelectedSeatsText">Chưa chọn ghế</small>
-                        <span class="price-text fs-5" id="mobileTotalPrice">0 đ</span>
+                        <span class="price-text-v2" id="mobileTotalPrice">0 đ</span>
                     </div>
-                    <div>
-                        <button type="submit" class="btn btn-futa py-2 px-4 shadow">
-                            Tiếp tục <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-futa py-2.5 px-5 shadow-lg rounded-pill fw-bold d-flex align-items-center gap-2">
+                        TIẾP TỤC <i class="bi bi-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -399,7 +559,7 @@
             const maxSeats = 5;
             let selectedSeats = [];
 
-            // Phục hồi ghế đã chọn nếu có từ ModelState
+            // Restore previously selected seats from ModelState
             const initialSeats = '@Model.SelectedSeats';
             if (initialSeats) {
                 selectedSeats = initialSeats.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
@@ -414,13 +574,15 @@
             const mobileTotalPrice = document.getElementById('mobileTotalPrice');
 
             function updateUI() {
-                // Đồng bộ class trên tất cả các nút ghế
+                // Sync class and aria-pressed on all seat buttons
                 seatButtons.forEach(btn => {
                     const code = btn.getAttribute('data-seat-code');
                     const isOccupied = btn.getAttribute('data-occupied') === 'true';
 
                     if (!isOccupied) {
-                        if (selectedSeats.includes(code)) {
+                        const isSel = selectedSeats.includes(code);
+                        btn.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+                        if (isSel) {
                             btn.classList.add('selected');
                             btn.classList.remove('available');
                         } else {
@@ -430,12 +592,20 @@
                     }
                 });
 
-                // Cập nhật giá trị input
+                // Hide warnings when seats selected
+                if (selectedSeats.length > 0) {
+                    const alertDesk = document.getElementById('noSeatAlertDesktop');
+                    const alertMob = document.getElementById('noSeatAlertMobile');
+                    if (alertDesk) alertDesk.classList.add('d-none');
+                    if (alertMob) alertMob.classList.add('d-none');
+                }
+
+                // Update hidden input
                 hiddenInput.value = selectedSeats.join(',');
 
-                // Cập nhật số lượng và nhãn hiển thị
+                // Update display
                 const count = selectedSeats.length;
-                seatCountBadge.innerText = `Đã chọn: ${count}/${maxSeats}`;
+                if (seatCountBadge) seatCountBadge.innerText = `Đã chọn: ${count}/${maxSeats}`;
 
                 const formattedSeats = count > 0 ? selectedSeats.join(', ') : 'Chưa chọn ghế nào';
                 const formattedPrice = (count * basePrice).toLocaleString('vi-VN') + ' đ';
@@ -446,22 +616,20 @@
                 if (mobileTotalPrice) mobileTotalPrice.innerText = formattedPrice;
             }
 
-            // Gán sự kiện click cho từng ghế
+            // Seat click handlers
             seatButtons.forEach(btn => {
                 btn.addEventListener('click', function () {
                     const isOccupied = this.getAttribute('data-occupied') === 'true';
-                    if (isOccupied) {
-                        return;
-                    }
+                    if (isOccupied) return;
 
                     const code = this.getAttribute('data-seat-code');
                     const index = selectedSeats.indexOf(code);
 
                     if (index > -1) {
-                        // Bỏ chọn
+                        // Deselect
                         selectedSeats.splice(index, 1);
                     } else {
-                        // Kiểm tra giới hạn 5 ghế
+                        // Check limit 5 seats
                         if (selectedSeats.length >= maxSeats) {
                             alert('Mỗi hành khách chỉ được chọn tối đa 5 ghế trong một lượt đặt vé!');
                             return;
@@ -471,11 +639,38 @@
 
                     updateUI();
                 });
+
+                // Keyboard support
+                btn.addEventListener('keydown', function (e) {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
             });
 
-            // Khởi chạy cập nhật trạng thái ban đầu
+            // Form submit validation
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', function (e) {
+                    if (selectedSeats.length === 0) {
+                        e.preventDefault();
+                        const alertDesk = document.getElementById('noSeatAlertDesktop');
+                        const alertMob = document.getElementById('noSeatAlertMobile');
+                        if (alertDesk) alertDesk.classList.remove('d-none');
+                        if (alertMob) alertMob.classList.remove('d-none');
+
+                        // Scroll to seat map on mobile
+                        const seatContainer = document.querySelector('.gtrans-card');
+                        if (seatContainer) {
+                            seatContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+
+            // Initial UI sync
             updateUI();
         });
     </script>
 }
-

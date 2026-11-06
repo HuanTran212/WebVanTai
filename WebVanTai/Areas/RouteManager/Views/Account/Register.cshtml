@@ -1,0 +1,226 @@
+@{
+    ViewData["Title"] = "Đăng Ký - G-Trans";
+    Layout = null; // Standalone clean register page
+    var returnUrl = ViewBag.ReturnUrl as string ?? "/";
+    var fullName = ViewBag.FullName as string ?? "";
+    var email = ViewBag.Email as string ?? "";
+    var phoneNumber = ViewBag.PhoneNumber as string ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Ký - Hệ Thống Vận Tải G-Trans</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        :root {
+            --futa-orange: #F26522;
+            --futa-orange-hover: #D95413;
+        }
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            padding: 1.5rem;
+        }
+        .register-card {
+            width: 100%;
+            max-width: 480px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .register-header {
+            background-color: var(--futa-orange);
+            color: #FFFFFF;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        .btn-futa {
+            background-color: var(--futa-orange);
+            color: #FFFFFF;
+            border: none;
+            font-weight: 600;
+            padding: 0.75rem;
+            transition: background-color 0.2s;
+        }
+        .btn-futa:hover {
+            background-color: var(--futa-orange-hover);
+            color: #FFFFFF;
+        }
+        .form-control:focus {
+            border-color: var(--futa-orange);
+            box-shadow: 0 0 0 0.25rem rgba(242, 101, 34, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="register-card">
+        <div class="register-header">
+            <div class="fs-1 mb-2"><i class="bi bi-person-plus-fill"></i></div>
+            <h4 class="fw-bold mb-1">G-Trans</h4>
+            <div class="small opacity-75">Đăng Ký Tài Khoản Khách Hàng</div>
+        </div>
+
+        <div class="p-4">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger py-2 small mb-3">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div><i class="bi bi-exclamation-circle-fill me-1"></i> @error.ErrorMessage</div>
+                    }
+                </div>
+            }
+
+            <form method="post" action="/Identity/Account/Register" id="registerForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                <!-- Họ và tên -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small" for="fullNameInput">Họ và Tên <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" name="fullName" id="fullNameInput" class="form-control" placeholder="Nguyễn Văn A" value="@fullName" required autocomplete="name" />
+                    </div>
+                </div>
+
+                <!-- Số điện thoại -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small" for="phoneInput">Số Điện Thoại</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                        <input type="tel" name="phoneNumber" id="phoneInput" class="form-control" placeholder="0901 234 567" value="@phoneNumber" 
+                               pattern="^(03|05|07|08|09)[0-9]{8}$" title="Số điện thoại di động Việt Nam gồm 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09)" autocomplete="tel" />
+                    </div>
+                    <div class="form-text small text-muted">Dùng để nhận mã vé QR và thông báo chuyến đi (10 số).</div>
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small" for="emailInput">Địa Chỉ Email <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                        <input type="email" name="email" id="emailInput" class="form-control" placeholder="name@example.com" value="@email" required autocomplete="email" />
+                    </div>
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small" for="passwordInput">Mật Khẩu <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Tối thiểu 6 ký tự" minlength="6" required autocomplete="new-password" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('passwordInput', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Xác nhận mật khẩu -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small" for="confirmPasswordInput">Xác Nhận Mật Khẩu <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-shield-check"></i></span>
+                        <input type="password" name="confirmPassword" id="confirmPasswordInput" class="form-control" placeholder="Nhập lại mật khẩu" minlength="6" required autocomplete="new-password" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('confirmPasswordInput', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div id="passwordMatchMsg" class="small mt-1" style="display:none;"></div>
+                </div>
+
+                <!-- Điều khoản -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="agreeTerms" checked required />
+                    <label class="form-check-label small text-muted" for="agreeTerms">
+                        Tôi đồng ý với <a href="#" class="text-decoration-none" style="color:var(--futa-orange);">Điều khoản dịch vụ</a> và <a href="#" class="text-decoration-none" style="color:var(--futa-orange);">Chính sách bảo mật</a> của G-Trans
+                    </label>
+                </div>
+
+                <!-- Nút Đăng Ký -->
+                <button type="submit" class="btn btn-futa w-100 rounded-pill mb-3" id="btnSubmitRegister">
+                    <i class="bi bi-person-plus-fill me-1"></i> Hoàn Tất Đăng Ký
+                </button>
+
+                <!-- Đã có tài khoản -->
+                <div class="text-center mb-3">
+                    <span class="small text-muted">Đã có tài khoản?</span>
+                    <a href="/Identity/Account/Login@(string.IsNullOrEmpty(returnUrl) ? "" : $"?returnUrl={Uri.EscapeDataString(returnUrl)}")" class="small fw-bold text-decoration-none" style="color:var(--futa-orange);">Đăng nhập ngay</a>
+                </div>
+            </form>
+
+            <div class="text-center mt-3 pt-3 border-top">
+                <a href="/" class="small text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i> Quay về trang chủ khách hàng
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
+        const pwdInput = document.getElementById('passwordInput');
+        const confirmPwdInput = document.getElementById('confirmPasswordInput');
+        const matchMsg = document.getElementById('passwordMatchMsg');
+        const form = document.getElementById('registerForm');
+
+        function checkPasswordMatch() {
+            const pwd = pwdInput.value;
+            const confirm = confirmPwdInput.value;
+
+            if (!confirm) {
+                matchMsg.style.display = 'none';
+                confirmPwdInput.classList.remove('is-valid', 'is-invalid');
+                return true;
+            }
+
+            matchMsg.style.display = 'block';
+            if (pwd === confirm) {
+                matchMsg.className = 'small mt-1 text-success';
+                matchMsg.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Mật khẩu trùng khớp';
+                confirmPwdInput.classList.remove('is-invalid');
+                confirmPwdInput.classList.add('is-valid');
+                return true;
+            } else {
+                matchMsg.className = 'small mt-1 text-danger';
+                matchMsg.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i> Mật khẩu xác nhận không khớp';
+                confirmPwdInput.classList.remove('is-valid');
+                confirmPwdInput.classList.add('is-invalid');
+                return false;
+            }
+        }
+
+        pwdInput.addEventListener('input', checkPasswordMatch);
+        confirmPwdInput.addEventListener('input', checkPasswordMatch);
+
+        form.addEventListener('submit', function (e) {
+            if (pwdInput.value !== confirmPwdInput.value) {
+                e.preventDefault();
+                checkPasswordMatch();
+                confirmPwdInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

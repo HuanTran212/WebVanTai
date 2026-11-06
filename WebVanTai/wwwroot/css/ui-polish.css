@@ -1,0 +1,517 @@
+/* ============================================================
+   ui-polish.css — Lớp "polish" giao diện G-Trans & Thiết Kế Hiện Đại
+   - Hỗ trợ toàn diện Tailwind CSS & Utility Components
+   - Tokens màu G-Trans, glassmorphism, card hover, timeline lộ trình,
+     sơ đồ ghế xe khách, chân trang 4 cột chuyên nghiệp.
+   ============================================================ */
+
+:root {
+    --futa-orange: #F26522;
+    --futa-orange-hover: #D95413;
+    --futa-orange-light: #FFF5EE;
+    --futa-orange-subtle: #FFEEDD;
+    --futa-dark: #1E293B;
+    --futa-sidebar: #0F172A;
+    --futa-bg: #F8FAFC;
+    --futa-text: #334155;
+    --futa-border: #E2E8F0;
+    --futa-muted: #94A3B8;
+    --futa-ring: rgba(242, 101, 34, 0.18);
+    --futa-shadow-md: 0 10px 25px -5px rgba(242, 101, 34, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --gtrans-gradient: linear-gradient(135deg, #F26522 0%, #EA580C 50%, #C2410C 100%);
+}
+
+/* ---- Container chuẩn: căn giữa, padding co giãn responsive ---- */
+.app-container {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+}
+
+@media (min-width: 768px) {
+    .app-container {
+        padding-inline: 1.5rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .app-container {
+        padding-inline: 2rem;
+    }
+}
+
+/* ---- Brand Logo Styling ---- */
+.brand-logo-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gtrans-gradient);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 14px rgba(242, 101, 34, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.brand-logo-icon:hover {
+    transform: scale(1.05) rotate(-3deg);
+    box-shadow: 0 6px 18px rgba(242, 101, 34, 0.45);
+}
+
+.brand-text {
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #F26522 0%, #C2410C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-subtext {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #64748B;
+    text-transform: uppercase;
+}
+
+/* ---- Hiệu ứng thẻ hiện đại (Modern Card) ---- */
+.modern-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #F1F5F9;
+    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.modern-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(242, 101, 34, 0.12);
+    border-color: #FED7AA;
+}
+
+/* ---- Nút hoán đổi xoay mượt mà ---- */
+.swap-btn-round {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #FFF5EE;
+    border: 1.5px solid #FDBA74;
+    color: var(--futa-orange);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.swap-btn-round:hover {
+    background: var(--futa-orange);
+    color: #ffffff;
+    border-color: var(--futa-orange);
+    transform: rotate(180deg) scale(1.08);
+}
+
+/* ---- Chip tuyến xe nhanh ---- */
+.quick-route-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 30px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.quick-route-chip:hover {
+    background: #FFF5EE;
+    border-color: #FDBA74;
+    color: var(--futa-orange);
+    transform: translateY(-1px);
+}
+
+/* ---- Boarding Pass Ticket Card ---- */
+.ticket-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #F1F5F9;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.ticket-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--futa-orange);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.ticket-card:hover {
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.09);
+    transform: translateY(-2px);
+    border-color: #FDBA74;
+}
+
+.ticket-card:hover::before {
+    opacity: 1;
+}
+
+/* ---- Timeline Trạm Dừng ---- */
+.station-stepper-item {
+    position: relative;
+    padding-left: 36px;
+    padding-bottom: 24px;
+}
+
+.station-stepper-item:last-child {
+    padding-bottom: 0;
+}
+
+.station-stepper-line {
+    position: absolute;
+    left: 14px;
+    top: 26px;
+    bottom: 0;
+    width: 2px;
+    background: #E2E8F0;
+}
+
+.station-stepper-item:last-child .station-stepper-line {
+    display: none;
+}
+
+.station-stepper-node {
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+}
+
+/* Shell nội dung cho khu Admin / Điều hành */
+.page-shell {
+    width: 100%;
+    max-width: 1400px;
+    margin-inline: auto;
+}
+
+/* ---- Chuyển động mượt mặc định ---- */
+body {
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    transition: color 0.2s ease;
+}
+
+.btn {
+    transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+    .btn:active {
+        transform: scale(0.97);
+    }
+
+/* ---- Focus ring màu thương hiệu (thay xanh template) ---- */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--futa-orange);
+    box-shadow: 0 0 0 0.22rem var(--futa-ring);
+}
+
+.form-check-input:checked {
+    background-color: var(--futa-orange);
+    border-color: var(--futa-orange);
+}
+
+.form-check-input:focus {
+    border-color: var(--futa-orange);
+    box-shadow: 0 0 0 0.22rem var(--futa-ring);
+}
+
+/* ---- Card: bóng nâng nhẹ khi hover ---- */
+.card,
+.card-custom {
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+    .card:hover {
+        box-shadow: var(--futa-shadow-md);
+    }
+
+    .card-custom:hover {
+        box-shadow: var(--futa-shadow-md);
+        transform: translateY(-2px);
+    }
+
+/* ---- Nút cam nổi hơn ---- */
+.btn-futa {
+    box-shadow: 0 4px 14px rgba(242, 101, 34, 0.28);
+}
+
+    .btn-futa:hover {
+        box-shadow: 0 8px 20px rgba(242, 101, 34, 0.42);
+        transform: translateY(-1px);
+    }
+
+    .btn-futa:active {
+        transform: scale(0.97);
+    }
+
+/* ---- Navbar khách hàng: gạch chân trượt + shadow khi cuộn ---- */
+.navbar .nav-link {
+    position: relative;
+}
+
+    .navbar .nav-link::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 2px;
+        width: 0;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--futa-orange);
+        transform: translateX(-50%);
+        transition: width 0.25s ease;
+    }
+
+    .navbar .nav-link:hover::after {
+        width: calc(100% - 1.5rem);
+    }
+
+.navbar.navbar-scrolled {
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+}
+
+/* ---- Dropdown hiện đại ---- */
+.dropdown-menu {
+    border: 1px solid var(--futa-border);
+    border-radius: 14px;
+    padding: 0.4rem;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    animation: ui-dropdown-in 0.18s ease both;
+}
+
+.dropdown-item {
+    border-radius: 9px;
+}
+
+    .dropdown-item:hover {
+        background: var(--futa-orange-light);
+    }
+
+@keyframes ui-dropdown-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ---- Bảng (khu quản trị): row hover tông cam ---- */
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+    .table tbody tr:hover {
+        background-color: var(--futa-orange-light);
+    }
+
+/* ---- Topbar dính trên khi cuộn (khu quản trị) — đồng bộ điểm nhấn cam với navbar khách ---- */
+.top-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    border-top: 3px solid var(--futa-orange);
+}
+
+/* ---- Sidebar off-canvas mobile: backdrop mờ + khoá cuộn ---- */
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1040;
+}
+
+    .sidebar-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+@media (max-width: 991.98px) {
+    #sidebar {
+        z-index: 1050;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+    }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
+}
+
+/* ---- Bottom-nav: chỉ báo chấm cam (khu soát vé) ---- */
+.bottom-nav a.active::after {
+    content: "";
+    display: block;
+    width: 18px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--futa-orange);
+    margin: 3px auto 0;
+}
+
+/* ---- Date pills: cuộn snap + ẩn scrollbar ---- */
+.date-scroll-bar {
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+}
+
+    .date-scroll-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+.date-pill-btn {
+    scroll-snap-align: start;
+}
+
+/* ---- Scrollbar mảnh, tông trung tính ---- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 transparent;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+        border: 3px solid transparent;
+        background-clip: content-box;
+    }
+
+/* ---- Hiệu ứng vào trang (chỉ opacity — không phá position:fixed) ---- */
+@keyframes ui-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+main {
+    animation: ui-fade-in 0.4s ease both;
+}
+
+/* ---- Tôn trọng người dùng bật giảm chuyển động ---- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ---- Modern Footer Styling ---- */
+.gtrans-footer {
+    background: #0F172A;
+    color: #94A3B8;
+    border-top: 3px solid var(--futa-orange);
+}
+
+.gtrans-footer a {
+    color: #94A3B8;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.gtrans-footer a:hover {
+    color: #FFFFFF;
+    transform: translateX(3px);
+}
+
+.gtrans-footer .footer-title {
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.25rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.gtrans-footer .footer-title::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 28px;
+    height: 2px;
+    background: var(--futa-orange);
+    border-radius: 2px;
+}
+
+/* ---- Fix Tailwind & Bootstrap Collapse Compatibility ---- */
+.navbar-collapse.collapse {
+    visibility: visible !important;
+}
+.collapse:not(.show) {
+    display: none !important;
+}
+.collapse.show {
+    display: block !important;
+}
+

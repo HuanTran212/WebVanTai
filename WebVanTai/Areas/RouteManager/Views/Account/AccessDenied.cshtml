@@ -7,22 +7,94 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Từ Chối Truy Cập - WebVanTai</title>
+    <title>Từ Chối Truy Cập - G-Trans</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        :root {
+            --futa-orange: #F26522;
+            --futa-orange-hover: #D95413;
+        }
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            padding: 1.5rem;
+        }
+        .error-card {
+            width: 100%;
+            max-width: 480px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        .btn-futa {
+            background-color: var(--futa-orange);
+            color: #FFFFFF;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-futa:hover {
+            background-color: var(--futa-orange-hover);
+            color: #FFFFFF;
+        }
+    </style>
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="card shadow-sm p-4 text-center" style="max-width: 480px;">
-        <div class="text-danger fs-1 mb-2">
-            <i class="bi bi-shield-slash-fill"></i>
+<body>
+    <div class="error-card">
+        <div class="text-danger fs-1 mb-3">
+            <i class="bi bi-shield-slash-fill" style="font-size: 3.5rem;"></i>
         </div>
-        <h4 class="fw-bold text-dark">Từ Chối Truy Cập (403 Forbidden)</h4>
-        <p class="text-muted small mt-2">
-            Tài khoản hiện tại không có vai trò <strong>RouteManager</strong> hoặc <strong>Admin</strong> để truy cập phân hệ Điều Hành Tuyến Xe.
+        <h4 class="fw-bold text-dark mb-2">Từ Chối Truy Cập (403)</h4>
+        <p class="text-muted small mb-4">
+            Bạn không có đủ quyền hạn để truy cập vào phân hệ hoặc tài nguyên này với tài khoản hiện tại.
         </p>
-        <div class="d-flex gap-2 justify-content-center mt-3">
-            <a href="/Identity/Account/Login" class="btn btn-warning btn-sm">Đổi Tài Khoản Khác</a>
-            <a href="/" class="btn btn-outline-secondary btn-sm">Về Trang Chủ</a>
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="alert alert-light border small text-muted py-2 mb-4 text-start">
+                <i class="bi bi-person-circle me-1 text-primary"></i> Đang đăng nhập: <strong>@(User.Identity.Name ?? "Người dùng")</strong>
+            </div>
+        }
+
+        <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Admin/Dashboard" class="btn btn-futa btn-sm px-3 py-2">
+                    <i class="bi bi-speedometer2 me-1"></i> Về Dashboard Admin
+                </a>
+            }
+            else if (User.IsInRole("RouteManager"))
+            {
+                <a href="/RouteManager/Dashboard" class="btn btn-futa btn-sm px-3 py-2">
+                    <i class="bi bi-speedometer2 me-1"></i> Về Quản Lý Tuyến
+                </a>
+            }
+            else if (User.IsInRole("TicketInspector"))
+            {
+                <a href="/TicketInspector/Dashboard" class="btn btn-futa btn-sm px-3 py-2">
+                    <i class="bi bi-qr-code-scan me-1"></i> Về Máy Soát Vé
+                </a>
+            }
+            else if (User.IsInRole("Customer"))
+            {
+                <a href="/Payment/MyTickets" class="btn btn-futa btn-sm px-3 py-2">
+                    <i class="bi bi-ticket-detailed me-1"></i> Xem Vé Của Tôi
+                </a>
+            }
+
+            <a href="/Identity/Account/Login" class="btn btn-outline-warning text-dark btn-sm px-3 py-2">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Đổi Tài Khoản Khác
+            </a>
+            <a href="/" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                <i class="bi bi-house me-1"></i> Về Trang Chủ
+            </a>
         </div>
     </div>
 </body>
