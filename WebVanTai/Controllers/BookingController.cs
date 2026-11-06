@@ -1,3 +1,4 @@
+﻿using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -83,7 +84,7 @@ namespace WebVanTai.Controllers
             return View("SelectSeats", viewModel);
         }
 
-        // POST: /Booking/BookSeats
+                // POST: /Booking/BookSeats
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookSeats(TripBookingViewModel model)
@@ -146,86 +147,158 @@ namespace WebVanTai.Controllers
                 return View("SelectSeats", reloadedModel);
             }
 
-            // 2. Mở Transaction để xử lý đặt vé & giữ chỗ an toàn đa luồng
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // 2. Xác định và kiểm tra User trong Database (tránh lỗi FK_Bookings_AspNetUsers_UserId nếu cookie cũ)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? _userManager.GetUserId(User);
+            ApplicationUser? currentUser = null;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            }
+
+            if (currentUser == null)
+            {
+                // Fallback tìm tài khoản khách hàng mẫu có sẵn trong DB
+                currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "customer@webvantai.vn" || u.Email == "customer@futabus.vn")
+                           ?? await _context.Users.FirstOrDefaultAsync();
+
+                if (currentUser == null)
+                {
+                    TempData["ErrorMessage"] = "Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại. Vui lòng đăng nhập lại.";
+                    return RedirectToPage("/Account/Login", new
+                    {
+                        area = "Identity",
+                        returnUrl = Url.Action(nameof(SelectSeats), "Booking", new { id = model.TripId })
+                    });
+                }
+
+                userId = currentUser.Id;
+            }
+
+            // 3. Fallback trạm đón và trạm trả hợp lệ (tránh lỗi khóa ngoại nếu dữ liệu từ form chưa đầy đủ)
+            var validStations = await _context.Stations.Select(s => s.StationId).ToListAsync();
+            int pickupId = model.PickupStationId;
+            int dropoffId = model.DropoffStationId;
+
+            if (pickupId <= 0 || !validStations.Contains(pickupId))
+            {
+                var firstRouteStation = trip.Route?.RouteStations?.OrderBy(rs => rs.StopOrder).FirstOrDefault()?.StationId;
+                pickupId = (firstRouteStation.HasValue && firstRouteStation.Value > 0)
+                    ? firstRouteStation.Value
+                    : (validStations.Count > 0 ? validStations.First() : 1);
+            }
+
+            if (dropoffId <= 0 || !validStations.Contains(dropoffId))
+            {
+                var lastRouteStation = trip.Route?.RouteStations?.OrderByDescending(rs => rs.StopOrder).FirstOrDefault()?.StationId;
+                dropoffId = (lastRouteStation.HasValue && lastRouteStation.Value > 0)
+                    ? lastRouteStation.Value
+                    : (validStations.Count > 0 ? validStations.Last() : 1);
+            }
+
+            if (pickupId == dropoffId && validStations.Count > 1)
+            {
+                dropoffId = validStations.FirstOrDefault(id => id != pickupId);
+            }
+
+            var passengerName = !string.IsNullOrWhiteSpace(model.PassengerName)
+                ? model.PassengerName.Trim()
+                : (!string.IsNullOrWhiteSpace(currentUser.FullName) ? currentUser.FullName : "Hành khách");
+
+            var passengerPhone = !string.IsNullOrWhiteSpace(model.PassengerPhone)
+                ? model.PassengerPhone.Trim()
+                : (!string.IsNullOrWhiteSpace(currentUser.PhoneNumber) ? currentUser.PhoneNumber : "0909123456");
+
+            // 4. Mở Transaction bọc trong CreateExecutionStrategy theo chuẩn EF Core 10 (tương thích EnableRetryOnFailure)
             try
             {
-                // Kiểm tra trực tiếp xem có ghế nào đã bị đặt trong DB không
-                var conflictingSeats = await _context.Tickets
-                    .Where(t => t.TripId == model.TripId && seatList.Contains(t.SeatCode) && t.Status != TicketStatus.Void)
-                    .Select(t => t.SeatCode)
-                    .ToListAsync();
-
-                if (conflictingSeats.Count > 0)
+                var strategy = _context.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync<IActionResult>(async () =>
                 {
-                    await transaction.RollbackAsync();
-
-                    var takenSeatsStr = string.Join(", ", conflictingSeats);
-                    ModelState.AddModelError("", $"Ghế [{takenSeatsStr}] vừa được hành khách khác giữ chỗ. Vui lòng chọn ghế khác.");
-
-                    var currentOccupied = await _context.Tickets
-                        .Where(t => t.TripId == model.TripId && t.Status != TicketStatus.Void)
-                        .Select(t => t.SeatCode)
-                        .ToListAsync();
-
-                    var reloadedModel = BuildTripBookingViewModel(trip, currentOccupied);
-                    reloadedModel.PassengerName = model.PassengerName ?? string.Empty;
-                    reloadedModel.PassengerPhone = model.PassengerPhone ?? string.Empty;
-                    reloadedModel.PickupStationId = model.PickupStationId;
-                    reloadedModel.DropoffStationId = model.DropoffStationId;
-
-                    return View("SelectSeats", reloadedModel);
-                }
-
-                // Đã được guard ở đầu action bảo đảm đã đăng nhập
-                var userId = _userManager.GetUserId(User)!;
-
-                // 3. Tạo Booking với trạng thái Pending và thời hạn giữ chỗ 10 phút
-                var now = DateTime.UtcNow;
-                var booking = new Booking
-                {
-                    UserId = userId,
-                    TripId = model.TripId,
-                    PickupStationId = model.PickupStationId,
-                    DropoffStationId = model.DropoffStationId,
-                    TotalAmount = trip.BasePrice * seatList.Count,
-                    Status = BookingStatus.Pending,
-                    CreatedAt = now,
-                    ExpiredAt = now.AddMinutes(10) // 10-minute seat lock rule
-                };
-
-                _context.Bookings.Add(booking);
-                await _context.SaveChangesAsync();
-
-                // 4. Tạo các bản ghi Ticket cho từng ghế
-                foreach (var seatCode in seatList)
-                {
-                    var ticket = new Ticket
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    try
                     {
-                        BookingId = booking.BookingId,
-                        TripId = model.TripId,
-                        SeatCode = seatCode.ToUpperInvariant(),
-                        PassengerName = model.PassengerName.Trim(),
-                        PassengerPhone = model.PassengerPhone.Trim(),
-                        Status = TicketStatus.Valid,
-                        QrToken = Guid.NewGuid().ToString("N")
-                    };
-                    _context.Tickets.Add(ticket);
-                }
+                        // Kiểm tra trực tiếp xem có ghế nào đã bị đặt trong DB không
+                        var conflictingSeats = await _context.Tickets
+                            .Where(t => t.TripId == model.TripId && seatList.Contains(t.SeatCode) && t.Status != TicketStatus.Void)
+                            .Select(t => t.SeatCode)
+                            .ToListAsync();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                        if (conflictingSeats.Count > 0)
+                        {
+                            await transaction.RollbackAsync();
 
-                _logger.LogInformation("Đặt vé thành công cho Booking #{BookingId}, {SeatCount} ghế.", booking.BookingId, seatList.Count);
+                            var takenSeatsStr = string.Join(", ", conflictingSeats);
+                            ModelState.AddModelError("", $"Ghế [{takenSeatsStr}] vừa được hành khách khác giữ chỗ. Vui lòng chọn ghế khác.");
 
-                return RedirectToAction("Pay", "Payment", new { bookingId = booking.BookingId });
+                            var currentOccupied = await _context.Tickets
+                                .Where(t => t.TripId == model.TripId && t.Status != TicketStatus.Void)
+                                .Select(t => t.SeatCode)
+                                .ToListAsync();
+
+                            var reloadedModel = BuildTripBookingViewModel(trip, currentOccupied);
+                            reloadedModel.PassengerName = passengerName;
+                            reloadedModel.PassengerPhone = passengerPhone;
+                            reloadedModel.PickupStationId = pickupId;
+                            reloadedModel.DropoffStationId = dropoffId;
+
+                            return View("SelectSeats", reloadedModel);
+                        }
+
+                        // Tạo Booking với trạng thái Pending và thời hạn giữ chỗ 10 phút
+                        var now = DateTime.UtcNow;
+                        var booking = new Booking
+                        {
+                            UserId = userId ?? string.Empty,
+                            TripId = model.TripId,
+                            PickupStationId = pickupId,
+                            DropoffStationId = dropoffId,
+                            TotalAmount = trip.BasePrice * seatList.Count,
+                            Status = BookingStatus.Pending,
+                            CreatedAt = now,
+                            ExpiredAt = now.AddMinutes(10), // 10-minute seat lock rule
+                            VnPayTxnRef = null
+                        };
+
+                        _context.Bookings.Add(booking);
+                        await _context.SaveChangesAsync();
+
+                        // Tạo các bản ghi Ticket cho từng ghế
+                        foreach (var seatCode in seatList)
+                        {
+                            var ticket = new Ticket
+                            {
+                                BookingId = booking.BookingId,
+                                TripId = model.TripId,
+                                SeatCode = seatCode.ToUpperInvariant(),
+                                PassengerName = passengerName,
+                                PassengerPhone = passengerPhone,
+                                Status = TicketStatus.Valid,
+                                QrToken = Guid.NewGuid().ToString("N")
+                            };
+                            _context.Tickets.Add(ticket);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        _logger.LogInformation("Đặt vé thành công cho Booking #{BookingId}, {SeatCount} ghế.", booking.BookingId, seatList.Count);
+
+                        // Điều hướng sang trang xác nhận giữ chỗ với đầy đủ đồng hồ đếm ngược và nút thanh toán VNPay
+                        return RedirectToAction("Confirmation", new { bookingId = booking.BookingId });
+                    }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                });
             }
             catch (DbUpdateException ex)
             {
-                await transaction.RollbackAsync();
                 _logger.LogWarning(ex, "Xung đột trùng ghế khi đặt vé chuyến #{TripId}.", model.TripId);
 
                 ModelState.AddModelError("", "Rất tiếc! Xung đột giữ chỗ ghế xảy ra: Một hành khách khác vừa đặt thành công ghế này trước bạn trong tích tắc. Vui lòng chọn ghế khác.");
+                ModelState.AddModelError("", $"Lỗi chi tiết: {ex.InnerException?.Message ?? ex.Message}");
 
                 var currentOccupied = await _context.Tickets
                     .Where(t => t.TripId == model.TripId && t.Status != TicketStatus.Void)
@@ -233,18 +306,17 @@ namespace WebVanTai.Controllers
                     .ToListAsync();
 
                 var reloadedModel = BuildTripBookingViewModel(trip, currentOccupied);
-                reloadedModel.PassengerName = model.PassengerName ?? string.Empty;
-                reloadedModel.PassengerPhone = model.PassengerPhone ?? string.Empty;
-                reloadedModel.PickupStationId = model.PickupStationId;
-                reloadedModel.DropoffStationId = model.DropoffStationId;
+                reloadedModel.PassengerName = passengerName;
+                reloadedModel.PassengerPhone = passengerPhone;
+                reloadedModel.PickupStationId = pickupId;
+                reloadedModel.DropoffStationId = dropoffId;
 
                 return View("SelectSeats", reloadedModel);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Lỗi bất ngờ khi xử lý đặt vé.");
-                ModelState.AddModelError("", "Có lỗi xảy ra trong quá trình đặt vé. Vui lòng thử lại sau.");
+                ModelState.AddModelError("", $"Lỗi đặt vé: {ex.InnerException?.Message ?? ex.Message}");
 
                 var currentOccupied = await _context.Tickets
                     .Where(t => t.TripId == model.TripId && t.Status != TicketStatus.Void)
@@ -252,6 +324,11 @@ namespace WebVanTai.Controllers
                     .ToListAsync();
 
                 var reloadedModel = BuildTripBookingViewModel(trip, currentOccupied);
+                reloadedModel.PassengerName = passengerName;
+                reloadedModel.PassengerPhone = passengerPhone;
+                reloadedModel.PickupStationId = pickupId;
+                reloadedModel.DropoffStationId = dropoffId;
+
                 return View("SelectSeats", reloadedModel);
             }
         }

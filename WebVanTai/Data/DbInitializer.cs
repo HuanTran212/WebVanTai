@@ -328,6 +328,33 @@ namespace WebVanTai.Data
                 await context.SaveChangesAsync();
             }
 
+            // 7.1. Cập nhật chuyến đi mẫu: Luôn đảm bảo ngày giờ khởi hành trong tương lai
+            var nowUtc = DateTime.UtcNow;
+            var expiredTrips = await context.Trips
+                .Where(t => t.DepartureTime <= nowUtc)
+                .ToListAsync();
+
+            if (expiredTrips.Count > 0)
+            {
+                for (int i = 0; i < expiredTrips.Count; i++)
+                {
+                    var expTrip = expiredTrips[i];
+                    var dayOffset = (i % 2 == 0) ? 1 : 2;
+                    var newDepartureDate = DateTime.Today.AddDays(dayOffset);
+                    var originalHour = expTrip.DepartureTime.Hour;
+                    var originalMinute = expTrip.DepartureTime.Minute;
+                    var duration = expTrip.ArrivalTime > expTrip.DepartureTime
+                        ? (expTrip.ArrivalTime - expTrip.DepartureTime)
+                        : TimeSpan.FromHours(5);
+
+                    expTrip.DepartureTime = newDepartureDate.AddHours(originalHour).AddMinutes(originalMinute);
+                    expTrip.ArrivalTime = expTrip.DepartureTime.Add(duration);
+                    expTrip.Status = TripStatus.Scheduled;
+                }
+
+                await context.SaveChangesAsync();
+            }
+
             // 8. Bookings & Tickets Seed (Demo trực quan: 3 đơn Paid với 5 Ticket có QrToken cho ngày mai)
             if (!await context.Bookings.AnyAsync())
             {
@@ -339,7 +366,7 @@ namespace WebVanTai.Data
                     var tomorrow = DateTime.Today.AddDays(1);
                     var tomorrowTrips = await context.Trips
                         .Include(t => t.Route)
-                        .Where(t => t.DepartureTime >= tomorrow && t.DepartureTime < tomorrow.AddDays(1))
+                        .Where(t => t.DepartureTime >= tomorrow)
                         .OrderBy(t => t.DepartureTime)
                         .ToListAsync();
 
