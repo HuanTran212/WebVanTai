@@ -504,14 +504,21 @@ main {
     border-radius: 2px;
 }
 
-/* ---- Fix Tailwind & Bootstrap Collapse Compatibility ---- */
-.navbar-collapse.collapse {
+.collapse {
     visibility: visible !important;
 }
-.collapse:not(.show) {
-    display: none !important;
+
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important;
+        visibility: visible !important;
+    }
 }
-.collapse.show {
-    display: block !important;
+
+@media (min-width: 768px) {
+    .collapse.d-md-block {
+        display: block !important;
+        visibility: visible !important;
+    }
 }
 
