@@ -8,13 +8,33 @@
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
-    <!-- Mobile-first: chặn zoom khi focus input, cho phép chạy full màn hình trên điện thoại -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#F26522" />
-    <title>@ViewData["Title"] - Soát Vé | WebVanTai</title>
+    <title>@ViewData["Title"] - Soát Vé | G-Trans</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- UI polish + Tailwind (prefix tw-, không reset Bootstrap) -->
+    <link rel="stylesheet" href="~/css/ui-polish.css" asp-append-version="true" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            prefix: 'tw-',
+            corePlugins: { preflight: false },
+            theme: {
+                extend: {
+                    colors: {
+                        futa: { DEFAULT: '#F26522', dark: '#D95413', light: '#FFF5EE', subtle: '#FFEEDD' },
+                        night: '#0F172A'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
 
     <style>
         :root {
@@ -93,10 +113,14 @@
                 color: #94A3B8;
                 font-size: 0.68rem;
                 font-weight: 600;
-                padding: 0.25rem 0;
+                padding: 0.45rem 0 0.35rem;
                 border-radius: 10px;
-                transition: color 0.2s;
+                transition: color 0.2s, transform 0.2s;
             }
+
+                .bottom-nav a:active {
+                    transform: scale(0.94);
+                }
 
                 .bottom-nav a i {
                     display: block;
@@ -291,7 +315,7 @@
         <div class="app-title">
             <i class="bi bi-qr-code-scan"></i>
             <div>
-                <div>Soát Vé <span style="opacity:.85">WebVanTai</span></div>
+                <div>Soát Vé <span style="opacity:.85">G-Trans</span></div>
                 <small style="font-size:0.68rem; font-weight:400; opacity:.9; display:block;">Nhân viên soát vé tại bến</small>
             </div>
         </div>

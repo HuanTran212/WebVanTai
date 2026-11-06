@@ -1,4 +1,11 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+// ============================================================
+// site.js — JS dùng chung cho trang khách hàng
+// ============================================================
 
-// Write your JavaScript code.
+// Navbar: đổ bóng nhẹ khi cuộn xuống để tạo chiều sâu
+window.addEventListener('scroll', function () {
+    var nav = document.querySelector('header .navbar');
+    if (nav) {
+        nav.classList.toggle('navbar-scrolled', window.scrollY > 8);
+    }
+}, { passive: true });

@@ -1,57 +1,60 @@
 @model WebVanTai.Controllers.TripSearchPageViewModel
 @{
-    ViewData["Title"] = "Danh Sách Chuyến Xe Khách - FutaBus";
+    ViewData["Title"] = "Danh Sách Chuyến Xe Khách - G-Trans";
     var currentDate = Model.Filter.DepartureDate ?? DateTime.Today.AddDays(1);
 }
 
 <style>
-    :root {
-        --futa-orange: #F26522;
-        --futa-orange-hover: #d85415;
-        --futa-orange-light: #fff5ee;
-        --futa-orange-subtle: #ffeedd;
-    }
-
-    .futa-search-strip {
+    /* Top Search Strip Modern */
+    .gtrans-search-strip {
         background: #ffffff;
-        border-radius: 16px;
+        border-radius: 20px;
         padding: 16px 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e9ecef;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+        border: 1px solid #F1F5F9;
         margin-bottom: 1.5rem;
     }
 
+    /* Date Scroll Bar */
     .date-scroll-bar {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         overflow-x: auto;
         padding-bottom: 8px;
-        margin-bottom: 1.5rem;
-        scrollbar-width: thin;
+        margin-bottom: 1.75rem;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .date-scroll-bar::-webkit-scrollbar {
+        display: none;
     }
 
     .date-pill-btn {
         flex: 0 0 auto;
         background: #ffffff;
-        border: 1.5px solid #dee2e6;
-        border-radius: 12px;
-        padding: 8px 16px;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 10px 18px;
         text-align: center;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         min-width: 110px;
+        scroll-snap-align: start;
     }
 
     .date-pill-btn:hover {
         border-color: var(--futa-orange);
         color: var(--futa-orange);
+        transform: translateY(-2px);
     }
 
     .date-pill-btn.active {
-        background: var(--futa-orange);
-        border-color: var(--futa-orange);
+        background: linear-gradient(135deg, #F26522 0%, #EA580C 100%);
+        border-color: #F26522;
         color: #ffffff;
-        box-shadow: 0 4px 12px rgba(242, 101, 34, 0.35);
+        box-shadow: 0 8px 18px rgba(242, 101, 34, 0.35);
+        transform: translateY(-2px);
     }
 
     .date-pill-day {
@@ -62,28 +65,29 @@
     }
 
     .date-pill-date {
-        font-size: 1rem;
+        font-size: 1.05rem;
         font-weight: 800;
     }
 
     /* Filter Sidebar */
-    .filter-card {
+    .gtrans-filter-card {
         background: #ffffff;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e9ecef;
+        border-radius: 20px;
+        padding: 22px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+        border: 1px solid #F1F5F9;
     }
 
     .filter-section-title {
-        font-size: 0.88rem;
+        font-size: 0.85rem;
         font-weight: 700;
         text-transform: uppercase;
-        color: #495057;
+        color: #334155;
         margin-bottom: 12px;
         display: flex;
         align-items: center;
         gap: 6px;
+        letter-spacing: 0.02em;
     }
 
     .filter-chip-group {
@@ -96,74 +100,23 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 6px 10px;
-        border-radius: 8px;
-        transition: background 0.15s ease;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: #F8FAFC;
+        border: 1px solid #F1F5F9;
+        transition: all 0.2s ease;
         cursor: pointer;
+        margin-bottom: 0;
     }
 
     .filter-checkbox-item:hover {
-        background: var(--futa-orange-light);
+        background: #FFF5EE;
+        border-color: #FED7AA;
     }
 
     .form-check-input:checked {
         background-color: var(--futa-orange);
         border-color: var(--futa-orange);
-    }
-
-    /* Trip Card Styles */
-    .trip-card {
-        border: 1px solid #edf0f2;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .trip-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
-        border-color: rgba(242, 101, 34, 0.3);
-    }
-
-    .trip-line-bar {
-        height: 2px;
-        background: #dee2e6;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1;
-    }
-
-    .trip-line-icon {
-        position: relative;
-        z-index: 2;
-    }
-
-    .btn-futa-select-trip {
-        background: var(--futa-orange);
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        transition: all 0.2s ease;
-    }
-
-    .btn-futa-select-trip:hover {
-        background: var(--futa-orange-hover);
-        color: #ffffff;
-        box-shadow: 0 6px 15px rgba(242, 101, 34, 0.4);
-    }
-
-    .btn-futa-primary {
-        background: var(--futa-orange);
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    .btn-futa-primary:hover {
-        background: var(--futa-orange-hover);
-        color: #ffffff;
     }
 
     /* Loading Overlay */
@@ -173,13 +126,13 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(2px);
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(4px);
         display: none;
         align-items: center;
         justify-content: center;
-        z-index: 20;
-        border-radius: 16px;
+        z-index: 30;
+        border-radius: 20px;
     }
 
     .filter-loading-overlay.active {
@@ -188,12 +141,15 @@
 </style>
 
 <!-- 1. SEARCH TOP STRIP -->
-<div class="futa-search-strip">
-    <form id="topSearchForm" class="row g-2 align-items-center">
+<div class="gtrans-search-strip">
+    <form id="topSearchForm" class="row g-2 g-md-3 align-items-center">
+        <!-- Điểm Đi -->
         <div class="col-12 col-md-3">
             <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 text-danger"><i class="bi bi-geo-alt-fill"></i></span>
-                <select class="form-select border-start-0 ps-0 fw-semibold" id="topStartProvince" name="startProvince">
+                <span class="input-group-text bg-light border-end-0 text-danger rounded-start-pill ps-3">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </span>
+                <select class="form-select border-start-0 ps-0 fw-bold text-dark rounded-end-pill" id="topStartProvince" name="startProvince">
                     <option value="">-- Tất cả điểm đi --</option>
                     @foreach (var p in Model.AvailableStartProvinces)
                     {
@@ -203,16 +159,20 @@
             </div>
         </div>
 
+        <!-- Nút Đổi Chiều -->
         <div class="col-12 col-md-auto text-center">
-            <button type="button" class="btn btn-outline-warning btn-sm rounded-circle p-2" id="btnTopSwap" title="Đổi chiều">
-                <i class="bi bi-arrow-left-right text-dark"></i>
+            <button type="button" class="swap-btn-round" id="btnTopSwap" title="Hoán đổi điểm đi và điểm đến" style="width: 38px; height: 38px;">
+                <i class="bi bi-arrow-left-right fs-6"></i>
             </button>
         </div>
 
+        <!-- Điểm Đến -->
         <div class="col-12 col-md-3">
             <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 text-warning"><i class="bi bi-flag-fill"></i></span>
-                <select class="form-select border-start-0 ps-0 fw-semibold" id="topEndProvince" name="endProvince">
+                <span class="input-group-text bg-light border-end-0 text-warning rounded-start-pill ps-3">
+                    <i class="bi bi-flag-fill"></i>
+                </span>
+                <select class="form-select border-start-0 ps-0 fw-bold text-dark rounded-end-pill" id="topEndProvince" name="endProvince">
                     <option value="">-- Tất cả điểm đến --</option>
                     @foreach (var p in Model.AvailableEndProvinces)
                     {
@@ -222,24 +182,28 @@
             </div>
         </div>
 
+        <!-- Ngày Đi -->
         <div class="col-12 col-md-3">
             <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 text-primary"><i class="bi bi-calendar3"></i></span>
-                <input type="date" class="form-control border-start-0 ps-0 fw-semibold" id="topDepartureDate" name="departureDate" 
+                <span class="input-group-text bg-light border-end-0 text-primary rounded-start-pill ps-3">
+                    <i class="bi bi-calendar3"></i>
+                </span>
+                <input type="date" class="form-control border-start-0 ps-0 fw-bold text-dark rounded-end-pill" id="topDepartureDate" name="departureDate" 
                        value="@(Model.Filter.DepartureDate?.ToString("yyyy-MM-dd") ?? "")" 
                        min="@DateTime.Today.ToString("yyyy-MM-dd")">
             </div>
         </div>
 
-        <div class="col-12 col-md-auto">
-            <button type="submit" class="btn btn-futa-primary px-4 py-2 w-100">
-                <i class="bi bi-search me-1"></i> Tìm kiếm
+        <!-- Nút Tìm -->
+        <div class="col-12 col-md-auto flex-grow-1">
+            <button type="submit" class="btn btn-futa fw-bold px-4 py-2 w-100 rounded-pill shadow-sm">
+                <i class="bi bi-search me-1"></i> Tìm xe
             </button>
         </div>
     </form>
 </div>
 
-<!-- 2. DATE SELECTOR STRIP (CLICK TO FILTER INSTANTLY) -->
+<!-- 2. DATE SELECTOR STRIP (7 NGÀY) -->
 <div class="date-scroll-bar" id="dateScrollBar">
     @for (int i = 0; i < 7; i++)
     {
@@ -256,13 +220,13 @@
     }
 </div>
 
-<!-- 3. MAIN CONTENT: 2 COLUMNS (LEFT: ADVANCED FILTERS, RIGHT: AJAX RESULTS) -->
+<!-- 3. MAIN CONTENT: 2 COLUMNS (SIDEBAR FILTERS + TRIP LIST) -->
 <div class="row g-4">
-    <!-- MOBILE FILTER TRIGGER BUTTON -->
+    <!-- MOBILE FILTER TOGGLE BUTTON -->
     <div class="col-12 d-md-none">
-        <button class="btn btn-outline-warning text-dark w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2" 
+        <button class="btn btn-outline-warning text-dark w-100 fw-bold py-2.5 rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2" 
                 type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebarCollapse">
-            <i class="bi bi-funnel-fill text-danger"></i>
+            <i class="bi bi-funnel-fill text-futa"></i>
             <span>Bộ Lọc Nâng Cao (<span id="mobileFilterCountBadge">0</span>)</span>
         </button>
     </div>
@@ -270,12 +234,12 @@
     <!-- FILTER SIDEBAR -->
     <div class="col-12 col-md-4 col-lg-3">
         <div class="collapse d-md-block" id="filterSidebarCollapse">
-            <div class="filter-card">
+            <div class="gtrans-filter-card">
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                    <h5 class="h6 fw-bold mb-0 text-dark">
-                        <i class="bi bi-funnel-fill text-danger me-1"></i> BỘ LỌC TÌM KIẾM
+                    <h5 class="h6 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-funnel-fill text-futa"></i> BỘ LỌC TÌM KIẾM
                     </h5>
-                    <button type="button" class="btn btn-link btn-sm text-muted p-0 text-decoration-none" id="btnResetFilters">
+                    <button type="button" class="btn btn-link btn-sm text-muted p-0 text-decoration-none fw-semibold" id="btnResetFilters">
                         <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
                     </button>
                 </div>
@@ -285,7 +249,7 @@
                     <label class="filter-section-title" for="selectSortBy">
                         <i class="bi bi-sort-down text-primary"></i> Sắp xếp theo
                     </label>
-                    <select class="form-select form-select-sm" id="selectSortBy">
+                    <select class="form-select form-select-sm rounded-3 fw-semibold text-dark" id="selectSortBy">
                         <option value="time_asc" selected="@(Model.Filter.SortBy == "time_asc" ? "selected" : null)">Giờ đi: Sớm nhất</option>
                         <option value="time_desc" selected="@(Model.Filter.SortBy == "time_desc" ? "selected" : null)">Giờ đi: Muộn nhất</option>
                         <option value="price_asc" selected="@(Model.Filter.SortBy == "price_asc" ? "selected" : null)">Giá vé: Thấp đến cao</option>
@@ -297,44 +261,48 @@
                 <!-- 2. KHUNG GIỜ XUẤT BẾN -->
                 <div class="mb-4">
                     <div class="filter-section-title">
-                        <i class="bi bi-clock-history text-danger"></i> Khung giờ xuất bến
+                        <i class="bi bi-clock-history text-danger"></i> Giờ xuất bến
                     </div>
                     <div class="filter-chip-group">
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-time" type="checkbox" value="early" 
                                        @(Model.Filter.TimeRanges.Contains("early") ? "checked" : "")>
-                                <span class="small">Sáng sớm (00:00 - 06:00)</span>
+                                <span class="small fw-semibold text-dark">Sáng sớm (00:00 - 06:00)</span>
                             </span>
+                            <i class="bi bi-moon-stars text-secondary small"></i>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-time" type="checkbox" value="morning" 
                                        @(Model.Filter.TimeRanges.Contains("morning") ? "checked" : "")>
-                                <span class="small">Buổi sáng (06:00 - 12:00)</span>
+                                <span class="small fw-semibold text-dark">Buổi sáng (06:00 - 12:00)</span>
                             </span>
+                            <i class="bi bi-sun text-warning small"></i>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-time" type="checkbox" value="afternoon" 
                                        @(Model.Filter.TimeRanges.Contains("afternoon") ? "checked" : "")>
-                                <span class="small">Buổi chiều (12:00 - 18:00)</span>
+                                <span class="small fw-semibold text-dark">Buổi chiều (12:00 - 18:00)</span>
                             </span>
+                            <i class="bi bi-brightness-high text-warning small"></i>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-time" type="checkbox" value="evening" 
                                        @(Model.Filter.TimeRanges.Contains("evening") ? "checked" : "")>
-                                <span class="small">Buổi tối (18:00 - 24:00)</span>
+                                <span class="small fw-semibold text-dark">Buổi tối (18:00 - 24:00)</span>
                             </span>
+                            <i class="bi bi-moon text-primary small"></i>
                         </label>
                     </div>
                 </div>
 
-                <!-- 3. LOẠI XE (BusType) -->
+                <!-- 3. LOẠI XE -->
                 <div class="mb-4">
                     <div class="filter-section-title">
-                        <i class="bi bi-bus-front text-warning"></i> Loại xe (BusType)
+                        <i class="bi bi-bus-front text-warning"></i> Loại xe khách
                     </div>
                     <div class="filter-chip-group">
                         @foreach (var bt in Model.AvailableBusTypes)
@@ -343,22 +311,22 @@
                                 <span class="d-flex align-items-center gap-2">
                                     <input class="form-check-input filter-bustype" type="checkbox" value="@bt.BusTypeId" 
                                            @(Model.Filter.BusTypeIds.Contains(bt.BusTypeId) ? "checked" : "")>
-                                    <span class="small">@bt.Name</span>
+                                    <span class="small fw-semibold text-dark">@bt.Name</span>
                                 </span>
-                                <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">@bt.TotalSeats chỗ</span>
+                                <span class="badge bg-light text-muted border rounded-pill" style="font-size: 0.7rem;">@bt.TotalSeats chỗ</span>
                             </label>
                         }
                     </div>
                 </div>
 
-                <!-- 4. KHOẢNG GIÁ -->
+                <!-- 4. KHOẢNG GIÁ VÉ -->
                 <div class="mb-4">
                     <div class="filter-section-title">
                         <i class="bi bi-cash-stack text-success"></i> Khoảng giá vé
                     </div>
                     <div class="d-flex justify-content-between small text-muted mb-1">
-                        <span>Tối đa:</span>
-                        <strong id="priceLabel" style="color: var(--futa-orange);">
+                        <span>Mức giá tối đa:</span>
+                        <strong id="priceLabel" class="text-futa fs-6">
                             @((Model.Filter.MaxPrice ?? Model.GlobalMaxPrice).ToString("N0")) đ
                         </strong>
                     </div>
@@ -374,14 +342,14 @@
 
                     <!-- Quick Price Buttons -->
                     <div class="d-flex flex-wrap gap-1 mt-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 quick-price" data-price="250000" style="font-size: 0.75rem;">≤ 250k</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 quick-price" data-price="350000" style="font-size: 0.75rem;">≤ 350k</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 quick-price" data-price="@((int)Model.GlobalMaxPrice)" style="font-size: 0.75rem;">Tất cả</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 quick-price rounded-pill" data-price="250000" style="font-size: 0.75rem;">≤ 250k</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 quick-price rounded-pill" data-price="350000" style="font-size: 0.75rem;">≤ 350k</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 quick-price rounded-pill" data-price="@((int)Model.GlobalMaxPrice)" style="font-size: 0.75rem;">Tất cả</button>
                     </div>
                 </div>
 
-                <!-- 5. SỐ GHẾ TRỐNG CÒN LẠI -->
-                <div class="mb-3">
+                <!-- 5. SỐ GHẾ TRỐNG TỐI THIỂU -->
+                <div class="mb-2">
                     <div class="filter-section-title">
                         <i class="bi bi-person-check-fill text-info"></i> Số ghế trống tối thiểu
                     </div>
@@ -390,28 +358,28 @@
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-seats" type="radio" name="seatsFilter" value="0" 
                                        @(Model.Filter.MinSeats == 0 ? "checked" : "")>
-                                <span class="small">Tất cả chuyến xe</span>
+                                <span class="small fw-semibold text-dark">Tất cả chuyến xe</span>
                             </span>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-seats" type="radio" name="seatsFilter" value="1" 
                                        @(Model.Filter.MinSeats == 1 ? "checked" : "")>
-                                <span class="small">Còn ít nhất 1 chỗ</span>
+                                <span class="small fw-semibold text-dark">Còn ít nhất 1 chỗ</span>
                             </span>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-seats" type="radio" name="seatsFilter" value="2" 
                                        @(Model.Filter.MinSeats == 2 ? "checked" : "")>
-                                <span class="small">Còn ít nhất 2 chỗ</span>
+                                <span class="small fw-semibold text-dark">Còn ít nhất 2 chỗ</span>
                             </span>
                         </label>
                         <label class="filter-checkbox-item">
                             <span class="d-flex align-items-center gap-2">
                                 <input class="form-check-input filter-seats" type="radio" name="seatsFilter" value="4" 
                                        @(Model.Filter.MinSeats == 4 ? "checked" : "")>
-                                <span class="small">Còn ít nhất 4 chỗ</span>
+                                <span class="small fw-semibold text-dark">Còn ít nhất 4 chỗ</span>
                             </span>
                         </label>
                     </div>
@@ -420,12 +388,12 @@
         </div>
     </div>
 
-    <!-- TRIP LIST CONTAINER (AJAX/FETCH TARGET) -->
+    <!-- TRIP LIST CONTAINER (AJAX FETCH TARGET) -->
     <div class="col-12 col-md-8 col-lg-9 position-relative">
         <div class="filter-loading-overlay" id="loadingOverlay">
-            <div class="text-center p-3 bg-white rounded-3 shadow">
-                <div class="spinner-border text-warning" role="status"></div>
-                <div class="small fw-bold text-dark mt-2">Đang tải danh sách chuyến xe...</div>
+            <div class="text-center p-4 bg-white rounded-4 shadow-lg border">
+                <div class="spinner-border text-warning" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                <div class="small fw-bold text-dark mt-2">Đang tải danh sách chuyến xe G-Trans...</div>
             </div>
         </div>
 
@@ -471,7 +439,6 @@
         if (topSearchForm) {
             topSearchForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                // Đồng bộ ngày vào date buttons nếu có
                 const chosenDate = departureDateInput.value;
                 dateButtons.forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.date === chosenDate);
@@ -561,10 +528,17 @@
         }
 
         // Core AJAX / Fetch function
+        let currentFilterAbortController = null;
+
         function triggerAjaxFilter() {
             if (loadingOverlay) loadingOverlay.classList.add('active');
 
-            // 1. Collect filter values
+            if (currentFilterAbortController) {
+                currentFilterAbortController.abort();
+            }
+            currentFilterAbortController = new AbortController();
+            const signal = currentFilterAbortController.signal;
+
             const params = new URLSearchParams();
 
             if (startProvinceSelect && startProvinceSelect.value) {
@@ -577,72 +551,41 @@
                 params.append('departureDate', departureDateInput.value);
             }
 
-            // Time ranges
             const selectedTimes = Array.from(document.querySelectorAll('.filter-time:checked')).map(cb => cb.value);
-            if (selectedTimes.length > 0) {
-                params.append('timeRanges', selectedTimes.join(','));
-            }
+            selectedTimes.forEach(t => params.append('timeRanges', t));
 
-            // Bus types
             const selectedBusTypes = Array.from(document.querySelectorAll('.filter-bustype:checked')).map(cb => cb.value);
-            if (selectedBusTypes.length > 0) {
-                params.append('busTypeIds', selectedBusTypes.join(','));
-            }
+            selectedBusTypes.forEach(b => params.append('busTypeIds', b));
 
-            // Max price
-            if (priceSlider && priceSlider.value < priceSlider.max) {
+            if (priceSlider && priceSlider.value) {
                 params.append('maxPrice', priceSlider.value);
             }
 
-            // Min seats
-            const selectedSeat = document.querySelector('.filter-seats:checked');
-            if (selectedSeat && parseInt(selectedSeat.value) > 0) {
-                params.append('minSeats', selectedSeat.value);
+            const selectedSeats = document.querySelector('.filter-seats:checked');
+            if (selectedSeats && selectedSeats.value) {
+                params.append('minSeats', selectedSeats.value);
             }
 
-            // Sort
             if (selectSortBy && selectSortBy.value) {
                 params.append('sortBy', selectSortBy.value);
             }
 
-            // Update badge count
-            let filterCount = selectedTimes.length + selectedBusTypes.length;
-            if (selectedSeat && parseInt(selectedSeat.value) > 0) filterCount++;
-            if (priceSlider && priceSlider.value < priceSlider.max) filterCount++;
-            const mobileBadge = document.getElementById('mobileFilterCountBadge');
-            if (mobileBadge) mobileBadge.innerText = filterCount;
-
-            // 2. Fetch partial view from server
-            const url = `/Trips/Filter?${params.toString()}`;
-
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Network error: ' + res.status);
-                return res.text();
-            })
-            .then(html => {
-                if (tripsContainer) {
-                    tripsContainer.innerHTML = html;
-                }
-                // Update URL query string without reloading page
-                history.replaceState(null, '', `/Trips?${params.toString()}`);
-            })
-            .catch(err => {
-                console.error('Filter error:', err);
-                if (tripsContainer) {
-                    tripsContainer.innerHTML = `
-                        <div class="alert alert-danger my-3">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i> Lỗi khi tải dữ liệu chuyến xe. Vui lòng thử lại.
-                        </div>`;
-                }
-            })
-            .finally(() => {
-                if (loadingOverlay) loadingOverlay.classList.remove('active');
-            });
+            fetch(`/Trips/FilterTrips?${params.toString()}`, { signal })
+                .then(res => {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.text();
+                })
+                .then(html => {
+                    if (tripsContainer) tripsContainer.innerHTML = html;
+                })
+                .catch(err => {
+                    if (err.name !== 'AbortError') {
+                        console.error('Lỗi lọc chuyến xe:', err);
+                    }
+                })
+                .finally(() => {
+                    if (loadingOverlay) loadingOverlay.classList.remove('active');
+                });
         }
     });
 </script>

@@ -4,7 +4,7 @@
 - **Framework:** ASP.NET Core Web App (Model-View-Controller) on **.NET 10.0**.
 - **ORM & Database:** Entity Framework Core 10 (Code-First) with **SQL Server LocalDB** (`Server=(localdb)\\mssqllocaldb;Database=BusTicketDb;Trusted_Connection=True;MultipleActiveResultSets=true`).
 - **Authentication & RBAC:** ASP.NET Core Identity (`ApplicationUser : IdentityUser`) with 4 Roles: `Admin`, `RouteManager`, `TicketInspector`, `Customer`.
-- **Frontend:** Razor Views (`.cshtml`), Bootstrap 5 (Mobile-First responsive, FutaBus orange theme `#F26522`), Leaflet.js (OpenStreetMap), `html5-qrcode` (Camera scanner).
+- **Frontend:** Razor Views (`.cshtml`), Bootstrap 5 (Mobile-First responsive, G-Trans orange theme `#F26522`), Leaflet.js (OpenStreetMap), `html5-qrcode` (Camera scanner).
 - **NuGet Packages:** `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Microsoft.AspNetCore.Identity.UI`, `QRCoder`.
 
 ## 2. Directory & Area Partitioning (Strict Team Boundaries)

@@ -1,362 +1,185 @@
 @model WebVanTai.Controllers.HomeViewModel
 @{
-    ViewData["Title"] = "FutaBus - Hệ Thống Đặt Vé Xe Khách Trực Tuyến Toàn Quốc";
+    ViewData["Title"] = "G-Trans - Hệ Thống Đặt Vé Xe Khách Cao Cấp & Trực Tuyến Toàn Quốc";
     var tomorrow = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
     var today = DateTime.Today.ToString("yyyy-MM-dd");
 }
 
 <style>
-    :root {
-        --futa-orange: #F26522;
-        --futa-orange-hover: #d85415;
-        --futa-orange-light: #fff5ee;
-        --futa-orange-subtle: #ffeedd;
-        --futa-green: #00613d;
-        --futa-green-light: #e8f5e9;
-        --futa-dark: #222222;
-        --futa-gray: #6c757d;
-        --futa-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        --futa-border-radius: 16px;
-    }
-
-    /* Hero Section */
-    .hero-banner {
-        background: linear-gradient(135deg, rgba(242, 101, 34, 0.92) 0%, rgba(200, 75, 15, 0.95) 100%),
+    /* Hero Banner Modern */
+    .gtrans-hero {
+        background: linear-gradient(135deg, rgba(242, 101, 34, 0.94) 0%, rgba(200, 65, 12, 0.96) 60%, rgba(15, 23, 42, 0.92) 100%),
                     url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-        border-radius: 24px;
-        padding: 40px 24px 70px;
-        color: white;
+        border-radius: 28px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 2rem;
+        box-shadow: 0 20px 40px -15px rgba(242, 101, 34, 0.3);
     }
 
-    .hero-banner::after {
+    .gtrans-hero::before {
         content: "";
         position: absolute;
-        bottom: -50px;
-        right: -50px;
-        width: 250px;
-        height: 250px;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
-        border-radius: 50%;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 50%);
         pointer-events: none;
     }
 
-    .futa-badge-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(8px);
-        padding: 6px 16px;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-    }
-
-    /* Floating Search Widget */
-    .search-card-wrapper {
-        margin-top: -55px;
+    /* Floating Booking Box */
+    .booking-floating-box {
+        margin-top: -65px;
         position: relative;
-        z-index: 10;
+        z-index: 20;
     }
 
-    .search-card {
-        background: #ffffff;
-        border-radius: var(--futa-border-radius);
-        box-shadow: 0 15px 40px rgba(242, 101, 34, 0.12), 0 5px 15px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(242, 101, 34, 0.15);
-        padding: 24px;
+    @@media (max-width: 768px) {
+        .booking-floating-box {
+            margin-top: -35px;
+        }
     }
 
-    /* Trip Type Radio Chips */
-    .trip-type-pill {
-        display: inline-flex;
-        background: #f1f3f5;
-        border-radius: 30px;
+    /* Segmented trip type selector */
+    .trip-type-segmented {
+        background: #F1F5F9;
         padding: 4px;
-        margin-bottom: 18px;
+        border-radius: 9999px;
+        display: inline-flex;
     }
 
-    .trip-type-pill input[type="radio"] {
+    .trip-type-segmented input[type="radio"] {
         display: none;
     }
 
-    .trip-type-pill label {
+    .trip-type-segmented label {
         padding: 6px 18px;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        font-weight: 600;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748B;
         cursor: pointer;
-        color: #495057;
         transition: all 0.2s ease;
         margin: 0;
     }
 
-    .trip-type-pill input[type="radio"]:checked + label {
-        background: var(--futa-orange);
-        color: #ffffff;
-        box-shadow: 0 3px 8px rgba(242, 101, 34, 0.35);
+    .trip-type-segmented input[type="radio"]:checked + label {
+        background: #FFFFFF;
+        color: var(--futa-orange);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    /* Search Inputs */
-    .search-input-box {
-        background: #fbfbfc;
-        border: 1.5px solid #e9ecef;
-        border-radius: 12px;
+    /* Custom Form Input Container */
+    .gtrans-input-wrap {
+        background: #F8FAFC;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 16px;
         padding: 10px 14px;
-        transition: all 0.2s ease;
-        position: relative;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         height: 100%;
     }
 
-    .search-input-box:focus-within {
+    .gtrans-input-wrap:focus-within {
+        background: #FFFFFF;
         border-color: var(--futa-orange);
-        background: #ffffff;
         box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.12);
     }
 
-    .search-input-label {
+    .gtrans-input-label {
         font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
-        color: #868e96;
-        margin-bottom: 2px;
+        color: #94A3B8;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
+        margin-bottom: 2px;
+        letter-spacing: 0.03em;
     }
 
-    .search-select, .search-date {
+    .gtrans-select, .gtrans-date {
         border: none;
         outline: none;
         background: transparent;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #212529;
+        font-size: 0.975rem;
+        font-weight: 700;
+        color: #0F172A;
         width: 100%;
         padding: 0;
-    }
-
-    /* Swap Button */
-    .btn-swap-provinces {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid var(--futa-orange);
-        color: var(--futa-orange);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 10px rgba(242, 101, 34, 0.2);
         cursor: pointer;
-        transition: all 0.25s ease;
-        z-index: 5;
     }
 
-    .btn-swap-provinces:hover {
-        background: var(--futa-orange);
-        color: #ffffff;
-        transform: rotate(180deg) scale(1.08);
-    }
-
-    /* Primary Search Button */
-    .btn-futa-search {
-        background: linear-gradient(135deg, #F26522 0%, #e05312 100%);
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 1.05rem;
-        border-radius: 12px;
-        padding: 12px 24px;
-        border: none;
-        box-shadow: 0 8px 20px rgba(242, 101, 34, 0.35);
-        transition: all 0.25s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        height: 100%;
-        min-height: 56px;
-    }
-
-    .btn-futa-search:hover {
-        background: linear-gradient(135deg, #d85415 0%, #c0450b 100%);
-        color: #ffffff;
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba(242, 101, 34, 0.45);
-    }
-
-    /* Popular Route Cards */
-    .route-card {
+    /* Popular Route Card */
+    .route-card-v2 {
         background: #ffffff;
-        border-radius: var(--futa-border-radius);
+        border-radius: 20px;
+        border: 1px solid #F1F5F9;
         overflow: hidden;
-        border: 1px solid #f1f3f5;
-        box-shadow: var(--futa-card-shadow);
-        transition: all 0.3s ease;
-        height: 100%;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         flex-direction: column;
+        height: 100%;
     }
 
-    .route-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.12);
-        border-color: rgba(242, 101, 34, 0.3);
+    .route-card-v2:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.12);
+        border-color: #FDBA74;
     }
 
-    .route-card-img-wrap {
-        height: 160px;
+    .route-card-v2-img {
+        height: 175px;
         position: relative;
         overflow: hidden;
     }
 
-    .route-card-img {
+    .route-card-v2-img img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.5s ease;
     }
 
-    .route-card:hover .route-card-img {
+    .route-card-v2:hover .route-card-v2-img img {
         transform: scale(1.08);
-    }
-
-    .route-price-tag {
-        position: absolute;
-        bottom: 12px;
-        right: 12px;
-        background: rgba(242, 101, 34, 0.95);
-        color: #ffffff;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        backdrop-filter: blur(4px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .route-duration-badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        background: rgba(0, 0, 0, 0.65);
-        color: #ffffff;
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        backdrop-filter: blur(4px);
-    }
-
-    /* Feature Pillars */
-    .feature-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px 20px;
-        border: 1px solid #eef0f2;
-        transition: all 0.3s ease;
-        height: 100%;
-        text-align: center;
-    }
-
-    .feature-card:hover {
-        border-color: var(--futa-orange);
-        box-shadow: 0 10px 25px rgba(242, 101, 34, 0.1);
-        transform: translateY(-3px);
-    }
-
-    .feature-icon-circle {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: var(--futa-orange-light);
-        color: var(--futa-orange);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        margin: 0 auto 16px;
-        transition: all 0.3s ease;
-    }
-
-    .feature-card:hover .feature-icon-circle {
-        background: var(--futa-orange);
-        color: #ffffff;
-        transform: scale(1.1);
-    }
-
-    /* Step Guide */
-    .step-number {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: var(--futa-orange);
-        color: white;
-        font-weight: 800;
-        font-size: 1.1rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 10px rgba(242, 101, 34, 0.3);
-    }
-
-    /* Quick destination chips */
-    .dest-chip {
-        display: inline-flex;
-        align-items: center;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 20px;
-        padding: 4px 12px;
-        font-size: 0.8rem;
-        color: #495057;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-    }
-
-    .dest-chip:hover {
-        background: var(--futa-orange-subtle);
-        border-color: var(--futa-orange);
-        color: var(--futa-orange);
     }
 </style>
 
 <!-- 1. HERO BANNER -->
-<section class="hero-banner">
+<section class="gtrans-hero p-4 sm:p-5 md:p-6 lg:p-7 text-white mb-4">
     <div class="row align-items-center">
-        <div class="col-lg-8">
-            <span class="futa-badge-pill">
-                <i class="bi bi-shield-check"></i> FutaBus Quality & Comfort
+        <div class="col-12 col-lg-8">
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/20 backdrop-blur-md text-white border border-white/25 shadow-sm mb-3">
+                <i class="bi bi-patch-check-fill text-warning"></i> G-Trans Premium Fleet 2026
             </span>
-            <h1 class="display-5 fw-bold mb-3">
-                CHẤT LƯỢNG LÀ DANH DỰ
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight mb-3">
+                HÀNH TRÌNH ÊM ÁI, <br class="d-none d-sm-inline"/><span style="color: #FFEEDD;">TRỌN VẸN NIỀM VUI</span>
             </h1>
-            <p class="lead mb-4 text-white-50" style="max-width: 650px;">
-                Hệ thống đặt vé xe khách liên tỉnh trực tuyến hiện đại. Xe đời mới tiện nghi, đúng giờ xuất bến, thanh toán an toàn và nhận vé QR tức thì.
+            <p class="lead mb-4 text-white-50" style="max-width: 620px; font-size: 1.05rem;">
+                Hệ thống xe khách liên tỉnh chất lượng cao hàng đầu Việt Nam. Đặt vé trực tuyến nhanh chóng trong 60 giây, chọn chỗ 3D thông minh, thanh toán VNPay bảo mật 100%.
             </p>
-            <div class="d-flex flex-wrap gap-3 text-white small">
-                <div><i class="bi bi-check-circle-fill text-warning me-1"></i> Hơn @Model.TotalTrips chuyến xe mỗi ngày</div>
-                <div><i class="bi bi-check-circle-fill text-warning me-1"></i> @Model.TotalStations trạm đón trả toàn quốc</div>
-                <div><i class="bi bi-check-circle-fill text-warning me-1"></i> Giữ chỗ tức thì 10 phút</div>
+            <div class="d-flex flex-wrap gap-3 gap-md-4 text-white small font-medium">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-warning"></i>
+                    <span><strong>@Model.TotalTrips+</strong> Chuyến xe mỗi ngày</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-warning"></i>
+                    <span><strong>@Model.TotalStations+</strong> Trạm đón trả toàn quốc</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill text-warning"></i>
+                    <span>Giữ chỗ <strong>10 phút</strong> chống trùng vé</span>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- 2. MOBILE-FIRST SEARCH WIDGET (FLOATING CARD) -->
-<div class="container-fluid px-0 search-card-wrapper mb-5">
-    <div class="search-card">
-        <!-- Trip Type Selection -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <div class="trip-type-pill">
+<!-- 2. FLOATING BOOKING WIDGET -->
+<div class="booking-floating-box mb-5">
+    <div class="modern-card p-3 p-sm-4 p-lg-5 shadow-2xl">
+        <!-- Trip Type Segmented Tabs -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="trip-type-segmented">
                 <input type="radio" id="typeOneWay" name="tripType" value="oneway" checked>
                 <label for="typeOneWay"><i class="bi bi-arrow-right me-1"></i> Một chiều</label>
 
@@ -364,21 +187,22 @@
                 <label for="typeRoundTrip"><i class="bi bi-arrow-left-right me-1"></i> Khứ hồi</label>
             </div>
 
-            <div class="text-muted small d-none d-md-block mb-2">
-                <i class="bi bi-info-circle text-primary me-1"></i> Đặt vé trước để đảm bảo vị trí giường/ghế đẹp nhất
+            <div class="text-muted small d-none d-md-flex align-items-center gap-1">
+                <i class="bi bi-shield-check text-success"></i>
+                <span>Cam kết giá niêm yết chính hãng, không phụ thu</span>
             </div>
         </div>
 
         <!-- Search Form -->
         <form method="get" asp-controller="Trips" asp-action="Index" id="futaSearchForm">
-            <div class="row g-3 align-items-center">
+            <div class="row g-2 g-md-3 align-items-center">
                 <!-- Điểm Đi -->
-                <div class="col-12 col-md-3">
-                    <div class="search-input-box">
-                        <div class="search-input-label">
-                            <i class="bi bi-geo-alt-fill text-danger"></i> Điểm đi (Tỉnh / TP)
-                        </div>
-                        <select class="search-select form-select" id="startProvinceSelect" name="startProvince" required>
+                <div class="col-12 col-md-4 col-lg-3">
+                    <div class="gtrans-input-wrap">
+                        <label class="gtrans-input-label" for="startProvinceSelect">
+                            <i class="bi bi-geo-alt-fill text-danger fs-6"></i> Điểm khởi hành
+                        </label>
+                        <select class="gtrans-select" id="startProvinceSelect" name="startProvince" required>
                             <option value="">-- Chọn điểm đi --</option>
                             @foreach (var prov in Model.StartProvinces)
                             {
@@ -388,20 +212,20 @@
                     </div>
                 </div>
 
-                <!-- Swap Button (Mobile: Center button, Desktop: compact between inputs) -->
+                <!-- Nút Đổi Chiều (Desktop & Mobile) -->
                 <div class="col-12 col-md-auto d-flex justify-content-center p-0">
-                    <button type="button" class="btn-swap-provinces" id="btnSwap" title="Hoán đổi điểm đi và điểm đến" aria-label="Hoán đổi điểm đi và đến">
+                    <button type="button" class="swap-btn-round" id="btnSwap" title="Hoán đổi điểm đi và điểm đến" aria-label="Hoán đổi điểm đi và đến">
                         <i class="bi bi-arrow-left-right fs-5"></i>
                     </button>
                 </div>
 
                 <!-- Điểm Đến -->
-                <div class="col-12 col-md-3">
-                    <div class="search-input-box">
-                        <div class="search-input-label">
-                            <i class="bi bi-flag-fill text-warning"></i> Điểm đến (Tỉnh / TP)
-                        </div>
-                        <select class="search-select form-select" id="endProvinceSelect" name="endProvince" required>
+                <div class="col-12 col-md-4 col-lg-3">
+                    <div class="gtrans-input-wrap">
+                        <label class="gtrans-input-label" for="endProvinceSelect">
+                            <i class="bi bi-flag-fill text-warning fs-6"></i> Điểm đến
+                        </label>
+                        <select class="gtrans-select" id="endProvinceSelect" name="endProvince" required>
                             <option value="">-- Chọn điểm đến --</option>
                             @foreach (var prov in Model.EndProvinces)
                             {
@@ -412,36 +236,45 @@
                 </div>
 
                 <!-- Ngày Đi -->
-                <div class="col-12 col-md-2">
-                    <div class="search-input-box">
-                        <div class="search-input-label">
-                            <i class="bi bi-calendar3 text-primary"></i> Ngày khởi hành
-                        </div>
-                        <input type="date" class="search-date form-control" id="departureDateInput" name="departureDate" 
+                <div class="col-12 col-md-3 col-lg-2">
+                    <div class="gtrans-input-wrap">
+                        <label class="gtrans-input-label" for="departureDateInput">
+                            <i class="bi bi-calendar3 text-primary fs-6"></i> Ngày khởi hành
+                        </label>
+                        <input type="date" class="gtrans-date" id="departureDateInput" name="departureDate" 
                                value="@tomorrow" min="@today" required>
                     </div>
                 </div>
 
                 <!-- Nút Tìm Chuyến Xe -->
-                <div class="col-12 col-md-3">
-                    <button type="submit" class="btn-futa-search w-100">
+                <div class="col-12 col-md-12 col-lg-3">
+                    <button type="submit" class="btn btn-futa w-100 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                            style="min-height: 58px; border-radius: 16px; font-size: 1.05rem; letter-spacing: 0.5px;">
                         <i class="bi bi-search fs-5"></i>
                         <span>TÌM CHUYẾN XE</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Quick Popular Destination Suggestions -->
-            <div class="d-flex align-items-center gap-2 mt-3 flex-wrap">
-                <span class="text-muted small fw-semibold">Gợi ý tìm nhanh:</span>
-                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Lâm Đồng&departureDate=@tomorrow" class="dest-chip">
-                    <i class="bi bi-pin-map text-danger me-1"></i> TP.HCM ➔ Đà Lạt
+            <!-- Validation Feedback -->
+            <div id="searchValidationError" class="alert alert-warning py-2 small my-2 d-none rounded-3 border-warning">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="searchValidationText"></span>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top flex-wrap">
+                <span class="text-muted small fw-bold">Gợi ý chặng HOT:</span>
+                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Lâm Đồng&departureDate=@tomorrow" class="quick-route-chip">
+                    <i class="bi bi-pin-map-fill text-danger"></i> TP.HCM ➔ Đà Lạt
                 </a>
-                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Khánh Hòa&departureDate=@tomorrow" class="dest-chip">
-                    <i class="bi bi-pin-map text-warning me-1"></i> TP.HCM ➔ Nha Trang
+                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Khánh Hòa&departureDate=@tomorrow" class="quick-route-chip">
+                    <i class="bi bi-pin-map-fill text-warning"></i> TP.HCM ➔ Nha Trang
                 </a>
-                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Bà Rịa - Vũng Tàu&departureDate=@tomorrow" class="dest-chip">
-                    <i class="bi bi-pin-map text-success me-1"></i> TP.HCM ➔ Vũng Tàu
+                <a href="/Trips?startProvince=Hồ Chí Minh&endProvince=Bà Rịa - Vũng Tàu&departureDate=@tomorrow" class="quick-route-chip">
+                    <i class="bi bi-pin-map-fill text-success"></i> TP.HCM ➔ Vũng Tàu
+                </a>
+                <a href="/Trips?startProvince=Hà Nội&endProvince=Lào Cai&departureDate=@tomorrow" class="quick-route-chip">
+                    <i class="bi bi-pin-map-fill text-primary"></i> Hà Nội ➔ Sapa
                 </a>
             </div>
         </form>
@@ -449,15 +282,19 @@
 </div>
 
 <!-- 3. POPULAR ROUTES SECTION -->
-<section class="mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+<section class="mb-5 pb-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="h3 fw-bold mb-1" style="color: #212529;">
-                <span style="color: var(--futa-orange);"><i class="bi bi-fire"></i> Tuyến Đường</span> Phổ Biến Nhất
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 font-bold">
+                    <i class="bi bi-fire me-1"></i> Tuyến Phổ Biến
+                </span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-0">
+                Các Chặng Xe <span class="text-futa">Được Yêu Thích Nhất</span>
             </h2>
-            <p class="text-muted mb-0">Các chặng xe khách được hành khách tin tưởng lựa chọn hàng ngày</p>
         </div>
-        <a asp-controller="Trips" asp-action="Index" class="btn btn-outline-secondary btn-sm fw-semibold mt-2 mt-sm-0">
+        <a asp-controller="Trips" asp-action="Index" class="btn btn-outline-secondary btn-sm fw-semibold rounded-pill px-3">
             Xem tất cả chuyến xe <i class="bi bi-arrow-right ms-1"></i>
         </a>
     </div>
@@ -468,33 +305,32 @@
             @foreach (var route in Model.PopularRoutes)
             {
                 <div class="col-12 col-sm-6 col-lg-4">
-                    <div class="route-card">
-                        <div class="route-card-img-wrap">
-                            <img src="@route.ImageUrl" alt="@route.StartProvince đi @route.EndProvince" class="route-card-img" loading="lazy">
-                            <div class="route-duration-badge">
-                                <i class="bi bi-clock me-1"></i> ~@route.DurationHours.ToString("0.#") giờ (@route.DistanceKm km)
+                    <div class="route-card-v2">
+                        <div class="route-card-v2-img">
+                            <img src="@route.ImageUrl" alt="@route.StartProvince đi @route.EndProvince" loading="lazy">
+                            <div class="position-absolute top-3 start-3 bg-dark/75 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-pill fw-semibold">
+                                <i class="bi bi-clock me-1 text-warning"></i> ~@route.DurationHours.ToString("0.#")h (@route.DistanceKm km)
                             </div>
-                            <div class="route-price-tag">
+                            <div class="position-absolute bottom-3 end-3 bg-futa text-white text-sm px-3 py-1 rounded-pill fw-bold shadow">
                                 Từ @route.MinPrice.ToString("N0") đ
                             </div>
                         </div>
                         <div class="p-3 d-flex flex-column flex-grow-1">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <h3 class="h5 fw-bold mb-0 text-dark">
-                                    @route.StartProvince <i class="bi bi-arrow-right text-warning mx-1"></i> @route.EndProvince
-                                </h3>
-                            </div>
+                            <h3 class="h5 fw-bold text-dark mb-1 d-flex align-items-center justify-content-between">
+                                <span>@route.StartProvince</span>
+                                <i class="bi bi-arrow-right text-warning fs-5"></i>
+                                <span>@route.EndProvince</span>
+                            </h3>
                             <p class="text-muted small mb-3 flex-grow-1">
                                 <i class="bi bi-bus-front text-secondary me-1"></i> @route.BusTypeSummary
                             </p>
                             <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-                                <span class="badge bg-light text-dark border">
-                                    <i class="bi bi-calendar2-check text-success me-1"></i> Hàng ngày
+                                <span class="badge bg-light text-muted border">
+                                    <i class="bi bi-calendar-check text-success me-1"></i> Chạy hàng ngày
                                 </span>
                                 <a href="/Trips?startProvince=@Uri.EscapeDataString(route.StartProvince)&endProvince=@Uri.EscapeDataString(route.EndProvince)&departureDate=@tomorrow" 
-                                   class="btn btn-sm fw-bold px-3" 
-                                   style="background: var(--futa-orange); color: white; border-radius: 8px;">
-                                    Tìm vé ngay <i class="bi bi-chevron-right ms-1"></i>
+                                   class="btn btn-futa btn-sm fw-bold px-3 rounded-pill">
+                                    Chọn vé <i class="bi bi-chevron-right ms-1"></i>
                                 </a>
                             </div>
                         </div>
@@ -505,62 +341,64 @@
         else
         {
             <div class="col-12 text-center py-4">
-                <div class="alert alert-light border">
-                    <i class="bi bi-info-circle text-primary me-2"></i> Chưa có tuyến xe nào được thiết lập. Hãy truy cập Bảng điều hành để thêm dữ liệu.
+                <div class="alert alert-light border rounded-4 p-4">
+                    <i class="bi bi-info-circle text-primary fs-3 d-block mb-2"></i>
+                    <p class="mb-0 text-muted">Chưa có tuyến xe nào được thiết lập trong hệ thống.</p>
                 </div>
             </div>
         }
     </div>
 </section>
 
-<!-- 4. WHY CHOOSE FUTABUS (VALUE PROPOSITIONS) -->
-<section class="mb-5 py-4" style="background: #ffffff; border-radius: 20px; border: 1px solid #eef0f2; padding: 30px 20px;">
-    <div class="text-center mb-4">
-        <h2 class="h3 fw-bold" style="color: #212529;">
-            Tại Sao Chọn <span style="color: var(--futa-orange);">WebVanTai</span>?
+<!-- 4. WHY CHOOSE G-TRANS (VALUE PROPOSITIONS) -->
+<section class="mb-5 py-5 px-3 px-md-4 rounded-4" style="background: #FFFFFF; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);">
+    <div class="text-center mb-5">
+        <span class="badge bg-warning-subtle text-dark rounded-pill px-3 py-1 font-bold mb-2">Cam Kết Chất Lượng</span>
+        <h2 class="h3 fw-bold text-dark mb-2">
+            Tại Sao Bạn Nên Chọn <span class="text-futa">G-Trans</span>?
         </h2>
-        <p class="text-muted" style="max-width: 600px; margin: 0 auto;">
-            Chúng tôi kiến tạo trải nghiệm di chuyển xe khách chuẩn mực cao, an toàn và thuận tiện nhất cho mọi hành khách.
+        <p class="text-muted mx-auto" style="max-width: 620px;">
+            Chúng tôi kiến tạo trải nghiệm di chuyển xe khách chuẩn mực cao, an toàn tuyệt đối và thuận tiện nhất cho mọi hành khách.
         </p>
     </div>
 
     <div class="row g-4">
         <div class="col-12 col-sm-6 col-lg-3">
-            <div class="feature-card">
-                <div class="feature-icon-circle">
-                    <i class="bi bi-shield-lock-fill"></i>
+            <div class="p-4 rounded-4 border bg-slate-50/50 text-center h-100 transition-all hover:shadow-md">
+                <div class="w-14 h-14 rounded-2xl bg-orange-100 text-futa mx-auto d-flex align-items-center justify-content-center fs-2 mb-3 shadow-sm">
+                    <i class="bi bi-shield-check"></i>
                 </div>
-                <h3 class="h6 fw-bold mb-2">An Toàn & Đúng Giờ</h3>
-                <p class="text-muted small mb-0">Cam kết khởi hành đúng giờ quy định, xe bảo dưỡng định kỳ và lái xe kinh nghiệm lâu năm.</p>
+                <h3 class="h6 fw-bold mb-2 text-dark">An Toàn & Đúng Giờ</h3>
+                <p class="text-muted small mb-0">Cam kết 100% xuất bến đúng giờ, xe bảo dưỡng định kỳ và tài xế được đào tạo chuyên nghiệp.</p>
             </div>
         </div>
 
         <div class="col-12 col-sm-6 col-lg-3">
-            <div class="feature-card">
-                <div class="feature-icon-circle">
+            <div class="p-4 rounded-4 border bg-slate-50/50 text-center h-100 transition-all hover:shadow-md">
+                <div class="w-14 h-14 rounded-2xl bg-blue-100 text-primary mx-auto d-flex align-items-center justify-content-center fs-2 mb-3 shadow-sm">
                     <i class="bi bi-wifi"></i>
                 </div>
-                <h3 class="h6 fw-bold mb-2">Đội Xe Đời Mới</h3>
-                <p class="text-muted small mb-0">Dàn xe Limousine và Giường nằm cao cấp, wifi tốc độ cao, sạc USB, ghế ngả massage êm ái.</p>
+                <h3 class="h6 fw-bold mb-2 text-dark">Đội Xe Limousine 2026</h3>
+                <p class="text-muted small mb-0">Dàn xe Limousine phòng riêng VIP và Giường nằm cao cấp, wifi tốc độ cao, sạc USB, rèm riêng tư.</p>
             </div>
         </div>
 
         <div class="col-12 col-sm-6 col-lg-3">
-            <div class="feature-card">
-                <div class="feature-icon-circle">
+            <div class="p-4 rounded-4 border bg-slate-50/50 text-center h-100 transition-all hover:shadow-md">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-success mx-auto d-flex align-items-center justify-content-center fs-2 mb-3 shadow-sm">
                     <i class="bi bi-qr-code-scan"></i>
                 </div>
-                <h3 class="h6 fw-bold mb-2">Vé Điện Tử QR Code</h3>
-                <p class="text-muted small mb-0">Không cần in vé giấy. Check-in lên xe siêu tốc 1 chạm bằng camera quét mã QR tức thì.</p>
+                <h3 class="h6 fw-bold mb-2 text-dark">Vé Điện Tử QR 1 Chạm</h3>
+                <p class="text-muted small mb-0">Không cần in vé giấy. Check-in lên xe siêu tốc 1 chạm bằng camera quét mã QR tức thì tại bến.</p>
             </div>
         </div>
 
         <div class="col-12 col-sm-6 col-lg-3">
-            <div class="feature-card">
-                <div class="feature-icon-circle">
+            <div class="p-4 rounded-4 border bg-slate-50/50 text-center h-100 transition-all hover:shadow-md">
+                <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 mx-auto d-flex align-items-center justify-content-center fs-2 mb-3 shadow-sm">
                     <i class="bi bi-credit-card-2-front"></i>
                 </div>
-                <h3 class="h6 fw-bold mb-2">Thanh Toán Linh Hoạt</h3>
+                <h3 class="h6 fw-bold mb-2 text-dark">Thanh Toán An Toàn</h3>
                 <p class="text-muted small mb-0">Tích hợp cổng VNPay bảo mật chuẩn ngân hàng, giữ chỗ tự động 10 phút chống trùng vé.</p>
             </div>
         </div>
@@ -568,38 +406,38 @@
 </section>
 
 <!-- 5. 4-STEP BOOKING GUIDE -->
-<section class="mb-5">
+<section class="mb-5 pb-3">
     <div class="text-center mb-4">
-        <h2 class="h3 fw-bold" style="color: #212529;">Quy Trình Đặt Vé Chỉ Với <span style="color: var(--futa-orange);">4 Bước Đơn Giản</span></h2>
-        <p class="text-muted">Trải nghiệm đặt vé trực tuyến mượt mà từ máy tính hoặc điện thoại</p>
+        <h2 class="h4 fw-bold text-dark mb-1">Quy Trình Đặt Vé Đơn Giản</h2>
+        <p class="text-muted small">Chỉ với 4 bước đơn giản để sở hữu vé xe khách G-Trans</p>
     </div>
 
-    <div class="row g-4 text-center">
+    <div class="row g-3 g-md-4 text-center">
         <div class="col-6 col-md-3">
-            <div class="p-3 bg-white rounded-4 shadow-sm border h-100">
-                <div class="step-number">1</div>
-                <h3 class="h6 fw-bold mb-1">Tìm Chuyến Xe</h3>
+            <div class="p-3 p-md-4 bg-white rounded-4 shadow-sm border h-100">
+                <div class="w-10 h-10 rounded-full bg-futa text-white font-black fs-5 mx-auto d-flex align-items-center justify-content-center mb-2 shadow">1</div>
+                <h3 class="h6 fw-bold mb-1 text-dark">Tìm Chuyến Xe</h3>
                 <p class="text-muted small mb-0">Chọn nơi đi, nơi đến và ngày khởi hành mong muốn.</p>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="p-3 bg-white rounded-4 shadow-sm border h-100">
-                <div class="step-number">2</div>
-                <h3 class="h6 fw-bold mb-1">Chọn Chỗ & Trạm</h3>
+            <div class="p-3 p-md-4 bg-white rounded-4 shadow-sm border h-100">
+                <div class="w-10 h-10 rounded-full bg-futa text-white font-black fs-5 mx-auto d-flex align-items-center justify-content-center mb-2 shadow">2</div>
+                <h3 class="h6 fw-bold mb-1 text-dark">Chọn Chỗ & Trạm</h3>
                 <p class="text-muted small mb-0">Chọn sơ đồ ghế trực quan và trạm đón/trả thuận tiện.</p>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="p-3 bg-white rounded-4 shadow-sm border h-100">
-                <div class="step-number">3</div>
-                <h3 class="h6 fw-bold mb-1">Thanh Toán An Toàn</h3>
-                <p class="text-muted small mb-0">Thanh toán VNPay Sandbox với mã giao dịch chuẩn.</p>
+            <div class="p-3 p-md-4 bg-white rounded-4 shadow-sm border h-100">
+                <div class="w-10 h-10 rounded-full bg-futa text-white font-black fs-5 mx-auto d-flex align-items-center justify-content-center mb-2 shadow">3</div>
+                <h3 class="h6 fw-bold mb-1 text-dark">Thanh Toán An Toàn</h3>
+                <p class="text-muted small mb-0">Thanh toán qua cổng VNPay với mã bảo mật chuẩn.</p>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="p-3 bg-white rounded-4 shadow-sm border h-100">
-                <div class="step-number">4</div>
-                <h3 class="h6 fw-bold mb-1">Lên Xe Trải Nghiệm</h3>
+            <div class="p-3 p-md-4 bg-white rounded-4 shadow-sm border h-100">
+                <div class="w-10 h-10 rounded-full bg-futa text-white font-black fs-5 mx-auto d-flex align-items-center justify-content-center mb-2 shadow">4</div>
+                <h3 class="h6 fw-bold mb-1 text-dark">Lên Xe Trải Nghiệm</h3>
                 <p class="text-muted small mb-0">Xuất trình mã QR trên điện thoại cho nhân viên soát vé.</p>
             </div>
         </div>
@@ -609,18 +447,53 @@
 @section Scripts {
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Hoán đổi Điểm đi và Điểm đến mượt mà
         const btnSwap = document.getElementById('btnSwap');
         const startSelect = document.getElementById('startProvinceSelect');
         const endSelect = document.getElementById('endProvinceSelect');
+        const departureDateInput = document.getElementById('departureDateInput');
+        const searchForm = document.getElementById('futaSearchForm');
+        const valErrorBox = document.getElementById('searchValidationError');
+        const valErrorText = document.getElementById('searchValidationText');
 
+        // 1. Cập nhật ngày min theo giờ cục bộ của trình duyệt
+        if (departureDateInput) {
+            const todayLocal = new Date().toLocaleDateString('en-CA');
+            departureDateInput.min = todayLocal;
+            if (departureDateInput.value && departureDateInput.value < todayLocal) {
+                departureDateInput.value = todayLocal;
+            }
+        }
+
+        // Helper: Gán giá trị cho select, nếu option chưa có thì bổ sung tạm thời
+        function assignSelectValue(selectElem, targetVal) {
+            if (!targetVal) return;
+            let exists = false;
+            for (let i = 0; i < selectElem.options.length; i++) {
+                if (selectElem.options[i].value === targetVal) {
+                    selectElem.selectedIndex = i;
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                const newOpt = new Option(targetVal, targetVal, true, true);
+                selectElem.add(newOpt);
+            }
+        }
+
+        // 2. Hoán đổi Điểm đi và Điểm đến mượt mà
         if (btnSwap && startSelect && endSelect) {
             btnSwap.addEventListener('click', function () {
-                const tempVal = startSelect.value;
-                startSelect.value = endSelect.value;
-                endSelect.value = tempVal;
+                const oldStart = startSelect.value;
+                const oldEnd = endSelect.value;
 
-                // Thêm hiệu ứng rung xoay
+                if (!oldStart && !oldEnd) return;
+
+                assignSelectValue(startSelect, oldEnd);
+                assignSelectValue(endSelect, oldStart);
+
+                if (valErrorBox) valErrorBox.classList.add('d-none');
+
                 btnSwap.style.transform = 'rotate(180deg) scale(1.15)';
                 setTimeout(() => {
                     btnSwap.style.transform = '';
@@ -628,14 +501,27 @@
             });
         }
 
-        // Validate form khi submit
-        const searchForm = document.getElementById('futaSearchForm');
+        // Tự động ẩn lỗi khi thay đổi lựa chọn
+        [startSelect, endSelect].forEach(elem => {
+            if (elem) {
+                elem.addEventListener('change', function () {
+                    if (valErrorBox) valErrorBox.classList.add('d-none');
+                });
+            }
+        });
+
+        // 3. Validate form khi submit không dùng alert
         if (searchForm) {
             searchForm.addEventListener('submit', function (e) {
                 if (startSelect.value && endSelect.value && startSelect.value === endSelect.value) {
                     e.preventDefault();
-                    alert('Điểm đi và điểm đến không thể trùng nhau. Vui lòng chọn lại.');
-                    endSelect.focus();
+                    if (valErrorBox && valErrorText) {
+                        valErrorText.textContent = 'Điểm đi và điểm đến không thể trùng nhau. Vui lòng chọn điểm đến khác.';
+                        valErrorBox.classList.remove('d-none');
+                        endSelect.focus();
+                    } else {
+                        endSelect.focus();
+                    }
                 }
             });
         }

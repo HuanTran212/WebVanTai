@@ -24,116 +24,123 @@
     :root {
         --futa-orange: #F26522;
         --futa-orange-hover: #d85415;
-        --futa-orange-light: #fff5ee;
-        --futa-orange-subtle: #ffeedd;
+        --futa-orange-light: #FFF5EE;
+        --futa-orange-subtle: #FFEEDD;
     }
 
-    /* Map Container */
+    /* Map Container Modern */
     #routeMap {
-        height: 480px;
+        height: 520px;
         width: 100%;
-        border-radius: 16px;
+        border-radius: 20px;
         z-index: 1;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-        border: 1px solid #dee2e6;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        border: 1px solid #E2E8F0;
     }
 
     @@media (max-width: 768px) {
         #routeMap {
-            height: 360px;
+            height: 380px;
+            border-radius: 16px;
         }
     }
 
     /* Custom Leaflet Marker Pins */
     .custom-marker-pin {
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         color: #ffffff;
         font-weight: 800;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         border: 2.5px solid #ffffff;
         transition: transform 0.2s ease;
     }
 
     .custom-marker-pin:hover {
-        transform: scale(1.15);
+        transform: scale(1.2);
     }
 
-    .marker-pickup {
-        background: #198754;
-    }
+    .marker-pickup { background: #198754; }
+    .marker-dropoff { background: var(--futa-orange); }
+    .marker-both { background: #0d6efd; }
 
-    .marker-dropoff {
-        background: var(--futa-orange);
-    }
-
-    .marker-both {
-        background: #0d6efd;
-    }
-
-    /* Timeline Stepper */
+    /* Station Timeline Modern */
     .station-timeline {
         position: relative;
-        padding-left: 20px;
+        padding-left: 16px;
     }
 
     .station-timeline::before {
         content: '';
         position: absolute;
-        top: 15px;
-        bottom: 15px;
-        left: 31px;
+        top: 0;
+        bottom: 0;
+        left: 13px;
         width: 3px;
-        background: #e9ecef;
+        background: linear-gradient(180deg, #E2E8F0 0%, #F1F5F9 100%);
+        border-radius: 2px;
     }
 
     .station-timeline-item {
         position: relative;
-        padding-left: 32px;
-        margin-bottom: 24px;
+        padding-left: 36px;
+        padding-bottom: 28px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
     }
 
     .station-timeline-item:last-child {
-        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .station-timeline-item:last-child::before {
+        display: none;
+    }
+
+    .station-timeline-item:hover {
+        transform: translateX(4px);
     }
 
     .station-timeline-badge {
         position: absolute;
-        left: 0;
+        left: 2px;
         top: 0;
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 800;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         z-index: 2;
-        border: 2px solid white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .station-timeline-item:hover .station-timeline-badge {
+        transform: scale(1.2);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     }
 
     .station-timeline-card {
         background: #ffffff;
-        border: 1px solid #edf0f2;
-        border-radius: 12px;
-        padding: 12px 16px;
-        transition: all 0.2s ease;
+        border: 1px solid #F1F5F9;
+        border-radius: 14px;
+        padding: 14px 16px;
+        transition: all 0.25s ease;
     }
 
     .station-timeline-item:hover .station-timeline-card {
-        border-color: var(--futa-orange);
-        box-shadow: 0 6px 15px rgba(242, 101, 34, 0.12);
-        transform: translateX(4px);
+        border-color: #FDBA74;
+        box-shadow: 0 8px 20px rgba(242, 101, 34, 0.1);
+        background: #FFFDF8;
     }
 
     .station-timeline-item.active .station-timeline-card {
@@ -142,64 +149,119 @@
     }
 
     .btn-futa-primary {
-        background: var(--futa-orange);
+        background: linear-gradient(135deg, var(--futa-orange) 0%, #EA580C 100%);
         color: #ffffff;
         border: none;
-        border-radius: 12px;
-        transition: all 0.2s ease;
+        border-radius: 14px;
+        font-weight: 700;
+        transition: all 0.25s ease;
+        box-shadow: 0 6px 16px rgba(242, 101, 34, 0.3);
     }
 
     .btn-futa-primary:hover {
-        background: var(--futa-orange-hover);
+        background: linear-gradient(135deg, var(--futa-orange-hover) 0%, #C2410C 100%);
         color: #ffffff;
-        box-shadow: 0 8px 20px rgba(242, 101, 34, 0.35);
+        box-shadow: 0 10px 24px rgba(242, 101, 34, 0.45);
+        transform: translateY(-1px);
+    }
+
+    .btn-futa-primary:active {
+        transform: scale(0.98);
     }
 </style>
 
-<!-- HEADER & NAVIGATION -->
+<!-- MODERN HEADER & BREADCRUMB -->
 <div class="mb-4">
-    <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
-        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách chuyến xe
-    </a>
-
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <h1 class="h3 fw-bold mb-1 text-dark">
-                Chuyến xe: <span style="color: var(--futa-orange);">@Model.StartProvince</span> 
-                <i class="bi bi-arrow-right text-warning mx-1"></i> 
-                <span style="color: var(--futa-orange);">@Model.EndProvince</span>
-            </h1>
-            <p class="text-muted mb-0">
-                <i class="bi bi-calendar3 text-primary me-1"></i> Khởi hành: <strong>@Model.DepartureTime.ToString("HH:mm - dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN"))</strong>
-                <span class="mx-2">•</span>
-                <i class="bi bi-clock me-1"></i> Dự kiến chạy: <strong>~@Model.DurationHours.ToString("0.#") giờ (@Model.DistanceKm km)</strong>
-            </p>
-        </div>
-
-        <div class="d-flex align-items-center gap-2">
-            @if (Model.AvailableSeats > 0)
-            {
-                <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
-                   class="btn btn-futa-primary fw-bold px-4 py-2 shadow-sm">
-                    <i class="bi bi-ticket-perforated-fill me-1"></i> ĐẶT VÉ CHUYẾN NÀY
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item">
+                <a asp-controller="Home" asp-action="Index" class="text-muted text-decoration-none">
+                    <i class="bi bi-house"></i> Trang chủ
                 </a>
-            }
-            else
-            {
-                <button class="btn btn-secondary fw-bold px-4 py-2" disabled>HẾT CHỖ</button>
-            }
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-controller="Trips" asp-action="Index" class="text-muted text-decoration-none">Tra cứu lịch trình</a>
+            </li>
+            <li class="breadcrumb-item active text-futa fw-semibold" aria-current="page">
+                Chi tiết chuyến xe
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Route Header Banner -->
+    <div class="modern-card p-3 p-md-4 position-relative overflow-hidden" style="border: 1px solid #F1F5F9;">
+        <div class="absolute top-0 start-0 h-100 w-px" style="background: var(--gtrans-gradient);"></div>
+        <div class="row align-items-center g-3 position-relative">
+            <div class="col-12 col-md-8">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <span class="badge bg-light text-futa border border-orange-200 fw-bold px-3 py-1.5 rounded-pill" style="font-size: 0.75rem; background: #FFF5EE;">
+                        <i class="bi bi-bus-front-fill me-1"></i> @Model.BusTypeName
+                    </span>
+                    <span class="badge bg-slate-50 text-slate-700 border fw-semibold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem;">
+                        <i class="bi bi-upc-scan me-1 text-muted"></i> BKS: @Model.LicensePlate
+                    </span>
+                    @if (Model.AvailableSeats > 5)
+                    {
+                        <span class="badge bg-emerald-50 text-success border border-success-subtle fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem; background: #ECFDF5;">
+                            <i class="bi bi-check-circle-fill me-1"></i> Còn @Model.AvailableSeats chỗ
+                        </span>
+                    }
+                    else if (Model.AvailableSeats > 0)
+                    {
+                        <span class="badge bg-rose-50 text-danger border border-danger-subtle fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem; background: #FFF1F2;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Sắp hết - @Model.AvailableSeats chỗ!
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary text-white fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem;">
+                            <i class="bi bi-x-octagon me-1"></i> Hết chỗ
+                        </span>
+                    }
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-1">
+                    <span class="text-futa">@Model.StartProvince</span> 
+                    <i class="bi bi-arrow-right text-warning mx-1"></i> 
+                    <span class="text-futa">@Model.EndProvince</span>
+                </h1>
+                <div class="d-flex flex-wrap gap-3 text-muted small fw-semibold">
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-calendar3 text-primary"></i>
+                        <span>Khởi hành: <strong>@Model.DepartureTime.ToString("HH:mm - dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN"))</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-clock text-warning"></i>
+                        <span>~@Model.DurationHours.ToString("0.#") giờ (@Model.DistanceKm km)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 text-md-end">
+                @if (Model.AvailableSeats > 0)
+                {
+                    <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
+                       class="btn btn-futa-primary fw-bold px-5 py-3 shadow-lg d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-ticket-perforated-fill fs-5"></i>
+                        <span class="d-none d-sm-inline">CHỌN GHẾ & ĐẶT VÉ</span>
+                        <span class="d-sm-none fs-5">ĐẶT VÉ</span>
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-secondary fw-bold px-5 py-3" disabled>CHUYẾN XE ĐÃ HẾT CHỖ</button>
+                }
+            </div>
         </div>
     </div>
 </div>
 
 <div class="row g-4">
-    <!-- CỘT BÊN TRÁI: BẢN ĐỒ LEAFLET.JS VÀ LỘ TRÌNH -->
+    <!-- LEFT COLUMN: MAP & TIMELINE -->
     <div class="col-12 col-lg-8">
-        <!-- CARD BẢN ĐỒ -->
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <!-- MAP CARD -->
+        <div class="modern-card overflow-hidden mb-4" style="border: 1px solid #F1F5F9;">
             <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle p-2" style="background: var(--futa-orange-light); color: var(--futa-orange);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-orange-100 text-futa d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
                         <i class="bi bi-geo-alt-fill fs-5"></i>
                     </div>
                     <div>
@@ -208,37 +270,36 @@
                     </div>
                 </div>
 
-                <!-- CHÚ THÍCH (LEGEND) -->
-                <div class="d-flex align-items-center gap-3 small">
+                <!-- LEGEND -->
+                <div class="d-flex align-items-center gap-3 small text-muted flex-wrap">
                     <span class="d-flex align-items-center gap-1">
                         <span class="d-inline-block rounded-circle" style="width: 12px; height: 12px; background: #198754;"></span>
-                        Điểm đón
+                        <span class="fw-semibold">Điểm đón</span>
                     </span>
                     <span class="d-flex align-items-center gap-1">
                         <span class="d-inline-block rounded-circle" style="width: 12px; height: 12px; background: var(--futa-orange);"></span>
-                        Điểm trả
+                        <span class="fw-semibold">Điểm trả</span>
                     </span>
                     <span class="d-flex align-items-center gap-1">
-                        <span class="d-inline-block" style="width: 20px; height: 3px; background: var(--futa-orange);"></span>
-                        Tuyến đường
+                        <span class="d-inline-block" style="width: 24px; height: 3px; background: var(--futa-orange); border-radius: 2px;"></span>
+                        <span class="fw-semibold">Tuyến đường</span>
                     </span>
                 </div>
             </div>
 
             <div class="card-body p-2 p-md-3">
-                <!-- LEAFLET MAP CONTAINER -->
                 <div id="routeMap"></div>
                 <div class="text-muted small mt-2 d-flex justify-content-between align-items-center px-1">
-                    <span><i class="bi bi-info-circle me-1"></i> Nhấp vào từng điểm Marker trên bản đồ hoặc danh sách bên dưới để xem vị trí chi tiết.</span>
-                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btnFitMap">
+                    <span><i class="bi bi-info-circle me-1"></i> Nhấp vào Marker trên bản đồ hoặc trạm bên dưới để xem chi tiết.</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold" id="btnFitMap">
                         <i class="bi bi-arrows-fullscreen me-1"></i> Xem toàn bộ lộ trình
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- DANH SÁCH CÁC TRẠM DỌC LỘ TRÌNH (TIMELINE) -->
-        <div class="card border-0 shadow-sm rounded-4 p-4">
+        <!-- STATION TIMELINE -->
+        <div class="modern-card p-4" style="border: 1px solid #F1F5F9;">
             <h3 class="h6 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
                 <i class="bi bi-signpost-split text-danger"></i>
                 Danh Sách Các Điểm Dừng & Giờ Dự Kiến (@Model.Stations.Count trạm)
@@ -265,7 +326,7 @@
                                     <h4 class="h6 fw-bold mb-0 text-dark">
                                         @station.Name
                                     </h4>
-                                    <span class="badge @badgeColor" style="font-size: 0.72rem;">
+                                    <span class="badge @badgeColor" style="font-size: 0.7rem;">
                                         @badgeLabel
                                     </span>
                                 </div>
@@ -276,7 +337,7 @@
                                     <span>
                                         <i class="bi bi-clock-history text-primary me-1"></i> Dự kiến: <strong>@station.EstimatedTime.ToString("HH:mm - dd/MM/yyyy")</strong>
                                     </span>
-                                    <span class="text-primary fw-semibold" style="font-size: 0.78rem;">
+                                    <span class="text-primary fw-semibold" style="font-size: 0.76rem;">
                                         <i class="bi bi-cursor-fill me-1"></i> Xem trên bản đồ
                                     </span>
                                 </div>
@@ -294,75 +355,74 @@
         </div>
     </div>
 
-    <!-- CỘT BÊN PHẢI: THÔNG TIN CHUYẾN XE & ĐẶT VÉ -->
+    <!-- RIGHT COLUMN: STICKY BOOKING CARD -->
     <div class="col-12 col-lg-4">
-        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 85px;">
-            <h2 class="h5 fw-bold mb-3 text-dark pb-2 border-bottom">
-                Thông Tin Chuyến Xe
-            </h2>
-
-            <!-- GIÁ VÉ -->
-            <div class="mb-3 p-3 rounded-3" style="background: var(--futa-orange-light); border: 1px dashed var(--futa-orange);">
-                <div class="text-muted small">Giá vé chính thức</div>
-                <div class="d-flex align-items-baseline gap-1">
-                    <span class="display-6 fw-bold" style="color: var(--futa-orange);">
+        <div class="modern-card p-4 sticky-top shadow-lg" style="top: 95px; border: 1px solid #F1F5F9; background: #FFFFFF;">
+            <!-- PRICE BANNER -->
+            <div class="mb-4 p-4 rounded-4 text-center position-relative overflow-hidden" style="background: linear-gradient(135deg, #FFF5EE 0%, #FFEEDD 100%); border: 1px dashed var(--futa-orange);">
+                <div class="text-muted small text-uppercase fw-semibold tracking-wide mb-1">Giá vé niêm yết / ghế</div>
+                <div class="d-flex align-items-baseline justify-content-center gap-1">
+                    <span class="display-5 fw-bold text-futa" style="font-size: 2.75rem;">
                         @Model.BasePrice.ToString("N0")
                     </span>
-                    <span class="fw-bold text-muted">VNĐ / ghế</span>
+                    <span class="fw-bold text-muted fs-5">VNĐ</span>
                 </div>
-                <div class="small text-success mt-1">
-                    <i class="bi bi-check-circle-fill me-1"></i> Đã bao gồm bảo hiểm hành khách & phí cầu đường
+                <div class="small text-success mt-2 d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-shield-check me-1"></i> Đã bao gồm bảo hiểm hành khách & phí cầu đường
                 </div>
             </div>
 
-            <!-- THÔNG SỐ XE -->
+            <!-- BUS SPECIFICATIONS -->
             <div class="mb-4">
-                <div class="d-flex justify-content-between py-2 border-bottom">
-                    <span class="text-muted"><i class="bi bi-bus-front me-2"></i>Loại xe</span>
-                    <strong class="text-dark">@Model.BusTypeName</strong>
-                </div>
-                <div class="d-flex justify-content-between py-2 border-bottom">
-                    <span class="text-muted"><i class="bi bi-card-text me-2"></i>Biển kiểm soát</span>
-                    <strong class="text-dark">@Model.LicensePlate</strong>
-                </div>
-                <div class="d-flex justify-content-between py-2 border-bottom">
-                    <span class="text-muted"><i class="bi bi-people me-2"></i>Tổng số ghế</span>
-                    <strong class="text-dark">@Model.TotalSeats chỗ</strong>
-                </div>
-                <div class="d-flex justify-content-between py-2 border-bottom">
-                    <span class="text-muted"><i class="bi bi-ticket-detailed me-2"></i>Chỗ trống hiện tại</span>
-                    @if (Model.AvailableSeats > 5)
-                    {
-                        <strong class="text-success">Còn @Model.AvailableSeats chỗ</strong>
-                    }
-                    else if (Model.AvailableSeats > 0)
-                    {
-                        <strong class="text-danger">Chỉ còn @Model.AvailableSeats chỗ!</strong>
-                    }
-                    else
-                    {
-                        <strong class="text-secondary">Hết chỗ</strong>
-                    }
-                </div>
-                <div class="d-flex justify-content-between py-2 border-bottom">
-                    <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>Quãng đường</span>
-                    <strong class="text-dark">@Model.DistanceKm km</strong>
-                </div>
-                <div class="d-flex justify-content-between py-2">
-                    <span class="text-muted"><i class="bi bi-hourglass-split me-2"></i>Thời gian chạy</span>
-                    <strong class="text-dark">~@Model.DurationHours.ToString("0.#") tiếng</strong>
+                <h6 class="fw-bold small text-uppercase text-muted mb-3">Thông số chuyến xe</h6>
+                <div class="space-y-2">
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-bus-front text-futa"></i> Loại xe</span>
+                        <strong class="text-dark">@Model.BusTypeName</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-card-text text-futa"></i> Biển kiểm soát</span>
+                        <strong class="text-dark">@Model.LicensePlate</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-people text-futa"></i> Tổng số ghế</span>
+                        <strong class="text-dark">@Model.TotalSeats chỗ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-ticket-detailed text-futa"></i> Chỗ trống hiện tại</span>
+                        @if (Model.AvailableSeats > 5)
+                        {
+                            <strong class="text-success">Còn @Model.AvailableSeats chỗ</strong>
+                        }
+                        else if (Model.AvailableSeats > 0)
+                        {
+                            <strong class="text-danger">Chỉ còn @Model.AvailableSeats chỗ!</strong>
+                        }
+                        else
+                        {
+                            <strong class="text-secondary">Hết chỗ</strong>
+                        }
+                    </div>
+                    <div class="d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-geo-alt text-futa"></i> Quãng đường</span>
+                        <strong class="text-dark">@Model.DistanceKm km</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-2">
+                        <span class="text-muted d-flex align-items-center gap-2"><i class="bi bi-hourglass-split text-futa"></i> Thời gian chạy</span>
+                        <strong class="text-dark">~@Model.DurationHours.ToString("0.#") tiếng</strong>
+                    </div>
                 </div>
             </div>
 
-            <!-- TIỆN ÍCH -->
+            <!-- AMENITIES -->
             @if (!string.IsNullOrEmpty(Model.Amenities))
             {
                 <div class="mb-4">
                     <h6 class="fw-bold small text-uppercase text-muted mb-2">Tiện ích kèm theo</h6>
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-1.5">
                         @foreach (var am in Model.Amenities.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                         {
-                            <span class="badge bg-light text-dark border py-2 px-2 fw-normal">
+                            <span class="badge bg-light text-dark border py-2 px-3 fw-normal rounded-pill">
                                 <i class="bi bi-check2 text-success me-1"></i>@am
                             </span>
                         }
@@ -370,13 +430,16 @@
                 </div>
             }
 
-            <!-- CHÍNH SÁCH -->
-            <div class="mb-4 small text-muted bg-light p-3 rounded-3">
-                <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-exclamation text-warning me-1"></i> Quy định & Lưu ý:</div>
-                <ul class="ps-3 mb-0">
-                    <li>Có mặt tại trạm đón ít nhất 15-30 phút trước giờ khởi hành.</li>
-                    <li>Giữ chỗ trực tuyến tự động trong vòng 10 phút.</li>
-                    <li>Chính sách hủy vé: Trước giờ khởi hành ít nhất 4 tiếng.</li>
+            <!-- POLICY -->
+            <div class="mb-4 small text-muted bg-slate-50 p-3 rounded-4 border">
+                <div class="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-exclamation text-warning"></i> Quy định & Lưu ý:
+                </div>
+                <ul class="ps-3 mb-0 small" style="line-height: 1.8;">
+                    <li>Có mặt tại trạm đón ít nhất <strong>15-30 phút</strong> trước giờ khởi hành.</li>
+                    <li>Giữ chỗ trực tuyến tự động trong vòng <strong>10 phút</strong>.</li>
+                    <li>Chính sách hủy vé: Trước giờ khởi hành ít nhất <strong>4 tiếng</strong>.</li>
+                    <li>Mang theo <strong>CMND/CCCD</strong> và mã QR vé điện tử khi lên xe.</li>
                 </ul>
             </div>
 
@@ -384,8 +447,9 @@
             @if (Model.AvailableSeats > 0)
             {
                 <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
-                   class="btn btn-futa-primary btn-lg w-100 fw-bold py-3 shadow">
-                    <i class="bi bi-arrow-right-circle-fill me-2"></i> CHỌN GHẾ VÀ TIẾP TỤC
+                   class="btn btn-futa-primary btn-lg w-100 fw-bold py-3 shadow-lg d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-arrow-right-circle-fill fs-4"></i>
+                    <span>CHỌN GHẾ VÀ TIẾP TỤC</span>
                 </a>
             }
             else
@@ -404,7 +468,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Dữ liệu danh sách trạm từ Controller (Razor JSON)
         const stations = @Html.Raw(stationsJson);
 
         if (!stations || stations.length === 0) {
@@ -413,23 +476,22 @@
         }
 
         // 1. Khởi tạo bản đồ Leaflet
-        // Tọa độ trung tâm mặc định (trạm đầu tiên)
         const defaultCenter = [stations[0].lat, stations[0].lng];
         const map = L.map('routeMap', {
             scrollWheelZoom: false
         }).setView(defaultCenter, 11);
 
-        // 2. Tải bản đồ OpenStreetMap (miễn phí)
+        // 2. Tải bản đồ OpenStreetMap
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | FutaBus'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | G-Trans'
         }).addTo(map);
 
         // Bật cuộn chuột khi người dùng click vào bản đồ
         map.on('focus', () => { map.scrollWheelZoom.enable(); });
         map.on('blur', () => { map.scrollWheelZoom.disable(); });
 
-        // 3. Tạo các Markers cho từng trạm
+        // 3. Tạo Markers
         const markerGroup = L.featureGroup().addTo(map);
         const markersMap = new Map();
         const routeCoords = [];
@@ -438,7 +500,6 @@
             const latLng = [st.lat, st.lng];
             routeCoords.push(latLng);
 
-            // Phân loại màu marker theo StationType (0: Pickup, 1: Dropoff, 2: Both)
             let pinClass = 'marker-pickup';
             let pinIcon = st.stopOrder;
             if (st.stationType === 1) {
@@ -450,24 +511,24 @@
             const customDivIcon = L.divIcon({
                 className: 'custom-leaflet-icon',
                 html: `<div class="custom-marker-pin ${pinClass}">${pinIcon}</div>`,
-                iconSize: [34, 34],
-                iconAnchor: [17, 17],
-                popupAnchor: [0, -18]
+                iconSize: [36, 36],
+                iconAnchor: [18, 18],
+                popupAnchor: [0, -20]
             });
 
-            // Nội dung Popup chi tiết khi click marker
+            // Popup nội dung
             const popupContent = `
-                <div style="min-width: 220px; font-family: inherit;">
-                    <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: ${st.stationType === 1 ? '#F26522' : '#198754'}; margin-bottom: 4px;">
-                        <i class="bi bi-geo-alt-fill"></i> Trạm số ${st.stopOrder} • ${st.typeName}
+                <div style="min-width: 240px; font-family: inherit;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: ${st.stationType === 1 ? '#F26522' : '#198754'}; margin-bottom: 6px;">
+                        <i class="bi bi-geo-alt-fill"></i> Trạm số ${st.stopOrder} &bull; ${st.typeName}
                     </div>
-                    <div style="font-size: 0.95rem; font-weight: 700; color: #212529; margin-bottom: 4px;">
+                    <div style="font-size: 1rem; font-weight: 700; color: #212529; margin-bottom: 4px;">
                         ${st.name}
                     </div>
-                    <div style="font-size: 0.8rem; color: #6c757d; margin-bottom: 6px;">
+                    <div style="font-size: 0.82rem; color: #6c757d; margin-bottom: 8px;">
                         ${st.address} (${st.province})
                     </div>
-                    <div style="font-size: 0.78rem; font-weight: 600; color: #0d6efd; background: #f0f7ff; padding: 4px 8px; border-radius: 6px;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: #0d6efd; background: #f0f7ff; padding: 6px 10px; border-radius: 8px;">
                         <i class="bi bi-clock-fill"></i> Dự kiến: ${st.estTime}
                     </div>
                 </div>
@@ -480,42 +541,43 @@
             markersMap.set(st.stopOrder, marker);
         });
 
-        // 4. Vẽ Polyline lộ trình di chuyển nối các trạm theo thứ tự
+        // 4. Vẽ Polyline lộ trình
         if (routeCoords.length >= 2) {
-            // Lớp đổ bóng mờ bên dưới đường line
+            // Lớp đổ bóng bên dưới
             L.polyline(routeCoords, {
                 color: '#ffffff',
-                weight: 8,
-                opacity: 0.8,
-                lineJoin: 'round'
+                weight: 10,
+                opacity: 0.85,
+                lineJoin: 'round',
+                lineCap: 'round'
             }).addTo(map);
 
-            // Đường lộ trình chính màu cam FutaBus #F26522
+            // Đường chính G-Trans
             const polyline = L.polyline(routeCoords, {
                 color: '#F26522',
                 weight: 5,
-                opacity: 0.95,
+                opacity: 0.98,
                 lineCap: 'round',
                 lineJoin: 'round'
             }).addTo(map);
 
-            // Tự động căn chỉnh bản đồ vừa vặn toàn bộ lộ trình
+            // Auto fit bounds
             map.fitBounds(polyline.getBounds(), {
-                padding: [40, 40]
+                padding: [50, 50]
             });
 
             // Nút xem toàn bộ lộ trình
             const btnFitMap = document.getElementById('btnFitMap');
             if (btnFitMap) {
                 btnFitMap.addEventListener('click', () => {
-                    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+                    map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
                 });
             }
         } else if (routeCoords.length === 1) {
             map.setView(routeCoords[0], 13);
         }
 
-        // 5. Tương tác khi click vào từng trạm trong danh sách Timeline
+        // 5. Tương tác Timeline -> Map
         const timelineItems = document.querySelectorAll('.station-timeline-item');
         timelineItems.forEach(item => {
             item.addEventListener('click', function () {
@@ -526,7 +588,7 @@
                 timelineItems.forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
 
-                // Di chuyển bản đồ đến trạm được chọn và mở popup
+                // Bay đến vị trí
                 map.flyTo([lat, lng], 15, { duration: 1.2 });
 
                 const targetMarker = markersMap.get(stopOrder);

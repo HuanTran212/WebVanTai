@@ -10,11 +10,16 @@ namespace WebVanTai.Areas.RouteManager.Controllers
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+        public AccountController(
+            SignInManager<ApplicationUser> signInManager, 
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         [HttpGet("/Identity/Account/Login")]
@@ -59,6 +64,116 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             }
 
             ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không chính xác. Mặc định: routemanager@webvantai.vn / P@ssword123");
+            return View();
+        }
+
+        [HttpGet("/Identity/Account/Register")]
+        [HttpGet("/RouteManager/Account/Register")]
+        [HttpGet("/Account/Register")]
+        [AllowAnonymous]
+        public IActionResult Register(string? returnUrl = null)
+        {
+            if (_signInManager.IsSignedIn(User))
+            {
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+            ViewBag.ReturnUrl = returnUrl ?? "/";
+            return View();
+        }
+
+        [HttpPost("/Identity/Account/Register")]
+        [HttpPost("/RouteManager/Account/Register")]
+        [HttpPost("/Account/Register")]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(
+            string fullName,
+            string email,
+            string? phoneNumber,
+            string password,
+            string confirmPassword,
+            string? returnUrl = null)
+        {
+            returnUrl ??= "/";
+            ViewBag.ReturnUrl = returnUrl;
+            ViewBag.FullName = fullName;
+            ViewBag.Email = email;
+            ViewBag.PhoneNumber = phoneNumber;
+
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                ModelState.AddModelError(string.Empty, "Vui lòng nhập Họ và tên.");
+            }
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ModelState.AddModelError(string.Empty, "Vui lòng nhập Địa chỉ Email.");
+            }
+            else if (!email.Contains("@") || !email.Contains("."))
+            {
+                ModelState.AddModelError(string.Empty, "Định dạng Email không hợp lệ.");
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                ModelState.AddModelError(string.Empty, "Vui lòng nhập Mật khẩu.");
+            }
+            else if (password.Length < 6)
+            {
+                ModelState.AddModelError(string.Empty, "Mật khẩu phải có độ dài tối thiểu 6 ký tự.");
+            }
+            else if (password != confirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "Mật khẩu xác nhận không khớp.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
+            var existingUser = await _userManager.FindByEmailAsync(email.Trim());
+            if (existingUser != null)
+            {
+                ModelState.AddModelError(string.Empty, "Địa chỉ email này đã được sử dụng. Vui lòng đăng nhập hoặc dùng email khác.");
+                return View();
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = email.Trim(),
+                Email = email.Trim(),
+                FullName = fullName.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber.Trim(),
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+            {
+                // Đảm bảo role Customer tồn tại
+                if (!await _roleManager.RoleExistsAsync("Customer"))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole("Customer"));
+                }
+                await _userManager.AddToRoleAsync(user, "Customer");
+
+                // Đăng nhập ngay sau khi đăng ký
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                TempData["SuccessMessage"] = $"Đăng ký thành công! Chào mừng {user.FullName} đến với G-Trans.";
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/RouteManager/Dashboard")
+                {
+                    return LocalRedirect(returnUrl);
+                }
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
             return View();
         }
 
