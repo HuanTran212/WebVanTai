@@ -1,4 +1,4 @@
-@model WebVanTai.Models.ViewModels.TripBookingViewModel
+﻿@model WebVanTai.Models.ViewModels.TripBookingViewModel
 @{
     ViewData["Title"] = $"Chọn ghế - {Model.StartProvince} đi {Model.EndProvince} | G-Trans";
 }
@@ -21,7 +21,44 @@
         border-radius: 24px;
         padding: 20px 14px;
         margin: 0 auto;
+        width: 100%;
         max-width: 340px;
+        height: auto;
+        min-height: 460px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow: visible;
+    }
+
+    .deck-block {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+    }
+
+    .deck-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
+    }
+
+    .deck-badge-a {
+        background: linear-gradient(135deg, var(--futa-orange), #ea580c);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
+    }
+
+    .deck-badge-b {
+        background: linear-gradient(135deg, #0F172A, #334155);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
     }
 
     .seat-grid {
@@ -239,11 +276,29 @@
         font-size: 0.95rem;
         font-weight: 600;
         color: #0F172A;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        word-break: break-word;
+        overflow-wrap: break-word;
         transition: all 0.2s ease;
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
         cursor: pointer;
+    }
+
+    .station-address-desc {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+        line-height: 1.45;
+    }
+
+    .booking-sidebar {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .form-select-modern:focus {
@@ -282,6 +337,10 @@
         border-radius: 20px;
         border: 1px solid #F1F5F9;
         box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        height: auto;
     }
 </style>
 
@@ -384,40 +443,26 @@
                         </div>
                     </div>
                     <div class="p-3 p-md-4">
-                        @if (Model.Decks.Count > 1)
-                        {
-                            <!-- Tab điều hướng 2 tầng trên thiết bị di động -->
-                            <ul class="nav nav-pills nav-fill mb-3 d-md-none" id="deckTabs" role="tablist">
-                                @for (int i = 0; i < Model.Decks.Count; i++)
-                                {
-                                    var deck = Model.Decks[i];
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link @(i == 0 ? "active" : "") fw-bold py-2 rounded-pill" 
-                                                id="tab-deck-@deck.DeckNumber" 
-                                                data-bs-toggle="pill" 
-                                                data-bs-target="#deck-content-@deck.DeckNumber" 
-                                                type="button" 
-                                                role="tab">
-                                            @deck.DeckName
-                                        </button>
-                                    </li>
-                                }
-                            </ul>
-                        }
-
-                        <div class="tab-content row g-4 justify-content-center" id="deckTabsContent">
+                        <!-- Hiển thị trực tiếp 2 khối riêng biệt cho Tầng 1 và Tầng 2 -->
+                        <div class="row g-4 justify-content-center" id="decksContainer">
                             @for (int i = 0; i < Model.Decks.Count; i++)
                             {
                                 var deck = Model.Decks[i];
-                                <div class="col-12 @(Model.Decks.Count > 1 ? "col-md-6" : "") tab-pane fade @(i == 0 ? "show active" : "") d-md-block" 
-                                     id="deck-content-@deck.DeckNumber" 
-                                     role="tabpanel" 
-                                     aria-labelledby="tab-deck-@deck.DeckNumber">
-                                    <div class="bus-container">
-                                        <div class="bus-driver-area">
-                                            <i class="bi bi-steering-wheel me-1"></i> Vị trí Bác Tài (@deck.DeckName)
+                                <div class="col-12 @(Model.Decks.Count > 1 ? "col-md-6" : "") deck-block" id="deck-block-@deck.DeckNumber">
+                                    <div class="bus-container shadow-xs">
+                                        <!-- Header Tầng rõ ràng -->
+                                        <div class="text-center mb-3">
+                                            <span class="deck-badge-pill @(deck.DeckNumber == 1 ? "deck-badge-a" : "deck-badge-b")">
+                                                <i class="bi @(deck.DeckNumber == 1 ? "bi-layers-half" : "bi-layers-fill")"></i>
+                                                @(string.IsNullOrWhiteSpace(deck.DeckName) ? (deck.DeckNumber == 1 ? "Tầng dưới (A)" : "Tầng trên (B)") : deck.DeckName)
+                                            </span>
                                         </div>
-                                        <div class="seat-grid" style="display: grid; grid-template-columns: repeat(@(deck.Cols > 0 ? deck.Cols : 3), 48px); gap: 10px; justify-content: center; width: fit-content; margin: 0 auto;">
+
+                                        <div class="bus-driver-area">
+                                            <i class="bi bi-steering-wheel me-1"></i> Vị trí Bác Tài (@(deck.DeckNumber == 1 ? "Tầng dưới" : "Tầng trên"))
+                                        </div>
+
+                                        <div class="seat-grid" style="display: grid; grid-template-columns: repeat(@(deck.Cols > 0 ? deck.Cols : 3), 48px); gap: 10px; justify-content: center; width: fit-content; margin: 0 auto; height: auto;">
                                             @foreach (var seat in deck.Seats)
                                             {
                                                 var isOccupiedClass = seat.IsOccupied ? "occupied" : "available";
@@ -437,6 +482,10 @@
                                                 </div>
                                             }
                                         </div>
+
+                                        <div class="text-center mt-3 pt-2 border-top border-dashed text-muted small fw-semibold">
+                                            <i class="bi bi-arrow-down-up me-1"></i> Đuôi xe (@(deck.DeckNumber == 1 ? "Tầng A" : "Tầng B"))
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -446,7 +495,7 @@
             </div>
 
             <!-- RIGHT COLUMN: PASSENGER INFO & CHECKOUT -->
-            <div class="col-12 col-lg-5">
+            <div class="col-12 col-lg-5 booking-sidebar">
                 <!-- PICKUP/DROPOFF STATIONS -->
                 <div class="gtrans-card mb-4">
                     <div class="p-4 border-bottom">
@@ -476,6 +525,11 @@
                                 </div>
                             </div>
                             <span asp-validation-for="PickupStationId" class="text-danger small d-block mt-1"></span>
+
+                            <div class="station-address-desc mt-2 p-2.5 rounded-3 bg-slate-50 border border-slate-100 text-muted small" id="pickupAddressBox">
+                                <i class="bi bi-geo-alt-fill text-success me-1"></i>
+                                <span class="address-text">@(Model.PickupStations.FirstOrDefault()?.Address ?? "Vui lòng chọn bến đón")</span>
+                            </div>
                         </div>
 
                         <div class="mb-0">
@@ -499,6 +553,11 @@
                                 </div>
                             </div>
                             <span asp-validation-for="DropoffStationId" class="text-danger small d-block mt-1"></span>
+
+                            <div class="station-address-desc mt-2 p-2.5 rounded-3 bg-slate-50 border border-slate-100 text-muted small" id="dropoffAddressBox">
+                                <i class="bi bi-flag-fill text-danger me-1"></i>
+                                <span class="address-text">@(Model.DropoffStations.FirstOrDefault()?.Address ?? "Vui lòng chọn bến trả")</span>
+                            </div>
                         </div>
                     </div>
                 </div>

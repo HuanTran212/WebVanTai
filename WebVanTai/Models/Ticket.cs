@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WebVanTai.Models.Enums;
 
@@ -18,12 +18,10 @@ namespace WebVanTai.Models
         [Column(TypeName = "nvarchar(10)")]
         public string SeatCode { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(100)]
         [Column(TypeName = "nvarchar(100)")]
         public string PassengerName { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(20)]
         [Column(TypeName = "nvarchar(20)")]
         public string PassengerPhone { get; set; } = string.Empty;

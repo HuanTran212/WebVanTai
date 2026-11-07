@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebVanTai.Models;
 
 namespace WebVanTai.Areas.RouteManager.Controllers
@@ -28,6 +29,10 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
+            if (_signInManager.IsSignedIn(User))
+            {
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -40,18 +45,49 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
         {
             ViewBag.ReturnUrl = returnUrl;
+            ViewBag.Email = email?.Trim();
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                ModelState.AddModelError(string.Empty, "Vui lòng nhập đầy đủ Email và Mật khẩu.");
+                ModelState.AddModelError(string.Empty, "Vui lòng nhập đầy đủ Email/Tên đăng nhập và Mật khẩu.");
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
+            var input = email.Trim();
+
+            // 1. Tìm người dùng trong bảng AspNetUsers bằng cả Email hoặc UserName (hoặc Số điện thoại)
+            var user = await _userManager.FindByEmailAsync(input) 
+                       ?? await _userManager.FindByNameAsync(input);
+
+            if (user == null)
+            {
+                user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == input);
+            }
+
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "Tài khoản hoặc mật khẩu không chính xác.");
+                return View();
+            }
+
+            // 2. Bắt buộc kiểm tra mật khẩu băm qua PasswordSignInAsync
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName!, 
+                password, 
+                rememberMe, 
+                lockoutOnFailure: true);
+
             if (result.Succeeded)
             {
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user != null)
+                // Nếu có returnUrl cụ thể và hợp lệ từ trang trước
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "/RouteManager/Dashboard")
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                // 3. Kiểm tra Role của user từ Database để điều hướng tự động
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Admin"))
                 {
                     var roles = await _userManager.GetRolesAsync(user);
 
@@ -82,7 +118,13 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 return LocalRedirect(returnUrl ?? "/");
             }
 
-            ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không chính xác. Mặc định: routemanager@webvantai.vn / P@ssword123");
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError(string.Empty, "Tài khoản tạm thời bị khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau.");
+                return View();
+            }
+
+            ModelState.AddModelError(string.Empty, "Tài khoản hoặc mật khẩu không chính xác.");
             return View();
         }
 
