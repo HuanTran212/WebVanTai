@@ -35,6 +35,14 @@ namespace WebVanTai.Areas.TicketInspector.Controllers
             public string Token { get; set; } = string.Empty;
         }
 
+        public class CheckInBySeatRequest
+        {
+            public int TripId { get; set; }
+
+            /// <summary>Mã ghế hành khách (VD: A01, B02).</summary>
+            public string SeatCode { get; set; } = string.Empty;
+        }
+
         /// <summary>
         /// Kiểm tra QrToken của khách theo chuyến đang soát.
         /// Hợp lệ: cập nhật Ticket.Status = CheckedIn + lưu CheckedInAt (thẻ xanh).
@@ -190,6 +198,105 @@ namespace WebVanTai.Areas.TicketInspector.Controllers
         }
 
         /// <summary>
+        /// Xác nhận hành khách lên xe trực tiếp bằng cách bấm chọn ghế trên sơ đồ xe.
+        /// </summary>
+        [HttpPost("CheckInBySeat")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckInBySeat([FromBody] CheckInBySeatRequest request)
+        {
+            if (request.TripId <= 0 || string.IsNullOrWhiteSpace(request.SeatCode))
+            {
+                return Json(ScanResultViewModel.Invalid("Thiếu thông tin chuyến xe hoặc mã ghế."));
+            }
+
+            var seatCode = request.SeatCode.Trim().ToUpperInvariant();
+
+            var ticket = await _context.Tickets
+                .Include(t => t.Booking)
+                .FirstOrDefaultAsync(t => t.TripId == request.TripId && t.SeatCode.ToUpper() == seatCode && t.Status != TicketStatus.Void);
+
+            if (ticket == null)
+            {
+                return Json(new ScanResultViewModel
+                {
+                    ResultType = "notfound",
+                    Title = "Ghế chưa có khách!",
+                    Message = $"Ghế {seatCode} chưa có hành khách đặt vé hoặc vé đã bị hủy.",
+                    SeatCode = seatCode
+                });
+            }
+
+            if (ticket.Status == TicketStatus.CheckedIn)
+            {
+                return Json(new ScanResultViewModel
+                {
+                    ResultType = "already",
+                    Title = "Ghế đã được soát rồi!",
+                    Message = ticket.CheckedInAt.HasValue
+                        ? $"Khách {ticket.PassengerName} (ghế {seatCode}) đã lên xe lúc {ticket.CheckedInAt.Value.ToLocalTime():HH:mm:ss dd/MM/yyyy}."
+                        : $"Khách {ticket.PassengerName} (ghế {seatCode}) đã lên xe trước đó.",
+                    PassengerName = ticket.PassengerName,
+                    SeatCode = ticket.SeatCode,
+                    PassengerPhone = ticket.PassengerPhone,
+                    TicketId = ticket.TicketId,
+                    CheckedInAtUtc = ticket.CheckedInAt
+                });
+            }
+
+            var bookingStatus = ticket.Booking?.Status ?? BookingStatus.Pending;
+            if (bookingStatus != BookingStatus.Paid)
+            {
+                return Json(new ScanResultViewModel
+                {
+                    ResultType = "unpaid",
+                    Title = "Vé chưa được thanh toán!",
+                    Message = $"Vé ghế {seatCode} chưa được thanh toán (trạng thái: {bookingStatus}). Vui lòng yêu cầu khách thanh toán trước khi lên xe.",
+                    PassengerName = ticket.PassengerName,
+                    SeatCode = ticket.SeatCode,
+                    PassengerPhone = ticket.PassengerPhone,
+                    TicketId = ticket.TicketId
+                });
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var affected = await _context.Tickets
+                .Where(t => t.TicketId == ticket.TicketId && t.Status == TicketStatus.Valid)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(t => t.Status, TicketStatus.CheckedIn)
+                    .SetProperty(t => t.CheckedInAt, nowUtc));
+
+            if (affected == 0)
+            {
+                return Json(new ScanResultViewModel
+                {
+                    ResultType = "already",
+                    Title = "Ghế đã được soát rồi!",
+                    Message = $"Ghế {seatCode} vừa được nhân viên khác xác nhận lên xe.",
+                    PassengerName = ticket.PassengerName,
+                    SeatCode = ticket.SeatCode,
+                    PassengerPhone = ticket.PassengerPhone,
+                    TicketId = ticket.TicketId
+                });
+            }
+
+            _logger.LogInformation(
+                "Xác nhận lên xe qua sơ đồ ghế: Ticket #{TicketId} ghế {SeatCode} chuyến #{TripId} bởi {User}",
+                ticket.TicketId, ticket.SeatCode, request.TripId, User.Identity?.Name);
+
+            return Json(new ScanResultViewModel
+            {
+                ResultType = "success",
+                Title = "Xác nhận lên xe thành công!",
+                Message = $"Hành khách {ticket.PassengerName} đã lên xe thành công (Ghế {ticket.SeatCode}).",
+                PassengerName = ticket.PassengerName,
+                SeatCode = ticket.SeatCode,
+                PassengerPhone = ticket.PassengerPhone,
+                TicketId = ticket.TicketId,
+                CheckedInAtUtc = nowUtc
+            });
+        }
+
+        /// <summary>
         /// Trạng thái ghế thời gian thực của chuyến: client polling mỗi vài giây để tô màu sơ đồ.
         /// </summary>
         [HttpGet("SeatMap")]
@@ -200,19 +307,33 @@ namespace WebVanTai.Areas.TicketInspector.Controllers
                 return BadRequest(new { message = "TripId không hợp lệ." });
             }
 
-            var tickets = await _context.Tickets
+            var ticketsRaw = await _context.Tickets
                 .AsNoTracking()
                 .Where(t => t.TripId == tripId)
-                .Select(t => new SeatStatusDto
+                .Select(t => new
                 {
-                    Code = t.SeatCode,
-                    Status = t.Status == TicketStatus.CheckedIn ? "checkedin"
-                           : t.Status == TicketStatus.Valid ? "sold"
-                           : "void",
-                    PassengerName = t.PassengerName,
-                    PassengerPhone = t.PassengerPhone
+                    t.SeatCode,
+                    t.Status,
+                    t.PassengerName,
+                    t.PassengerPhone,
+                    t.TicketId,
+                    t.CheckedInAt
                 })
                 .ToListAsync();
+
+            var tickets = ticketsRaw.Select(t => new SeatStatusDto
+            {
+                Code = t.SeatCode,
+                Status = t.Status == TicketStatus.CheckedIn ? "checkedin"
+                       : t.Status == TicketStatus.Valid ? "sold"
+                       : "void",
+                PassengerName = t.PassengerName,
+                PassengerPhone = t.PassengerPhone,
+                TicketId = t.TicketId,
+                CheckedInAt = t.CheckedInAt.HasValue
+                    ? t.CheckedInAt.Value.ToLocalTime().ToString("HH:mm:ss dd/MM/yyyy")
+                    : null
+            }).ToList();
 
             var response = new SeatMapResponse
             {

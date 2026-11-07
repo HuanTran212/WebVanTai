@@ -552,10 +552,14 @@
             }
 
             const selectedTimes = Array.from(document.querySelectorAll('.filter-time:checked')).map(cb => cb.value);
-            selectedTimes.forEach(t => params.append('timeRanges', t));
+            if (selectedTimes.length > 0) {
+                params.append('timeRanges', selectedTimes.join(','));
+            }
 
             const selectedBusTypes = Array.from(document.querySelectorAll('.filter-bustype:checked')).map(cb => cb.value);
-            selectedBusTypes.forEach(b => params.append('busTypeIds', b));
+            if (selectedBusTypes.length > 0) {
+                params.append('busTypeIds', selectedBusTypes.join(','));
+            }
 
             if (priceSlider && priceSlider.value) {
                 params.append('maxPrice', priceSlider.value);
@@ -570,7 +574,7 @@
                 params.append('sortBy', selectSortBy.value);
             }
 
-            fetch(`/Trips/FilterTrips?${params.toString()}`, { signal })
+            fetch(`/Trips/Filter?${params.toString()}`, { signal })
                 .then(res => {
                     if (!res.ok) throw new Error('Network error');
                     return res.text();

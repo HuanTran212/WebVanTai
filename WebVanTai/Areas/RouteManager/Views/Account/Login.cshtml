@@ -119,24 +119,24 @@
 
             <!-- Quick 1-click login buttons for testing -->
             <div class="d-grid gap-2">
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "Customer", returnUrl })" 
-                   class="btn btn-outline-success btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-person-fill text-success me-2"></i>Đăng nhập nhanh: <strong>Khách hàng mẫu</strong></span>
+                <a href="/Account/QuickLogin?role=Customer" 
+                   class="btn btn-outline-success btn-sm text-start d-flex align-items-center justify-content-between py-2">
+                    <span><i class="bi bi-person-fill text-success me-2"></i>Đăng nhập nhanh: <strong>Khách hàng mẫu (Vé của tôi)</strong></span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "TicketInspector", returnUrl })" 
-                   class="btn btn-outline-info text-dark btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-qr-code-scan text-info me-2"></i>Đăng nhập nhanh: <strong>TicketInspector (Soát vé)</strong></span>
+                <a href="/Account/QuickLogin?role=TicketInspector" 
+                   class="btn btn-outline-info text-dark btn-sm text-start d-flex align-items-center justify-content-between py-2">
+                    <span><i class="bi bi-qr-code-scan text-info me-2"></i>Đăng nhập nhanh: <strong>TicketInspector (Soát vé xe)</strong></span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "RouteManager", returnUrl })" 
-                   class="btn btn-outline-warning text-dark btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-person-badge-fill text-warning me-2"></i>Đăng nhập nhanh: <strong>RouteManager</strong></span>
+                <a href="/Account/QuickLogin?role=RouteManager" 
+                   class="btn btn-outline-warning text-dark btn-sm text-start d-flex align-items-center justify-content-between py-2">
+                    <span><i class="bi bi-person-badge-fill text-warning me-2"></i>Đăng nhập nhanh: <strong>RouteManager (Điều hành tuyến)</strong></span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "Admin", returnUrl })" 
-                   class="btn btn-outline-primary btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-shield-lock-fill text-primary me-2"></i>Đăng nhập nhanh: <strong>Admin</strong></span>
+                <a href="/Account/QuickLogin?role=Admin" 
+                   class="btn btn-outline-primary btn-sm text-start d-flex align-items-center justify-content-between py-2">
+                    <span><i class="bi bi-shield-lock-fill text-primary me-2"></i>Đăng nhập nhanh: <strong>Admin (Quản trị hệ thống)</strong></span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>

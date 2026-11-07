@@ -157,5 +157,9 @@ namespace WebVanTai.Areas.TicketInspector.ViewModels
         public string PassengerName { get; set; } = string.Empty;
 
         public string PassengerPhone { get; set; } = string.Empty;
+
+        public int TicketId { get; set; }
+
+        public string? CheckedInAt { get; set; }
     }
 }
