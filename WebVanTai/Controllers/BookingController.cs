@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Data;
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -214,7 +215,7 @@ namespace WebVanTai.Controllers
                 var strategy = _context.Database.CreateExecutionStrategy();
                 return await strategy.ExecuteAsync<IActionResult>(async () =>
                 {
-                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
                     try
                     {
                         // Kiểm tra trực tiếp xem có ghế nào đã bị đặt trong DB không
@@ -286,9 +287,10 @@ namespace WebVanTai.Controllers
                         // Điều hướng sang trang xác nhận giữ chỗ với đầy đủ đồng hồ đếm ngược và nút thanh toán VNPay
                         return RedirectToAction("Confirmation", new { bookingId = booking.BookingId });
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         await transaction.RollbackAsync();
+                        _logger.LogError(ex, "Lỗi bên trong transaction đặt vé: {Message}. Inner: {Inner}", ex.Message, ex.InnerException?.Message);
                         throw;
                     }
                 });
@@ -296,6 +298,7 @@ namespace WebVanTai.Controllers
             catch (DbUpdateException ex)
             {
                 _logger.LogWarning(ex, "Xung đột trùng ghế khi đặt vé chuyến #{TripId}.", model.TripId);
+                _logger.LogError(ex, "Lỗi đặt vé chi tiết (DbUpdateException): {Message}. InnerException: {InnerMessage}", ex.Message, ex.InnerException?.Message);
 
                 ModelState.AddModelError("", "Rất tiếc! Xung đột giữ chỗ ghế xảy ra: Một hành khách khác vừa đặt thành công ghế này trước bạn trong tích tắc. Vui lòng chọn ghế khác.");
                 ModelState.AddModelError("", $"Lỗi chi tiết: {ex.InnerException?.Message ?? ex.Message}");
@@ -315,7 +318,7 @@ namespace WebVanTai.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi bất ngờ khi xử lý đặt vé.");
+                _logger.LogError(ex, "Lỗi đặt vé chi tiết: {Message}. InnerException: {InnerMessage}", ex.Message, ex.InnerException?.Message);
                 ModelState.AddModelError("", $"Lỗi đặt vé: {ex.InnerException?.Message ?? ex.Message}");
 
                 var currentOccupied = await _context.Tickets
