@@ -1,0 +1,38 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: webvantai_sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=BusTicket@StrongPass2026!
+    ports:
+      - "14333:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    restart: unless-stopped
+    networks:
+      - webvantai_network
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webvantai_webapp
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=BusTicketDb;User Id=sa;Password=BusTicket@StrongPass2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - VnPay__ReturnUrl=http://localhost:8080/Payment/VnPayReturn
+    restart: unless-stopped
+    networks:
+      - webvantai_network
+
+volumes:
+  mssql_data:
+
+networks:
+  webvantai_network:
+    driver: bridge

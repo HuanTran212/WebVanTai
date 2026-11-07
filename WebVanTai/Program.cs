@@ -1,6 +1,7 @@
-
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Services;
@@ -12,7 +13,17 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null)));
+
+// Cấu hình DataProtection lưu khóa vào thư mục cố định để không bị văng session khi khởi động lại container
+var keysFolder = Path.Combine(builder.Environment.ContentRootPath, "temp-keys");
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysFolder))
+    .SetApplicationName("WebVanTai");
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -43,18 +54,35 @@ builder.Services.AddScoped<VnPayService>();
 
 var app = builder.Build();
 
-// Seed initial data
+// Seed and Migrate initial data with retry logic for SQL Server container
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
+
+    int maxRetries = 5;
+    int retryDelaySeconds = 5;
+    for (int retry = 1; retry <= maxRetries; retry++)
     {
-        await DbInitializer.SeedAsync(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        try
+        {
+            logger.LogInformation("Attempting database migration and seeding (attempt {Attempt}/{MaxAttempts})...", retry, maxRetries);
+            await context.Database.MigrateAsync();
+            await DbInitializer.SeedAsync(services);
+            logger.LogInformation("Database migration and seed completed successfully.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to connect to database on attempt {Attempt}/{MaxAttempts}. Retrying in {Delay} seconds...", retry, maxRetries, retryDelaySeconds);
+            if (retry == maxRetries)
+            {
+                logger.LogError(ex, "An error occurred while migrating/seeding the database after {MaxAttempts} attempts.", maxRetries);
+                throw;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(retryDelaySeconds));
+        }
     }
 }
 

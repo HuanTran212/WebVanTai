@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebVanTai.Models;
 
 namespace WebVanTai.Areas.RouteManager.Controllers
@@ -24,46 +25,92 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
         [HttpGet("/Identity/Account/Login")]
         [HttpGet("/RouteManager/Account/Login")]
+        [HttpGet("/Account/Login")]
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
         {
-            ViewBag.ReturnUrl = returnUrl ?? "/RouteManager/Dashboard";
+            if (_signInManager.IsSignedIn(User))
+            {
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         [HttpPost("/Identity/Account/Login")]
         [HttpPost("/RouteManager/Account/Login")]
+        [HttpPost("/Account/Login")]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password, bool rememberMe, string? returnUrl = null)
         {
-            returnUrl ??= "/RouteManager/Dashboard";
             ViewBag.ReturnUrl = returnUrl;
+            ViewBag.Email = email?.Trim();
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                ModelState.AddModelError(string.Empty, "Vui lòng nhập đầy đủ Email và Mật khẩu.");
+                ModelState.AddModelError(string.Empty, "Vui lòng nhập đầy đủ Email/Tên đăng nhập và Mật khẩu.");
                 return View();
             }
 
-            var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
-            if (result.Succeeded)
+            var input = email.Trim();
+
+            // 1. Tìm người dùng trong bảng AspNetUsers bằng cả Email hoặc UserName (hoặc Số điện thoại)
+            var user = await _userManager.FindByEmailAsync(input) 
+                       ?? await _userManager.FindByNameAsync(input);
+
+            if (user == null)
             {
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user != null)
-                {
-                    var roles = await _userManager.GetRolesAsync(user);
-                    if (returnUrl == "/RouteManager/Dashboard")
-                    {
-                        if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
-                        if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
-                        if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
-                    }
-                }
-                return LocalRedirect(returnUrl);
+                user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == input);
             }
 
-            ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không chính xác. Mặc định: routemanager@webvantai.vn / P@ssword123");
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "Tài khoản hoặc mật khẩu không chính xác.");
+                return View();
+            }
+
+            // 2. Bắt buộc kiểm tra mật khẩu băm qua PasswordSignInAsync
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName!, 
+                password, 
+                rememberMe, 
+                lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                // Nếu có returnUrl cụ thể và hợp lệ từ trang trước
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "/RouteManager/Dashboard")
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                // 3. Kiểm tra Role của user từ Database để điều hướng tự động
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Admin"))
+                {
+                    return LocalRedirect("/Admin/Dashboard");
+                }
+                if (roles.Contains("RouteManager"))
+                {
+                    return LocalRedirect("/RouteManager/Dashboard");
+                }
+                if (roles.Contains("TicketInspector"))
+                {
+                    return LocalRedirect("/TicketInspector/Dashboard");
+                }
+
+                // Customer hoặc người dùng thông thường
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError(string.Empty, "Tài khoản tạm thời bị khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau.");
+                return View();
+            }
+
+            ModelState.AddModelError(string.Empty, "Tài khoản hoặc mật khẩu không chính xác.");
             return View();
         }
 
@@ -175,41 +222,6 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
             return View();
-        }
-
-        [HttpGet("/Identity/Account/QuickLogin")]
-        [HttpGet("/RouteManager/Account/QuickLogin")]
-        [AllowAnonymous]
-        public async Task<IActionResult> QuickLogin(string role = "RouteManager", string? returnUrl = null)
-        {
-            var email = role switch
-            {
-                "Admin" => "admin@webvantai.vn",
-                "TicketInspector" => "inspector@webvantai.vn",
-                "Customer" => "customer@webvantai.vn",
-                _ => "routemanager@webvantai.vn"
-            };
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null && role == "Customer")
-            {
-                user = await _userManager.FindByEmailAsync("customer@futabus.vn");
-            }
-            if (user != null)
-            {
-                await _signInManager.SignInAsync(user, isPersistent: true);
-                TempData["SuccessMessage"] = $"Đăng nhập thành công với quyền [{role}] ({user.Email})!";
-                if (!string.IsNullOrEmpty(returnUrl)) return LocalRedirect(returnUrl);
-                return role switch
-                {
-                    "Admin" => LocalRedirect("/Admin/Dashboard"),
-                    "TicketInspector" => LocalRedirect("/TicketInspector/Dashboard"),
-                    "Customer" => LocalRedirect("/Payment/MyTickets"),
-                    _ => LocalRedirect("/RouteManager/Dashboard")
-                };
-            }
-
-            TempData["ErrorMessage"] = "Không tìm thấy tài khoản mẫu. Vui lòng đảm bảo database đã được seed.";
-            return RedirectToAction("Login", "Account", new { area = "RouteManager", returnUrl });
         }
 
         [HttpPost("/RouteManager/Account/Logout")]

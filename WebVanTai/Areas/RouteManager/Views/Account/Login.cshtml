@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Đăng Nhập - G-Trans";
     Layout = null; // Standalone clean login page
     var returnUrl = ViewBag.ReturnUrl as string ?? "/";
@@ -11,6 +11,7 @@
     <title>Đăng Nhập - Hệ Thống Vận Tải G-Trans</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --futa-orange: #F26522;
@@ -22,34 +23,37 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             padding: 1.5rem;
         }
         .login-card {
             width: 100%;
             max-width: 440px;
             background: #FFFFFF;
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
             overflow: hidden;
         }
         .login-header {
-            background-color: var(--futa-orange);
+            background: linear-gradient(135deg, #F26522 0%, #D9531E 100%);
             color: #FFFFFF;
-            padding: 2rem 1.5rem;
+            padding: 2.25rem 1.5rem;
             text-align: center;
         }
         .btn-futa {
-            background-color: var(--futa-orange);
+            background: linear-gradient(135deg, #F26522 0%, #FF7A3D 100%);
             color: #FFFFFF;
             border: none;
-            font-weight: 600;
-            padding: 0.75rem;
-            transition: background-color 0.2s;
+            font-weight: 700;
+            padding: 0.8rem;
+            box-shadow: 0 4px 14px rgba(242, 101, 34, 0.3);
+            transition: all 0.2s;
         }
         .btn-futa:hover {
-            background-color: var(--futa-orange-hover);
+            background: linear-gradient(135deg, #D9531E 0%, #F26522 100%);
             color: #FFFFFF;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(242, 101, 34, 0.4);
         }
     </style>
 </head>
@@ -57,14 +61,14 @@
     <div class="login-card">
         <div class="login-header">
             <div class="fs-1 mb-2"><i class="bi bi-bus-front-fill"></i></div>
-            <h4 class="fw-bold mb-1">G-Trans</h4>
+            <h4 class="fw-bold mb-1">Hệ Thống Vận Tải G-Trans</h4>
             <div class="small opacity-75">Hệ Thống Đặt Vé & Quản Lý Vận Tải</div>
         </div>
 
-        <div class="p-4">
+        <div class="p-4 p-md-4">
             @if (!ViewData.ModelState.IsValid)
             {
-                <div class="alert alert-danger py-2 small mb-3">
+                <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3">
                     @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
                     {
                         <div><i class="bi bi-exclamation-circle-fill me-1"></i> @error.ErrorMessage</div>
@@ -77,19 +81,23 @@
                 <input type="hidden" name="returnUrl" value="@returnUrl" />
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small" for="emailInput">Địa Chỉ Email</label>
+                    <label class="form-label fw-semibold small text-secondary" for="emailInput">
+                        Email / Tên đăng nhập
+                    </label>
                     <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
-                        <input type="email" name="email" id="emailInput" class="form-control" placeholder="name@example.com" value="" required autocomplete="email" />
+                        <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person-fill"></i></span>
+                        <input type="text" name="email" id="emailInput" class="form-control border-start-0 ps-1" 
+                               placeholder="name@example.com hoặc username" value="@ViewBag.Email" required autocomplete="username" />
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small" for="passwordInput">Mật Khẩu</label>
+                    <label class="form-label fw-semibold small text-secondary" for="passwordInput">Mật Khẩu</label>
                     <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
-                        <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••" value="" required autocomplete="current-password" />
-                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('passwordInput', this)" tabindex="-1">
+                        <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" name="password" id="passwordInput" class="form-control border-start-0 border-end-0 ps-1" 
+                               placeholder="••••••••" value="" required autocomplete="current-password" />
+                        <button type="button" class="btn btn-outline-secondary border-start-0 bg-white" onclick="togglePassword('passwordInput', this)" tabindex="-1">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -98,7 +106,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" checked />
-                        <label class="form-check-label small" for="rememberMe">Ghi nhớ đăng nhập</label>
+                        <label class="form-check-label small text-secondary" for="rememberMe">Ghi nhớ đăng nhập</label>
                     </div>
                 </div>
 
@@ -112,36 +120,7 @@
                 </div>
             </form>
 
-            <div class="position-relative my-3 text-center">
-                <hr class="text-muted" />
-                <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">hoặc thử nghiệm nhanh</span>
-            </div>
-
-            <!-- Quick 1-click login buttons for testing -->
-            <div class="d-grid gap-2">
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "Customer", returnUrl })" 
-                   class="btn btn-outline-success btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-person-fill text-success me-2"></i>Đăng nhập nhanh: <strong>Khách hàng mẫu</strong></span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "TicketInspector", returnUrl })" 
-                   class="btn btn-outline-info text-dark btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-qr-code-scan text-info me-2"></i>Đăng nhập nhanh: <strong>TicketInspector (Soát vé)</strong></span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "RouteManager", returnUrl })" 
-                   class="btn btn-outline-warning text-dark btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-person-badge-fill text-warning me-2"></i>Đăng nhập nhanh: <strong>RouteManager</strong></span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-                <a href="@Url.Action("QuickLogin", "Account", new { area = "RouteManager", role = "Admin", returnUrl })" 
-                   class="btn btn-outline-primary btn-sm text-start d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-shield-lock-fill text-primary me-2"></i>Đăng nhập nhanh: <strong>Admin</strong></span>
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-
-            <div class="text-center mt-4">
+            <div class="text-center mt-4 pt-2 border-top">
                 <a href="/" class="small text-muted text-decoration-none">
                     <i class="bi bi-arrow-left me-1"></i> Quay về trang chủ khách hàng
                 </a>

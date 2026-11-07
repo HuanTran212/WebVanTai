@@ -1,0 +1,12 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/*.sql
+**/.vscode
+**/.agent
+**/.agents
+temp-keys/
+Dockerfile*
+docker-compose*
+README*
