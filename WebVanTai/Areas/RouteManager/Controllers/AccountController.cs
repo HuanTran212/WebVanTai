@@ -79,29 +79,41 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
             if (result.Succeeded)
             {
-                // Nếu có returnUrl cụ thể và hợp lệ từ trang trước
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "/RouteManager/Dashboard")
-                {
-                    return LocalRedirect(returnUrl);
-                }
-
                 // 3. Kiểm tra Role của user từ Database để điều hướng tự động
                 var roles = await _userManager.GetRolesAsync(user);
-                if (roles.Contains("Admin"))
+
+                // Nếu có returnUrl cụ thể và hợp lệ từ trang trước
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/" && !returnUrl.Contains("/Account/Login"))
                 {
-                    return LocalRedirect("/Admin/Dashboard");
-                }
-                if (roles.Contains("RouteManager"))
-                {
-                    return LocalRedirect("/RouteManager/Dashboard");
-                }
-                if (roles.Contains("TicketInspector"))
-                {
-                    return LocalRedirect("/TicketInspector/Dashboard");
+                    bool isForbidden =
+                        (roles.Contains("TicketInspector") && !roles.Contains("RouteManager") && !roles.Contains("Admin") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))) ||
+                        (roles.Contains("Customer") && !roles.Contains("Admin") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketInspector", StringComparison.OrdinalIgnoreCase))) ||
+                        (roles.Contains("RouteManager") && !roles.Contains("Admin") && returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase));
+
+                    if (!isForbidden)
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
                 }
 
-                // Customer hoặc người dùng thông thường
-                return RedirectToAction("Index", "Home", new { area = "" });
+                // Tự động điều hướng theo Role theo chuẩn nghiệp vụ:
+                // Admin -> /Admin/Dashboard
+                // RouteManager -> /RouteManager/Dashboard
+                // TicketInspector -> /TicketInspector/Dashboard
+                // Customer -> /
+                if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
+                if (roles.Contains("RouteManager")) return LocalRedirect("/RouteManager/Dashboard");
+                if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
+                if (roles.Contains("Customer"))
+                {
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/")
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
+                    return LocalRedirect("/");
+                }
+
+                return LocalRedirect("/");
             }
 
             if (result.IsLockedOut)
