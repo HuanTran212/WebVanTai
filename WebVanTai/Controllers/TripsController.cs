@@ -86,6 +86,23 @@ namespace WebVanTai.Controllers
             return PartialView("_TripListPartial", partialViewModel);
         }
 
+        // GET: /Trips/FilterTrips (Alias to ensure compatibility with client scripts)
+        [HttpGet]
+        public Task<IActionResult> FilterTrips(
+            string? startProvince,
+            string? endProvince,
+            DateTime? departureDate,
+            string? timeRanges,
+            string? busTypeIds,
+            decimal? minPrice,
+            decimal? maxPrice,
+            int? minSeats,
+            string? sortBy = "time_asc")
+        {
+            return Filter(startProvince, endProvince, departureDate, timeRanges, busTypeIds, minPrice, maxPrice, minSeats, sortBy);
+        }
+
+
         // GET: /Trips/Details/{id} (With Leaflet.js map and markers)
         [HttpGet]
         public async Task<IActionResult> Details(int id)
@@ -279,12 +296,13 @@ namespace WebVanTai.Controllers
             if (filter.DepartureDate.HasValue)
             {
                 var targetDate = filter.DepartureDate.Value.Date;
-                query = query.Where(t => t.DepartureTime.Date == targetDate);
+                var nextDate = targetDate.AddDays(1);
+                query = query.Where(t => t.DepartureTime >= targetDate && t.DepartureTime < nextDate);
             }
             else
             {
                 // Mặc định: hiện các chuyến sắp chạy từ hôm nay trở đi
-                var threshold = DateTime.UtcNow.Date;
+                var threshold = DateTime.Today;
                 query = query.Where(t => t.DepartureTime >= threshold);
             }
 

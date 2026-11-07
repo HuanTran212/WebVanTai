@@ -243,11 +243,15 @@
 
     /* Form Modern */
     .form-control-modern {
+        width: 100%;
+        max-width: 100%;
+        display: block;
+        box-sizing: border-box;
         background: #F8FAFC;
         border: 1.5px solid #E2E8F0;
         border-radius: 14px;
-        padding: 14px 16px;
-        font-size: 1rem;
+        padding: 12px 16px;
+        font-size: 0.95rem;
         font-weight: 600;
         color: #0F172A;
         transition: all 0.2s ease;
@@ -257,16 +261,18 @@
         background: #FFFFFF;
         border-color: var(--futa-orange);
         box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.12);
+        outline: none;
     }
 
     .form-select-modern {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        background: #F8FAFC;
+        width: 100%;
+        max-width: 100%;
+        display: block;
+        box-sizing: border-box;
+        background-color: #F8FAFC;
         border: 1.5px solid #E2E8F0;
         border-radius: 14px;
-        padding: 12px 14px;
+        padding: 12px 38px 12px 16px;
         font-size: 0.95rem;
         font-weight: 600;
         color: #0F172A;
@@ -276,6 +282,10 @@
         word-break: break-word;
         overflow-wrap: break-word;
         transition: all 0.2s ease;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        cursor: pointer;
     }
 
     .station-address-desc {
@@ -292,9 +302,10 @@
     }
 
     .form-select-modern:focus {
-        background: #FFFFFF;
+        background-color: #FFFFFF;
         border-color: var(--futa-orange);
         box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.12);
+        outline: none;
     }
 
     .form-label-modern {
@@ -497,12 +508,22 @@
                             <label asp-for="PickupStationId" class="form-label-modern">
                                 <i class="bi bi-geo-alt-fill text-danger"></i> ĐIỂM ĐÓN KHÁCH <span class="text-danger">*</span>
                             </label>
-                            <select asp-for="PickupStationId" class="form-select-modern" id="pickupStationSelect">
+                            <select asp-for="PickupStationId" class="form-select form-select-modern w-100" id="selectPickupStation">
                                 @foreach (var station in Model.PickupStations)
                                 {
-                                    <option value="@station.StationId" data-address="@station.Address">@station.Name</option>
+                                    <option value="@station.StationId" data-name="@station.Name" data-address="@station.Address"
+                                            selected="@(station.StationId == Model.PickupStationId ? "selected" : null)">
+                                        @station.Name
+                                    </option>
                                 }
                             </select>
+                            <div class="mt-2 p-2.5 rounded-3 border d-flex align-items-start gap-2" id="pickupStationPreview" style="background-color: #F8FAFC;">
+                                <i class="bi bi-geo-alt-fill text-danger mt-1 flex-shrink-0 fs-6"></i>
+                                <div style="min-width: 0;">
+                                    <div class="fw-bold text-dark small" id="pickupStationNameText"></div>
+                                    <div class="text-muted small mt-0.5 text-wrap" id="pickupStationAddressText" style="word-break: break-word; line-height: 1.4;"></div>
+                                </div>
+                            </div>
                             <span asp-validation-for="PickupStationId" class="text-danger small d-block mt-1"></span>
 
                             <div class="station-address-desc mt-2 p-2.5 rounded-3 bg-slate-50 border border-slate-100 text-muted small" id="pickupAddressBox">
@@ -515,12 +536,22 @@
                             <label asp-for="DropoffStationId" class="form-label-modern">
                                 <i class="bi bi-flag-fill text-warning"></i> ĐIỂM TRẢ KHÁCH <span class="text-danger">*</span>
                             </label>
-                            <select asp-for="DropoffStationId" class="form-select-modern" id="dropoffStationSelect">
+                            <select asp-for="DropoffStationId" class="form-select form-select-modern w-100" id="selectDropoffStation">
                                 @foreach (var station in Model.DropoffStations)
                                 {
-                                    <option value="@station.StationId" data-address="@station.Address">@station.Name</option>
+                                    <option value="@station.StationId" data-name="@station.Name" data-address="@station.Address"
+                                            selected="@(station.StationId == Model.DropoffStationId ? "selected" : null)">
+                                        @station.Name
+                                    </option>
                                 }
                             </select>
+                            <div class="mt-2 p-2.5 rounded-3 border d-flex align-items-start gap-2" id="dropoffStationPreview" style="background-color: #F8FAFC;">
+                                <i class="bi bi-flag-fill text-warning mt-1 flex-shrink-0 fs-6"></i>
+                                <div style="min-width: 0;">
+                                    <div class="fw-bold text-dark small" id="dropoffStationNameText"></div>
+                                    <div class="text-muted small mt-0.5 text-wrap" id="dropoffStationAddressText" style="word-break: break-word; line-height: 1.4;"></div>
+                                </div>
+                            </div>
                             <span asp-validation-for="DropoffStationId" class="text-danger small d-block mt-1"></span>
 
                             <div class="station-address-desc mt-2 p-2.5 rounded-3 bg-slate-50 border border-slate-100 text-muted small" id="dropoffAddressBox">
@@ -731,27 +762,30 @@
                 });
             }
 
-            // Station address live sync
-            const pickupSelect = document.getElementById('pickupStationSelect');
-            const pickupBox = document.querySelector('#pickupAddressBox .address-text');
-            if (pickupSelect && pickupBox) {
-                function syncPickupAddr() {
-                    const opt = pickupSelect.options[pickupSelect.selectedIndex];
-                    if (opt) pickupBox.textContent = opt.getAttribute('data-address') || opt.text;
+            // Sync station info card
+            function syncStationPreview(selectEl, nameEl, addressEl) {
+                if (!selectEl || !nameEl || !addressEl) return;
+                const opt = selectEl.options[selectEl.selectedIndex];
+                if (opt) {
+                    nameEl.innerText = opt.getAttribute('data-name') || opt.text || '';
+                    addressEl.innerText = opt.getAttribute('data-address') || '';
                 }
-                pickupSelect.addEventListener('change', syncPickupAddr);
-                syncPickupAddr();
             }
 
-            const dropoffSelect = document.getElementById('dropoffStationSelect');
-            const dropoffBox = document.querySelector('#dropoffAddressBox .address-text');
-            if (dropoffSelect && dropoffBox) {
-                function syncDropoffAddr() {
-                    const opt = dropoffSelect.options[dropoffSelect.selectedIndex];
-                    if (opt) dropoffBox.textContent = opt.getAttribute('data-address') || opt.text;
-                }
-                dropoffSelect.addEventListener('change', syncDropoffAddr);
-                syncDropoffAddr();
+            const selPickup = document.getElementById('selectPickupStation');
+            const pickupName = document.getElementById('pickupStationNameText');
+            const pickupAddr = document.getElementById('pickupStationAddressText');
+            if (selPickup) {
+                syncStationPreview(selPickup, pickupName, pickupAddr);
+                selPickup.addEventListener('change', () => syncStationPreview(selPickup, pickupName, pickupAddr));
+            }
+
+            const selDropoff = document.getElementById('selectDropoffStation');
+            const dropoffName = document.getElementById('dropoffStationNameText');
+            const dropoffAddr = document.getElementById('dropoffStationAddressText');
+            if (selDropoff) {
+                syncStationPreview(selDropoff, dropoffName, dropoffAddr);
+                selDropoff.addEventListener('change', () => syncStationPreview(selDropoff, dropoffName, dropoffAddr));
             }
 
             // Initial UI sync

@@ -3,6 +3,28 @@
     ViewData["Title"] = $"Soát vé - {Model.RouteName}";
 }
 
+<style>
+    .seat-box {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .seat-box:hover {
+        transform: scale(1.08);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+        z-index: 2;
+    }
+    .seat-box:active {
+        transform: scale(0.95);
+    }
+    /* Đảm bảo modal luôn nổi hẳn lên trên backdrop, không bị mờ đè */
+    #seatActionModal {
+        z-index: 1065 !important;
+    }
+    .modal-backdrop {
+        z-index: 1055 !important;
+    }
+</style>
+
 <!-- Tóm tắt chuyến đang soát -->
 <div class="card-mobile p-3 mb-3">
     <div class="d-flex justify-content-between align-items-start">
@@ -106,6 +128,60 @@
         <span><span class="seat-box sold d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Đã bán</span>
         <span><span class="seat-box checkedin d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Đã lên xe</span>
         <span><span class="seat-box void d-inline-flex" style="width:18px;height:18px;border-width:1px"></span> Vô hiệu</span>
+    </div>
+    <div class="text-center small text-muted mt-2 pt-2 border-top">
+        <i class="bi bi-hand-index-thumb text-futa me-1"></i>Chạm vào ghế để xem thông tin vé hoặc xác nhận lên xe trực tiếp.
+    </div>
+</div>
+
+<!-- Modal Chi tiết ghế & Xác nhận lên xe -->
+<div class="modal fade" id="seatActionModal" tabindex="-1" aria-labelledby="seatActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-3 px-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-futa text-white fs-6 px-3 py-1 rounded-pill" id="modalSeatBadge">Ghế A01</span>
+                    <span class="fw-bold text-dark small">Chi tiết vé</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-person me-1"></i>Hành khách:</span>
+                        <strong class="text-dark text-truncate" id="modalPassengerName" style="max-width: 140px;">—</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small"><i class="bi bi-telephone me-1"></i>Điện thoại:</span>
+                        <span class="text-dark fw-semibold" id="modalPassengerPhone">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small"><i class="bi bi-shield-check me-1"></i>Trạng thái:</span>
+                        <span id="modalSeatStatusBadge" class="badge rounded-pill px-2.5 py-1">Chờ lên xe</span>
+                    </div>
+                    <div class="mt-2 pt-2 border-top small text-muted d-none" id="modalCheckedInTimeBox">
+                        <i class="bi bi-clock-history me-1 text-success"></i>Lên xe: <strong id="modalCheckedInTimeText"></strong>
+                    </div>
+                </div>
+
+                <div id="modalActionArea">
+                    <button type="button" class="btn btn-success w-100 py-2.5 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 mb-2" id="btnConfirmBoarding">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Xác nhận đã lên xe</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 py-2 rounded-pill fw-semibold small" data-bs-dismiss="modal">
+                        Đóng
+                    </button>
+                </div>
+                <div id="modalEmptyArea" class="text-center text-muted py-2 d-none">
+                    <i class="bi bi-info-circle fs-4 text-secondary d-block mb-1"></i>
+                    <span class="small d-block mb-2">Ghế này chưa có khách đặt chỗ.</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-4 rounded-pill fw-semibold" data-bs-dismiss="modal">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -313,13 +389,104 @@
                 if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btnManualCheck').click(); }
             });
 
-            // ====== Sơ đồ ghế thời gian thực (polling) ======
+            // ====== Sơ đồ ghế thời gian thực & Chọn ghế lên xe ======
             var seatBoxes = {};
+            var currentSeatsData = {}; // code -> { status, passengerName, passengerPhone, ticketId, checkedInAt }
+            var selectedSeatCode = null;
+            var seatModalEl = document.getElementById('seatActionModal');
+            if (seatModalEl && seatModalEl.parentElement !== document.body) {
+                document.body.appendChild(seatModalEl);
+            }
+            var seatModal = seatModalEl ? new bootstrap.Modal(seatModalEl) : null;
+
             document.querySelectorAll('.seat-box[data-seat]').forEach(function (el) {
-                seatBoxes[el.getAttribute('data-seat')] = el;
+                var code = el.getAttribute('data-seat');
+                seatBoxes[code] = el;
+                el.addEventListener('click', function () {
+                    openSeatModal(code);
+                });
             });
 
+            function openSeatModal(code) {
+                selectedSeatCode = code;
+                var info = currentSeatsData[code];
+                var status = info && info.status ? info.status : 'available';
+
+                document.getElementById('modalSeatBadge').textContent = 'Ghế ' + code;
+                document.getElementById('modalPassengerName').textContent = (info && info.passengerName) ? info.passengerName : 'Chưa có thông tin';
+                document.getElementById('modalPassengerPhone').textContent = (info && info.passengerPhone) ? info.passengerPhone : '—';
+
+                var statusBadge = document.getElementById('modalSeatStatusBadge');
+                var actionArea = document.getElementById('modalActionArea');
+                var emptyArea = document.getElementById('modalEmptyArea');
+                var timeBox = document.getElementById('modalCheckedInTimeBox');
+
+                if (status === 'sold') {
+                    statusBadge.className = 'badge bg-warning text-dark rounded-pill px-2.5 py-1';
+                    statusBadge.textContent = 'Chờ lên xe (Đã mua)';
+                    actionArea.classList.remove('d-none');
+                    emptyArea.classList.add('d-none');
+                    timeBox.classList.add('d-none');
+                } else if (status === 'checkedin') {
+                    statusBadge.className = 'badge bg-success text-white rounded-pill px-2.5 py-1';
+                    statusBadge.textContent = 'Đã lên xe';
+                    actionArea.classList.add('d-none');
+                    emptyArea.classList.add('d-none');
+                    timeBox.classList.remove('d-none');
+                    document.getElementById('modalCheckedInTimeText').textContent = info.checkedInAt || 'Đã soát';
+                } else if (status === 'void') {
+                    statusBadge.className = 'badge bg-secondary text-white rounded-pill px-2.5 py-1';
+                    statusBadge.textContent = 'Vé vô hiệu';
+                    actionArea.classList.add('d-none');
+                    emptyArea.classList.add('d-none');
+                    timeBox.classList.add('d-none');
+                } else {
+                    // available
+                    statusBadge.className = 'badge bg-light text-muted border rounded-pill px-2.5 py-1';
+                    statusBadge.textContent = 'Ghế trống';
+                    actionArea.classList.add('d-none');
+                    emptyArea.classList.remove('d-none');
+                    timeBox.classList.add('d-none');
+                }
+
+                if (seatModal) seatModal.show();
+            }
+
+            // Nút Xác nhận đã lên xe từ Modal
+            var btnConfirmBoarding = document.getElementById('btnConfirmBoarding');
+            if (btnConfirmBoarding) {
+                btnConfirmBoarding.addEventListener('click', function () {
+                    if (!selectedSeatCode || processing) return;
+                    var btn = this;
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xác nhận...';
+
+                    fetch('@Url.Action("CheckInBySeat", "InspectorApi", new { area = "TicketInspector" })', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiForgeryToken
+                        },
+                        body: JSON.stringify({ tripId: tripId, seatCode: selectedSeatCode })
+                    })
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (seatModal) seatModal.hide();
+                            showResult(data);
+                            refreshSeatMap(true);
+                        })
+                        .catch(function () {
+                            showResult({ resultType: 'invalid', title: 'Lỗi kết nối', message: 'Không gọi được máy chủ. Vui lòng thử lại.' });
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Xác nhận đã lên xe</span>';
+                        });
+                });
+            }
+
             function applySeatStatus(code, info) {
+                currentSeatsData[code] = info || null;
                 var el = seatBoxes[code];
                 if (!el) return;
                 var st = (info && info.status) ? info.status : 'available';
@@ -331,7 +498,7 @@
                 var changed = el.className !== cls;
                 el.className = cls;
                 el.title = 'Ghế ' + code + (info && info.passengerName ? ' - ' + info.passengerName : '') +
-                    (st === 'checkedin' ? ' (đã lên xe)' : st === 'sold' ? ' (đã bán)' : st === 'void' ? ' (vé vô hiệu)' : '');
+                    (st === 'checkedin' ? ' (đã lên xe)' : st === 'sold' ? ' (bấm để soát vé)' : st === 'void' ? ' (vé vô hiệu)' : ' (trống)');
                 if (changed && st === 'checkedin' && lastSeatStates[code] && lastSeatStates[code] !== 'checkedin') {
                     el.classList.add('flash');                      // khách vừa lên xe -> nháy ghế
                     setTimeout(function () { el.classList.remove('flash'); }, 1300);
