@@ -89,8 +89,6 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 var roles = await _userManager.GetRolesAsync(user);
                 if (roles.Contains("Admin"))
                 {
-                    var roles = await _userManager.GetRolesAsync(user);
-
                     // Điều hướng thông minh theo quyền nếu không có returnUrl hoặc returnUrl mặc định/xung đột
                     if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "/RouteManager/Dashboard" || returnUrl.Contains("/Account/Login"))
                     {
