@@ -33,8 +33,26 @@ namespace WebVanTai.Models
         [Column(TypeName = "nvarchar(100)")]
         public string? VnPayTxnRef { get; set; }
 
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.VnPay;
+
+        [StringLength(450)]
+        public string? SoldByUserId { get; set; }
+
+        [StringLength(150)]
+        [Column(TypeName = "nvarchar(150)")]
+        public string? ContactEmail { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal RefundedAmount { get; set; } = 0m;
+
+        [Column(TypeName = "datetime2")]
+        public DateTime? CancelledAt { get; set; }
+
         [ForeignKey(nameof(UserId))]
         public virtual ApplicationUser? User { get; set; }
+
+        [ForeignKey(nameof(SoldByUserId))]
+        public virtual ApplicationUser? SoldByUser { get; set; }
 
         [ForeignKey(nameof(TripId))]
         public virtual Trip? Trip { get; set; }
@@ -48,4 +66,3 @@ namespace WebVanTai.Models
         public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     }
 }
-

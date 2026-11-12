@@ -1,0 +1,65 @@
+@model WebVanTai.Models.CrewMember
+@{
+    ViewData["Title"] = "Thêm Tài Xế / Lơ Xe";
+}
+
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a asp-action="Index">Tài xế &amp; Lơ xe</a></li>
+            <li class="breadcrumb-item active">Thêm mới</li>
+        </ol>
+    </nav>
+    <h3 class="fw-bold text-dark"><i class="bi bi-person-plus-fill text-warning me-2"></i>Thêm Tài Xế / Lơ Xe</h3>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Role" class="form-label fw-semibold">Vai trò <span class="text-danger">*</span></label>
+                    <select asp-for="Role" class="form-select">
+                        <option value="0">Tài xế (Driver)</option>
+                        <option value="1">Lơ xe / Phụ xe (Assistant)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                    <input asp-for="FullName" class="form-control" required />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PhoneNumber" class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                    <input asp-for="PhoneNumber" class="form-control" required />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="LicenseNumber" class="form-label fw-semibold">Số GPLX (bắt buộc nếu là Tài xế)</label>
+                    <input asp-for="LicenseNumber" class="form-control text-uppercase font-monospace" placeholder="VD: GPLX-E-51009" />
+                    <span asp-validation-for="LicenseNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                    <label asp-for="IsActive" class="form-check-label fw-semibold">Sẵn sàng nhận lịch chạy</label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-futa flex-grow-1"><i class="bi bi-save me-1"></i>Lưu nhân sự</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using WebVanTai.Areas.RouteManager.Models;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
@@ -93,12 +94,14 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         {
             await PopulateDropdowns();
             var tomorrow = DateTime.Today.AddDays(1);
-            var model = new Trip
+            var model = new TripCreateViewModel
             {
                 DepartureTime = tomorrow.AddHours(7),
                 ArrivalTime = tomorrow.AddHours(14),
                 BasePrice = 250000m,
-                Status = TripStatus.Scheduled
+                Status = TripStatus.Scheduled,
+                IsDailyRecurring = false,
+                RepeatEndDate = tomorrow.AddDays(6)
             };
             return View(model);
         }
@@ -106,37 +109,117 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         // POST: RouteManager/Trips/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TripId,RouteId,BusId,DepartureTime,ArrivalTime,BasePrice,Status")] Trip trip)
+        public async Task<IActionResult> Create(TripCreateViewModel model)
         {
             // Business Rule 1: ArrivalTime must be strictly after DepartureTime
-            if (trip.ArrivalTime <= trip.DepartureTime)
+            if (model.ArrivalTime <= model.DepartureTime)
             {
-                ModelState.AddModelError("ArrivalTime", "Thời gian đến nơi (ArrivalTime) phải sau thời gian khởi hành (DepartureTime)!");
+                ModelState.AddModelError(nameof(model.ArrivalTime), "Thời gian đến nơi (ArrivalTime) phải sau thời gian khởi hành (DepartureTime)!");
             }
 
-            // Business Rule 2: Overlap check for BusId
-            // A bus cannot be assigned to two trips with overlapping time intervals
-            var conflict = await CheckBusScheduleConflictAsync(trip.BusId, trip.TripId, trip.DepartureTime, trip.ArrivalTime);
-            if (conflict != null)
+            if (model.IsDailyRecurring)
             {
-                var errorMsg = $"Xung đột lịch trình: Xe biển số [{conflict.Bus?.LicensePlate}] đã được xếp cho Chuyến #{conflict.TripId} " +
-                               $"({conflict.Route?.StartProvince} → {conflict.Route?.EndProvince}) " +
-                               $"từ {conflict.DepartureTime:HH:mm dd/MM/yyyy} đến {conflict.ArrivalTime:HH:mm dd/MM/yyyy}. " +
-                               $"Không thể xếp trùng giờ!";
-                ModelState.AddModelError("BusId", errorMsg);
-                ModelState.AddModelError(string.Empty, errorMsg);
+                if (!model.RepeatEndDate.HasValue)
+                {
+                    ModelState.AddModelError(nameof(model.RepeatEndDate), "Vui lòng chọn ngày kết thúc lặp lại.");
+                }
+                else if (model.RepeatEndDate.Value.Date < model.DepartureTime.Date)
+                {
+                    ModelState.AddModelError(nameof(model.RepeatEndDate), "Ngày kết thúc lặp lại phải lớn hơn hoặc bằng ngày khởi hành đầu tiên.");
+                }
+                else if ((model.RepeatEndDate.Value.Date - model.DepartureTime.Date).TotalDays > 90)
+                {
+                    ModelState.AddModelError(nameof(model.RepeatEndDate), "Chỉ hỗ trợ tạo lịch lặp lại hàng ngày tối đa 90 ngày một lần.");
+                }
             }
+
+            var acceptedSlots = new List<(DateTime Dep, DateTime Arr)>();
+            var conflictMessages = new List<string>();
 
             if (ModelState.IsValid)
             {
-                _context.Add(trip);
+                // Sinh các slot chuyến xe: 1 chuyến đơn hoặc lặp lại hàng ngày theo khung giờ
+                var duration = model.ArrivalTime - model.DepartureTime;
+                var startDate = model.DepartureTime.Date;
+                var endDate = model.IsDailyRecurring && model.RepeatEndDate.HasValue
+                    ? model.RepeatEndDate.Value.Date
+                    : startDate;
+
+                for (var d = startDate; d <= endDate; d = d.AddDays(1))
+                {
+                    var dep = d.Add(model.DepartureTime.TimeOfDay);
+                    var arr = dep.Add(duration);
+
+                    var dbConflict = await CheckBusScheduleConflictAsync(model.BusId, 0, dep, arr);
+                    var batchOverlap = acceptedSlots.Any(s => s.Dep < arr && s.Arr > dep);
+
+                    if (dbConflict != null)
+                    {
+                        conflictMessages.Add(
+                            $"Ngày {dep:dd/MM/yyyy}: Xe [{dbConflict.Bus?.LicensePlate}] trùng với Chuyến #{dbConflict.TripId} " +
+                            $"({dbConflict.DepartureTime:HH:mm dd/MM} - {dbConflict.ArrivalTime:HH:mm dd/MM}).");
+                    }
+                    else if (batchOverlap)
+                    {
+                        conflictMessages.Add($"Ngày {dep:dd/MM/yyyy}: Thời lượng chuyến vượt quá 24 giờ nên chồng lấn với chuyến ngày hôm trước.");
+                    }
+                    else
+                    {
+                        acceptedSlots.Add((dep, arr));
+                    }
+                }
+
+                if (conflictMessages.Count > 0 && !model.SkipConflictingDates)
+                {
+                    foreach (var msg in conflictMessages.Take(5))
+                    {
+                        ModelState.AddModelError(string.Empty, msg);
+                    }
+                    if (conflictMessages.Count > 5)
+                    {
+                        ModelState.AddModelError(string.Empty, $"...và {conflictMessages.Count - 5} ngày xung đột khác.");
+                    }
+                    ModelState.AddModelError(nameof(model.BusId), "Phát hiện xung đột lịch xe trong khoảng thời gian đã chọn.");
+                }
+                else if (acceptedSlots.Count == 0)
+                {
+                    ModelState.AddModelError(string.Empty, "Tất cả các ngày trong khoảng lặp lại đều bị trùng lịch xe, không thể tạo chuyến mới.");
+                }
+            }
+
+            if (ModelState.IsValid && acceptedSlots.Count > 0)
+            {
+                var trips = acceptedSlots.Select(slot => new Trip
+                {
+                    RouteId = model.RouteId,
+                    BusId = model.BusId,
+                    DepartureTime = slot.Dep,
+                    ArrivalTime = slot.Arr,
+                    BasePrice = model.BasePrice,
+                    Status = model.Status
+                }).ToList();
+
+                await _context.Trips.AddRangeAsync(trips);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Đã lên lịch chuyến xe #{trip.TripId} thành công!";
+
+                if (trips.Count == 1 && !model.IsDailyRecurring)
+                {
+                    TempData["SuccessMessage"] = $"Đã lên lịch chuyến xe #{trips[0].TripId} thành công!";
+                }
+                else
+                {
+                    var skippedNote = conflictMessages.Count > 0
+                        ? $" (đã bỏ qua {conflictMessages.Count} ngày trùng lịch)"
+                        : string.Empty;
+                    TempData["SuccessMessage"] =
+                        $"Đã tạo thành công {trips.Count} chuyến xe chạy hàng ngày " +
+                        $"({trips.First().DepartureTime:dd/MM/yyyy} – {trips.Last().DepartureTime:dd/MM/yyyy}){skippedNote}.";
+                }
                 return RedirectToAction(nameof(Index));
             }
 
-            await PopulateDropdowns(trip.RouteId, trip.BusId);
-            return View(trip);
+            await PopulateDropdowns(model.RouteId, model.BusId);
+            return View(model);
         }
 
         // GET: RouteManager/Trips/Edit/5

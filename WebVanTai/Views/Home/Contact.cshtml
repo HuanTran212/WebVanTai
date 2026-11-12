@@ -1,0 +1,114 @@
+@model WebVanTai.Models.ContactMessage
+@{
+    ViewData["Title"] = "Liên hệ với G-Trans";
+    var smtpConfigured = (bool?)ViewBag.SmtpConfigured ?? false;
+}
+
+<div class="container py-4" style="max-width: 960px;">
+    <div class="p-4 p-md-5 rounded-4 text-white mb-4" style="background: linear-gradient(135deg, #F26522, #d9531e);">
+        <h3 class="fw-bold mb-1"><i class="bi bi-envelope-paper-fill me-2"></i>Liên hệ với chúng tôi</h3>
+        <p class="mb-0 opacity-75">Gửi góp ý, yêu cầu hỗ trợ đặt vé hoặc hợp tác vận chuyển — chúng tôi luôn sẵn sàng lắng nghe 24/7.</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show rounded-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+                <h5 class="fw-bold text-dark mb-3">Thông tin liên hệ G-Trans</h5>
+                <div class="d-flex flex-column gap-3 text-secondary">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="p-2 rounded-3 bg-warning-subtle text-futa"><i class="bi bi-telephone-inbound-fill fs-5"></i></div>
+                        <div>
+                            <div class="fw-semibold text-dark">Tổng đài hỗ trợ 24/7</div>
+                            <div>1900 6868</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="p-2 rounded-3 bg-warning-subtle text-futa"><i class="bi bi-envelope-check-fill fs-5"></i></div>
+                        <div>
+                            <div class="fw-semibold text-dark">Email tiếp nhận</div>
+                            <div>hotro@gtrans.vn</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="p-2 rounded-3 bg-warning-subtle text-futa"><i class="bi bi-geo-alt-fill fs-5"></i></div>
+                        <div>
+                            <div class="fw-semibold text-dark">Trụ sở chính</div>
+                            <div>Tòa nhà G-Trans, 501 Hoàng Hữu Nam, TP. Thủ Đức, TP. Hồ Chí Minh</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!smtpConfigured)
+                {
+                    <div class="alert alert-info small rounded-3 mt-4 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Để gửi email thực tế qua Gmail SMTP, cấu hình <code>Smtp:SenderEmail</code> và <code>Smtp:AppPassword</code> (App Password Google) trong <code>appsettings.json</code>.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold text-dark mb-3">Gửi thông tin liên hệ</h5>
+                <form asp-action="Contact" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FullName" class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" required />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">Số điện thoại</label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="0909 123 456" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label fw-semibold">Email phản hồi <span class="text-danger">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" required />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Subject" class="form-label fw-semibold">Tiêu đề <span class="text-danger">*</span></label>
+                            <input asp-for="Subject" class="form-control" placeholder="VD: Hỗ trợ đổi vé / Góp ý dịch vụ..." required />
+                            <span asp-validation-for="Subject" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Message" class="form-label fw-semibold">Nội dung liên hệ <span class="text-danger">*</span></label>
+                            <textarea asp-for="Message" rows="5" class="form-control" placeholder="Nhập chi tiết nội dung bạn muốn gửi đến G-Trans..." required></textarea>
+                            <span asp-validation-for="Message" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-futa rounded-pill px-4 py-2 fw-bold">
+                            <i class="bi bi-send-fill me-2"></i>Gửi thông tin liên hệ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

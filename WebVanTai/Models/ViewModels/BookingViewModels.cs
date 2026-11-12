@@ -10,6 +10,7 @@ namespace WebVanTai.Models.ViewModels
         public int TicketId { get; set; }
         public string SeatCode { get; set; } = string.Empty;
         public string PassengerName { get; set; } = string.Empty;
+        public string PassengerPhone { get; set; } = string.Empty;
         public string? QrToken { get; set; }
         public TicketStatus Status { get; set; }
         public DateTime? CheckedInAt { get; set; }
@@ -19,15 +20,24 @@ namespace WebVanTai.Models.ViewModels
     {
         public int BookingId { get; set; }
         public BookingStatus Status { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal RefundedAmount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? CancelledAt { get; set; }
 
         public string RouteName { get; set; } = string.Empty;
         public DateTime DepartureTime { get; set; }
+        public DateTime ArrivalTime { get; set; }
+        public string BusTypeName { get; set; } = string.Empty;
+        public string LicensePlate { get; set; } = string.Empty;
         public string PickupStationName { get; set; } = string.Empty;
+        public string PickupStationAddress { get; set; } = string.Empty;
         public string DropoffStationName { get; set; } = string.Empty;
+        public string DropoffStationAddress { get; set; } = string.Empty;
+        public string? SoldByStaffName { get; set; }
 
-        /// <summary>true nếu được phép hủy (Paid &amp; còn ≥ 4 tiếng đến giờ xuất bến)</summary>
+        /// <summary>true nếu được phép hủy (Paid &amp; còn ≥ 4 tiếng đến giờ xuất bến &amp; chưa ai lên xe)</summary>
         public bool CanCancel { get; set; }
 
         public List<TicketItemViewModel> Tickets { get; set; } = new();

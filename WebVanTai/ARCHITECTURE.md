@@ -3,7 +3,7 @@
 ## 1. Tech Stack & Environment
 - **Framework:** ASP.NET Core Web App (Model-View-Controller) on **.NET 10.0**.
 - **ORM & Database:** Entity Framework Core 10 (Code-First) with **SQL Server LocalDB** (`Server=(localdb)\\mssqllocaldb;Database=BusTicketDb;Trusted_Connection=True;MultipleActiveResultSets=true`).
-- **Authentication & RBAC:** ASP.NET Core Identity (`ApplicationUser : IdentityUser`) with 4 Roles: `Admin`, `RouteManager`, `TicketInspector`, `Customer`.
+- **Authentication & RBAC:** ASP.NET Core Identity (`ApplicationUser : IdentityUser`) with 5 Roles: `Admin`, `RouteManager`, `TicketManager` (Quản lý vé: bán vé tại quầy, thu tiền mặt, hủy/hoàn vé, danh sách vé), `TicketInspector`, `Customer`.
 - **Frontend:** Razor Views (`.cshtml`), Bootstrap 5 (Mobile-First responsive, G-Trans orange theme `#F26522`), Leaflet.js (OpenStreetMap), `html5-qrcode` (Camera scanner).
 - **NuGet Packages:** `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Microsoft.AspNetCore.Identity.UI`, `QRCoder`.
 
@@ -15,6 +15,7 @@
   - `PaymentController` & `Services/VnPayService.cs`: Owned by **Member 3** (VNPay Sandbox, QRCoder generation, ticket history).
 - `Areas/RouteManager/`: Owned by **Member 4** (CRUD for Buses, BusTypes, Stations, Routes, Trips, schedule conflict validation).
 - `Areas/TicketInspector/` & `Areas/Admin/`: Owned by **Member 5** (Mobile QR camera scanner, check-in API, Admin revenue dashboard & staff accounts).
+- `Areas/TicketManager/`: Owned by **Member 5** (Quản lý vé — bán vé tại quầy thu tiền mặt, thu tiền đơn online, hủy & hoàn tiền vé, danh sách vé toàn hệ thống, in thẻ lên xe). Seed bổ sung trong `Services/ExtraDataSeeder.cs` (không sửa `Data/DbInitializer.cs`).
 
 ## 3. Enums (`Models/Enums/SystemEnums.cs`)
 - `StationType`: `Pickup = 0`, `Dropoff = 1`, `Both = 2`

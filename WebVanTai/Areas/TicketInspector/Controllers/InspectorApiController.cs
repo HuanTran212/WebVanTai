@@ -343,7 +343,14 @@ namespace WebVanTai.Areas.TicketInspector.Controllers
                     : 0,
                 SoldTickets = tickets.Count(x => x.Status == "sold"),
                 CheckedInTickets = tickets.Count(x => x.Status == "checkedin"),
-                Seats = tickets.ToDictionary(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                // Một ghế có thể có nhiều vé (ví vé cũ bị Void do hết hạn/hủy rồi được đặt lại):
+                // nhóm theo SeatCode và ưu tiên vé còn hiệu lực để tránh lỗi trùng key từ điển.
+                Seats = tickets
+                    .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.OrderBy(x => x.Status == "void").First(),
+                        StringComparer.OrdinalIgnoreCase)
             };
             response.ValidTickets = response.SoldTickets + response.CheckedInTickets;
 

@@ -79,41 +79,36 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
             if (result.Succeeded)
             {
-                // Nếu có returnUrl cụ thể và hợp lệ từ trang trước
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "/RouteManager/Dashboard")
-                {
-                    return LocalRedirect(returnUrl);
-                }
-
-                // 3. Kiểm tra Role của user từ Database để điều hướng tự động
+                // Kiểm tra Role của user từ Database để điều hướng tự động
                 var roles = await _userManager.GetRolesAsync(user);
-                if (roles.Contains("Admin"))
+
+                // Điều hướng thông minh theo quyền nếu không có returnUrl hợp lệ hoặc returnUrl mặc định/xung đột
+                if (string.IsNullOrEmpty(returnUrl) || !Url.IsLocalUrl(returnUrl) || returnUrl == "/" || returnUrl == "/RouteManager/Dashboard" || returnUrl.Contains("/Account/Login"))
                 {
-                    // Điều hướng thông minh theo quyền nếu không có returnUrl hoặc returnUrl mặc định/xung đột
-                    if (string.IsNullOrEmpty(returnUrl) || returnUrl == "/" || returnUrl == "/RouteManager/Dashboard" || returnUrl.Contains("/Account/Login"))
-                    {
-                        if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
-                        if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
-                        if (roles.Contains("RouteManager")) return LocalRedirect("/RouteManager/Dashboard");
-                        if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
-                        return LocalRedirect("/");
-                    }
-
-                    // Chặn chuyển hướng sai quyền gây lỗi 403 Access Denied
-                    bool isForbidden =
-                        (roles.Contains("TicketInspector") && !roles.Contains("RouteManager") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))) ||
-                        (roles.Contains("Customer") && !roles.Contains("Admin") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketInspector", StringComparison.OrdinalIgnoreCase))) ||
-                        (roles.Contains("RouteManager") && !roles.Contains("Admin") && returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase));
-
-                    if (isForbidden)
-                    {
-                        if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
-                        if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
-                        if (roles.Contains("RouteManager")) return LocalRedirect("/RouteManager/Dashboard");
-                        if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
-                    }
+                    if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
+                    if (roles.Contains("TicketManager")) return LocalRedirect("/TicketManager/Dashboard");
+                    if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
+                    if (roles.Contains("RouteManager")) return LocalRedirect("/RouteManager/Dashboard");
+                    if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
+                    return LocalRedirect("/");
                 }
-                return LocalRedirect(returnUrl ?? "/");
+
+                // Chặn chuyển hướng sai quyền gây lỗi 403 Access Denied
+                bool isForbidden =
+                    (roles.Contains("TicketInspector") && !roles.Contains("Admin") && !roles.Contains("RouteManager") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketManager", StringComparison.OrdinalIgnoreCase))) ||
+                    (roles.Contains("TicketManager") && !roles.Contains("Admin") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketInspector", StringComparison.OrdinalIgnoreCase))) ||
+                    (roles.Contains("Customer") && !roles.Contains("Admin") && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketInspector", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketManager", StringComparison.OrdinalIgnoreCase))) ||
+                    (roles.Contains("RouteManager") && !roles.Contains("Admin") && (returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketManager", StringComparison.OrdinalIgnoreCase)));
+
+                if (isForbidden)
+                {
+                    if (roles.Contains("Admin")) return LocalRedirect("/Admin/Dashboard");
+                    if (roles.Contains("TicketManager")) return LocalRedirect("/TicketManager/Dashboard");
+                    if (roles.Contains("TicketInspector")) return LocalRedirect("/TicketInspector/Dashboard");
+                    if (roles.Contains("RouteManager")) return LocalRedirect("/RouteManager/Dashboard");
+                    if (roles.Contains("Customer")) return LocalRedirect("/Payment/MyTickets");
+                }
+                return LocalRedirect(returnUrl);
             }
 
             if (result.IsLockedOut)
@@ -234,60 +229,6 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
             return View();
-        }
-
-        [HttpGet("/Identity/Account/QuickLogin")]
-        [HttpGet("/RouteManager/Account/QuickLogin")]
-        [HttpGet("/Account/QuickLogin")]
-        [AllowAnonymous]
-        public async Task<IActionResult> QuickLogin(string role = "RouteManager", string? returnUrl = null)
-        {
-            var email = role switch
-            {
-                "Admin" => "admin@webvantai.vn",
-                "TicketInspector" => "inspector@webvantai.vn",
-                "Customer" => "customer@webvantai.vn",
-                _ => "routemanager@webvantai.vn"
-            };
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null && role == "Customer")
-            {
-                user = await _userManager.FindByEmailAsync("customer@futabus.vn");
-            }
-            if (user != null)
-            {
-                await _signInManager.SignInAsync(user, isPersistent: true);
-                TempData["SuccessMessage"] = $"Đăng nhập thành công với quyền [{role}] ({user.Email})!";
-
-                // Đường dẫn chức năng trực tiếp của từng quyền
-                var defaultRolePath = role switch
-                {
-                    "Admin" => "/Admin/Dashboard",
-                    "TicketInspector" => "/TicketInspector/Dashboard",
-                    "Customer" => "/Payment/MyTickets",
-                    _ => "/RouteManager/Dashboard"
-                };
-
-                // Nếu có returnUrl hợp lệ và không xung đột quyền
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
-                    bool isForbiddenRedirect =
-                        (role == "TicketInspector" && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))) ||
-                        (role == "Customer" && (returnUrl.StartsWith("/RouteManager", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) || returnUrl.StartsWith("/TicketInspector", StringComparison.OrdinalIgnoreCase))) ||
-                        (role == "RouteManager" && returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase));
-
-                    if (!isForbiddenRedirect && returnUrl != "/RouteManager/Dashboard" && !returnUrl.Contains("/Account/Login"))
-                    {
-                        return LocalRedirect(returnUrl);
-                    }
-                }
-
-                // Đi thẳng vào chức năng của role đó
-                return LocalRedirect(defaultRolePath);
-            }
-
-            TempData["ErrorMessage"] = "Không tìm thấy tài khoản mẫu. Vui lòng đảm bảo database đã được seed.";
-            return RedirectToAction("Login", "Account", new { area = "RouteManager" });
         }
 
         [HttpPost("/RouteManager/Account/Logout")]

@@ -20,6 +20,8 @@ namespace WebVanTai.Data
         public DbSet<Trip> Trips => Set<Trip>();
         public DbSet<Booking> Bookings => Set<Booking>();
         public DbSet<Ticket> Tickets => Set<Ticket>();
+        public DbSet<CrewMember> CrewMembers => Set<CrewMember>();
+        public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -42,10 +44,20 @@ namespace WebVanTai.Data
                 entity.Property(e => e.BasePrice).HasPrecision(18, 2);
             });
 
-            // Bus unique license plate
+            // Bus unique license plate & crew assignments
             builder.Entity<Bus>(entity =>
             {
                 entity.HasIndex(b => b.LicensePlate).IsUnique();
+
+                entity.HasOne(b => b.Driver)
+                    .WithMany(c => c.DrivenBuses)
+                    .HasForeignKey(b => b.DriverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(b => b.Assistant)
+                    .WithMany(c => c.AssistedBuses)
+                    .HasForeignKey(b => b.AssistantId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // RouteStation relations: Restrict on Station to prevent multiple cascade paths
@@ -62,7 +74,7 @@ namespace WebVanTai.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Booking relations: Restrict on Stations and User to prevent multiple cascade paths
+            // Booking relations: Restrict on Stations and Users to prevent multiple cascade paths
             builder.Entity<Booking>(entity =>
             {
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
@@ -80,6 +92,12 @@ namespace WebVanTai.Data
                 entity.HasOne(b => b.User)
                     .WithMany(u => u.Bookings)
                     .HasForeignKey(b => b.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Nhân viên Quản lý vé xuất đơn (nếu bán tại quầy) — không có navigation ngược trên ApplicationUser
+                entity.HasOne(b => b.SoldByUser)
+                    .WithMany()
+                    .HasForeignKey(b => b.SoldByUserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(b => b.Trip)

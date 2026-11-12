@@ -21,10 +21,19 @@ namespace WebVanTai.Models
 
         public bool IsActive { get; set; } = true;
 
+        public int? DriverId { get; set; }
+
+        public int? AssistantId { get; set; }
+
         [ForeignKey(nameof(BusTypeId))]
         public virtual BusType? BusType { get; set; }
+
+        [ForeignKey(nameof(DriverId))]
+        public virtual CrewMember? Driver { get; set; }
+
+        [ForeignKey(nameof(AssistantId))]
+        public virtual CrewMember? Assistant { get; set; }
 
         public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
     }
 }
-

@@ -1,0 +1,120 @@
+@model IEnumerable<WebVanTai.Models.CrewMember>
+@using WebVanTai.Models.Enums
+@{
+    ViewData["Title"] = "Quản Lý Tài Xế & Lơ Xe";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-person-vcard-fill text-warning me-2"></i>Quản Lý Tài Xế &amp; Lơ Xe
+        </h3>
+        <p class="text-muted mb-0 small">Danh sách tổ lái và nhân viên phụ xe để phân công cố định theo từng xe khách.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Buses" asp-action="Index" class="btn btn-outline-dark">
+            <i class="bi bi-truck me-1"></i>Phân công trên Xe
+        </a>
+        <a asp-action="Create" class="btn btn-futa shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i>Thêm Tài Xế / Lơ Xe
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm theo họ tên, SĐT, GPLX..." />
+        </div>
+        <div class="col-md-4">
+            <select name="role" class="form-select">
+                <option value="">-- Tất cả vai trò --</option>
+                <option value="0" selected="@(ViewBag.SelectedRole?.ToString() == "Driver")">Tài xế</option>
+                <option value="1" selected="@(ViewBag.SelectedRole?.ToString() == "Assistant")">Lơ xe (Phụ xe)</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-funnel me-1"></i>Lọc</button>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Họ và tên</th>
+                    <th>Vai trò</th>
+                    <th>Số điện thoại</th>
+                    <th>Số GPLX</th>
+                    <th>Xe đang phụ trách</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Chưa có nhân sự nào.</td></tr>
+                }
+                @foreach (var m in Model)
+                {
+                    var assignedBuses = m.Role == CrewRole.Driver ? m.DrivenBuses : m.AssistedBuses;
+                    <tr>
+                        <td class="fw-bold text-dark">@m.FullName</td>
+                        <td>
+                            @if (m.Role == CrewRole.Driver)
+                            {
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Tài xế</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info-subtle text-dark border border-info-subtle">Lơ xe</span>
+                            }
+                        </td>
+                        <td>@m.PhoneNumber</td>
+                        <td class="font-monospace small">@(m.LicenseNumber ?? "—")</td>
+                        <td>
+                            @if (assignedBuses.Any())
+                            {
+                                foreach (var bus in assignedBuses)
+                                {
+                                    <a asp-controller="Buses" asp-action="Details" asp-route-id="@bus.BusId"
+                                       class="badge bg-light text-dark border font-monospace text-decoration-none me-1">
+                                        @bus.LicensePlate
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Chưa phân công</span>
+                            }
+                        </td>
+                        <td>
+                            @if (m.IsActive)
+                            {
+                                <span class="badge bg-success-subtle text-success">Đang làm việc</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary">Tạm nghỉ</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-action="Edit" asp-route-id="@m.CrewMemberId" class="btn btn-outline-primary"><i class="bi bi-pencil-square"></i></a>
+                                <form asp-action="Delete" asp-route-id="@m.CrewMemberId" method="post" class="d-inline"
+                                      onsubmit="return confirm('Xóa nhân sự @m.FullName?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

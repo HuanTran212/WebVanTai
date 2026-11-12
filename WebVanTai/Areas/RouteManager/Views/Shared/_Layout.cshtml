@@ -251,14 +251,21 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a asp-area="RouteManager" asp-controller="Buses" asp-action="Index" 
+                    <a asp-area="RouteManager" asp-controller="Buses" asp-action="Index"
                        class="sidebar-link @(currentController == "Buses" ? "active" : "")">
                         <i class="bi bi-truck-front-fill"></i>
                         <span>Xe Khách (Bus)</span>
                     </a>
                 </li>
                 <li class="sidebar-item">
-                    <a asp-area="RouteManager" asp-controller="Trips" asp-action="Index" 
+                    <a asp-area="RouteManager" asp-controller="CrewMembers" asp-action="Index"
+                       class="sidebar-link @(currentController == "CrewMembers" ? "active" : "")">
+                        <i class="bi bi-person-vcard-fill"></i>
+                        <span>Tài Xế &amp; Lơ Xe</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a asp-area="RouteManager" asp-controller="Trips" asp-action="Index"
                        class="sidebar-link @(currentController == "Trips" ? "active" : "")">
                         <i class="bi bi-calendar2-range-fill"></i>
                         <span>Lịch Chạy & Chuyến Xe</span>

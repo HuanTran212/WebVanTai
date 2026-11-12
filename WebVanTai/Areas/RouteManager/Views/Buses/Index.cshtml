@@ -52,6 +52,7 @@
                     <th style="width: 60px;">Mã</th>
                     <th>Biển Số Xe</th>
                     <th>Loại Xe & Số Chỗ</th>
+                    <th>Tài Xế &amp; Lơ Xe</th>
                     <th>Tiện Ích Trang Bị</th>
                     <th class="text-center">Số Chuyến Đã Xếp</th>
                     <th>Trạng Thái</th>
@@ -62,7 +63,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+                        <td colspan="8" class="text-center py-5 text-muted">
                             <i class="bi bi-truck fs-1 d-block text-secondary mb-2"></i>
                             Không tìm thấy phương tiện nào phù hợp.
                         </td>
@@ -83,6 +84,16 @@
                             <td>
                                 <div class="fw-semibold text-dark">@bus.BusType?.Name</div>
                                 <small class="text-muted">@bus.BusType?.TotalSeats chỗ &bull; @bus.BusType?.TotalDecks tầng</small>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <span class="text-muted">Tài xế:</span>
+                                    <strong class="text-dark">@(bus.Driver?.FullName ?? "Chưa phân công")</strong>
+                                </div>
+                                <div class="small">
+                                    <span class="text-muted">Lơ xe:</span>
+                                    <strong class="text-dark">@(bus.Assistant?.FullName ?? "Chưa phân công")</strong>
+                                </div>
                             </td>
                             <td>
                                 <span class="small text-secondary text-truncate d-inline-block" style="max-width: 280px;" title="@bus.Amenities">

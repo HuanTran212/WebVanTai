@@ -59,14 +59,15 @@
                                     "Admin" => "Toàn quyền hệ thống + thống kê doanh thu",
                                     "RouteManager" => "Quản lý bến bãi, tuyến xe, lịch chạy",
                                     "TicketInspector" => "Soát vé QR trên di động tại bến",
+                                    "TicketManager" => "Quản lý vé: bán vé tại quầy, in vé, hủy/hoàn vé",
                                     _ => ""
                                 };
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="d-block h-100">
                                         <input type="radio" asp-for="Role" value="@role" class="d-none role-radio"
                                                disabled="@(isCurrentUser && role != "Admin")" />
                                         <div class="role-card p-3 h-100 @(Model.Role == role ? "selected" : "")" data-role="@role">
-                                            <i class="bi @(role switch { "Admin" => "bi-shield-lock-fill", "RouteManager" => "bi-bus-front-fill", "TicketInspector" => "bi-qr-code-scan", _ => "bi-person" }) fs-3 d-block mb-2"></i>
+                                            <i class="bi @(role switch { "Admin" => "bi-shield-lock-fill", "RouteManager" => "bi-bus-front-fill", "TicketInspector" => "bi-qr-code-scan", "TicketManager" => "bi-ticket-perforated-fill", _ => "bi-person" }) fs-3 d-block mb-2"></i>
                                             <div class="fw-bold">@role</div>
                                             <div class="small text-muted">@desc</div>
                                         </div>

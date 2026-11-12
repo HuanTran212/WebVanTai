@@ -1,0 +1,200 @@
+@model WebVanTai.Areas.TicketManager.ViewModels.ManagerSellViewModel
+@{
+    ViewData["Title"] = $"Bán vé chuyến #{Model.TripId}";
+}
+
+<style>
+    .pos-seat {
+        width: 46px; height: 46px; border-radius: 8px;
+        font-weight: 700; font-size: .8rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; border: 2px solid #F26522;
+        background: #fff; color: #F26522; user-select: none;
+        transition: all .15s;
+    }
+    .pos-seat:hover { transform: scale(1.08); }
+    .pos-seat.selected { background: #F26522; color: #fff; box-shadow: 0 3px 8px rgba(242,101,34,.35); }
+    .pos-seat.occupied { background: #e2e8f0; border-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-ticket-perforated text-warning me-2"></i>Bán Vé Tại Quầy — @Model.RouteName</h4>
+        <div class="small text-muted">
+            Chuyến #@Model.TripId &bull; Khởi hành: <strong>@Model.DepartureTime.ToString("HH:mm dd/MM/yyyy")</strong>
+            &bull; Xe @Model.LicensePlate (@Model.BusTypeName) &bull; <strong class="text-danger">@Model.BasePrice.ToString("N0") đ/ghế</strong>
+        </div>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quay lại</a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger small rounded-3">
+        <div asp-validation-summary="All" class="mb-0"></div>
+    </div>
+}
+
+<form asp-action="Sell" method="post" id="posSellForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="TripId" />
+    <input type="hidden" asp-for="SelectedSeats" id="selectedSeatsInput" />
+    <input type="hidden" asp-for="LinkedCustomerId" id="linkedCustomerId" />
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card card-custom p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0">Chọn ghế ngồi (tối đa 10 ghế/lần xuất vé)</h6>
+                    <span class="badge bg-warning text-dark" id="seatCountBadge">Đã chọn: 0</span>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    @foreach (var deck in Model.Decks)
+                    {
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border text-center">
+                                <div class="fw-bold small mb-2 text-uppercase">@deck.DeckName</div>
+                                <div style="display:grid;grid-template-columns:repeat(@(deck.Cols > 0 ? deck.Cols : 3), 46px);gap:8px;justify-content:center;">
+                                    @foreach (var seat in deck.Seats)
+                                    {
+                                        <div class="pos-seat @(seat.IsOccupied ? "occupied" : "")"
+                                             data-code="@seat.Code"
+                                             data-occupied="@(seat.IsOccupied ? "true" : "false")">
+                                            @seat.Code
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card card-custom p-4">
+                <h6 class="fw-bold mb-3 border-bottom pb-2">Thông tin khách &amp; Thanh toán tiền mặt</h6>
+
+                <div class="mb-3 p-2.5 rounded-3 bg-light border">
+                    <label class="form-label small fw-semibold mb-1">Tìm tài khoản khách (tùy chọn — để vé vào "Vé của tôi" và gửi email)</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="customerLookupInput" class="form-control" placeholder="Nhập email hoặc SĐT khách..." />
+                        <button type="button" class="btn btn-dark" id="btnLookupCustomer">Tìm</button>
+                    </div>
+                    <div id="customerLookupResult" class="small mt-1"></div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Điểm đón</label>
+                        <select asp-for="PickupStationId" class="form-select form-select-sm">
+                            @foreach (var s in Model.PickupStations)
+                            {
+                                <option value="@s.StationId">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Điểm trả</label>
+                        <select asp-for="DropoffStationId" class="form-select form-select-sm">
+                            @foreach (var s in Model.DropoffStations)
+                            {
+                                <option value="@s.StationId">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label asp-for="PassengerName" class="form-label small fw-semibold">Họ tên hành khách <span class="text-danger">*</span></label>
+                    <input asp-for="PassengerName" id="passengerNameInput" class="form-control" required />
+                </div>
+
+                <div class="mb-2">
+                    <label asp-for="PassengerPhone" class="form-label small fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                    <input asp-for="PassengerPhone" id="passengerPhoneInput" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ContactEmail" class="form-label small fw-semibold">Email nhận vé điện tử (tùy chọn)</label>
+                    <input asp-for="ContactEmail" id="contactEmailInput" type="email" class="form-control" placeholder="khachhang@gmail.com" />
+                </div>
+
+                <div class="p-3 rounded-3 bg-light mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted d-block">Ghế: <strong id="seatsSummary">Chưa chọn</strong></small>
+                        <span class="small text-muted">Tổng thu tiền mặt:</span>
+                    </div>
+                    <strong class="fs-4 text-danger" id="totalAmountText">0 đ</strong>
+                </div>
+
+                <button type="submit" class="btn btn-futa w-100 py-2.5 fw-bold">
+                    <i class="bi bi-cash-coin me-1"></i>Thu tiền mặt &amp; Xuất vé ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const basePrice = @Model.BasePrice;
+            const initial = ('@Model.SelectedSeats' || '').split(',').map(s => s.trim()).filter(Boolean);
+            let selected = [...initial];
+
+            function sync() {
+                document.querySelectorAll('.pos-seat').forEach(el => {
+                    if (el.dataset.occupied === 'true') return;
+                    el.classList.toggle('selected', selected.includes(el.dataset.code));
+                });
+                document.getElementById('selectedSeatsInput').value = selected.join(',');
+                document.getElementById('seatCountBadge').textContent = `Đã chọn: ${selected.length}`;
+                document.getElementById('seatsSummary').textContent = selected.length ? selected.join(', ') : 'Chưa chọn';
+                document.getElementById('totalAmountText').textContent = (selected.length * basePrice).toLocaleString('vi-VN') + ' đ';
+            }
+
+            document.querySelectorAll('.pos-seat').forEach(el => {
+                el.addEventListener('click', () => {
+                    if (el.dataset.occupied === 'true') return;
+                    const code = el.dataset.code;
+                    const idx = selected.indexOf(code);
+                    if (idx >= 0) selected.splice(idx, 1);
+                    else {
+                        if (selected.length >= 10) { alert('Tối đa 10 ghế mỗi lần xuất vé.'); return; }
+                        selected.push(code);
+                    }
+                    sync();
+                });
+            });
+
+            document.getElementById('btnLookupCustomer').addEventListener('click', async () => {
+                const q = document.getElementById('customerLookupInput').value.trim();
+                if (!q) return;
+                const res = await fetch(`@Url.Action("LookupCustomer")?query=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                const box = document.getElementById('customerLookupResult');
+                if (data.found) {
+                    document.getElementById('linkedCustomerId').value = data.userId;
+                    if (!document.getElementById('passengerNameInput').value) document.getElementById('passengerNameInput').value = data.fullName || '';
+                    if (!document.getElementById('passengerPhoneInput').value) document.getElementById('passengerPhoneInput').value = data.phoneNumber || '';
+                    if (!document.getElementById('contactEmailInput').value) document.getElementById('contactEmailInput').value = data.email || '';
+                    box.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>${data.fullName} — ${data.email}</span>`;
+                } else {
+                    document.getElementById('linkedCustomerId').value = '';
+                    box.innerHTML = '<span class="text-warning">Không tìm thấy tài khoản (bán vé tiền mặt cho khách vãng lai).</span>';
+                }
+            });
+
+            document.getElementById('posSellForm').addEventListener('submit', e => {
+                if (selected.length === 0) {
+                    e.preventDefault();
+                    alert('Vui lòng chọn ít nhất 1 ghế.');
+                }
+            });
+
+            sync();
+        })();
+    </script>
+}

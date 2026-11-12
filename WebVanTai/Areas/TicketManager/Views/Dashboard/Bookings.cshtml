@@ -1,0 +1,132 @@
+@model List<WebVanTai.Areas.TicketManager.ViewModels.ManagerBookingListItemViewModel>
+@using WebVanTai.Models.Enums
+@{
+    ViewData["Title"] = "Đơn Vé & Thu Tiền";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-receipt-cutoff text-warning me-2"></i>Đơn Vé &amp; Thu Tiền</h3>
+        <p class="text-muted small mb-0">Thu tiền mặt cho đơn khách đặt online, hủy &amp; ghi nhận hoàn tiền vé, in thẻ lên xe.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-futa"><i class="bi bi-plus-lg me-1"></i>Bán vé mới</a>
+</div>
+
+<div class="card card-custom p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Tìm theo mã đơn (#), tên, SĐT, email hoặc ghế</label>
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="VD: 12, Nguyễn Văn A, 0909..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Trạng thái</label>
+            <select name="status" class="form-select">
+                <option value="">-- Tất cả --</option>
+                <option value="0" selected="@(ViewBag.SelectedStatus?.ToString() == "Pending")">Đang giữ chỗ</option>
+                <option value="1" selected="@(ViewBag.SelectedStatus?.ToString() == "Paid")">Đã thanh toán</option>
+                <option value="3" selected="@(ViewBag.SelectedStatus?.ToString() == "Cancelled")">Đã hủy</option>
+                <option value="2" selected="@(ViewBag.SelectedStatus?.ToString() == "Expired")">Hết hạn</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Thanh toán</label>
+            <select name="paymentMethod" class="form-select">
+                <option value="">-- Tất cả --</option>
+                <option value="1" selected="@(ViewBag.SelectedPaymentMethod?.ToString() == "Cash")">Tiền mặt</option>
+                <option value="0" selected="@(ViewBag.SelectedPaymentMethod?.ToString() == "VnPay")">VNPay</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-search"></i></button>
+            <a asp-action="Bookings" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Đơn</th>
+                    <th>Hành khách</th>
+                    <th>Chuyến / Ghế</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">Không có đơn vé nào.</td></tr>
+                }
+                @foreach (var b in Model)
+                {
+                    var payBadge = b.PaymentMethod switch
+                    {
+                        PaymentMethod.Cash => "Tiền mặt",
+                        _ => "VNPay"
+                    };
+                    <tr>
+                        <td>
+                            <div class="fw-bold">#@b.BookingId</div>
+                            <small class="text-muted">@b.CreatedAt.ToLocalTime().ToString("HH:mm dd/MM")</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@b.PassengerName</div>
+                            <small class="text-muted">@b.PassengerPhone</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@b.RouteName</div>
+                            <small class="text-muted">@b.DepartureTime.ToString("HH:mm dd/MM") &bull; Xe @b.LicensePlate &bull; Ghế: <strong>@b.SeatCodes</strong></small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-danger">@b.TotalAmount.ToString("N0") đ</div>
+                            <span class="badge bg-light text-dark border">@payBadge</span>
+                        </td>
+                        <td>
+                            @switch (b.Status)
+                            {
+                                case BookingStatus.Paid:
+                                    <span class="badge bg-success-subtle text-success">Đã thanh toán</span>
+                                    break;
+                                case BookingStatus.Pending:
+                                    <span class="badge bg-info-subtle text-dark">Giữ chỗ</span>
+                                    break;
+                                case BookingStatus.Cancelled:
+                                    <span class="badge bg-danger-subtle text-danger">Đã hủy @(b.RefundedAmount > 0 ? $"(Hoàn {b.RefundedAmount:N0}đ)" : "")</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary-subtle text-secondary">Hết hạn</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                @if (b.CanCollectCash)
+                                {
+                                    <form asp-action="CollectCash" method="post" onsubmit="return confirm('Xác nhận đã thu @b.TotalAmount.ToString("N0")đ tiền mặt cho đơn #@b.BookingId?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="bookingId" value="@b.BookingId" />
+                                        <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-cash me-1"></i>Thu tiền</button>
+                                    </form>
+                                }
+                                @if (b.Status == BookingStatus.Paid)
+                                {
+                                    <a target="_blank" asp-area="" asp-controller="Payment" asp-action="PrintTicket" asp-route-bookingId="@b.BookingId"
+                                       class="btn btn-sm btn-outline-primary"><i class="bi bi-printer me-1"></i>In vé</a>
+                                    <form asp-action="CancelBooking" method="post" onsubmit="return confirm('Hủy đơn #@b.BookingId và ghi nhận hoàn tiền @b.TotalAmount.ToString("N0")đ cho khách?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="bookingId" value="@b.BookingId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Hủy &amp; Hoàn</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

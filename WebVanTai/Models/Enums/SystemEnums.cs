@@ -29,5 +29,16 @@ namespace WebVanTai.Models.Enums
         CheckedIn = 1,
         Void = 2
     }
-}
 
+    public enum PaymentMethod
+    {
+        VnPay = 0,
+        Cash = 1
+    }
+
+    public enum CrewRole
+    {
+        Driver = 0,
+        Assistant = 1
+    }
+}
