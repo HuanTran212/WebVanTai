@@ -41,6 +41,23 @@
                     <span asp-validation-for="BusTypeId" class="text-danger small"></span>
                 </div>
 
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="DriverId" class="form-label fw-semibold">Tài Xế Phụ Trách</label>
+                        <select asp-for="DriverId" class="form-select" asp-items="ViewBag.DriverId">
+                            <option value="">-- Chưa phân công --</option>
+                        </select>
+                        <span asp-validation-for="DriverId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="AssistantId" class="form-label fw-semibold">Lơ Xe Phụ Trách</label>
+                        <select asp-for="AssistantId" class="form-select" asp-items="ViewBag.AssistantId">
+                            <option value="">-- Chưa phân công --</option>
+                        </select>
+                        <span asp-validation-for="AssistantId" class="text-danger small"></span>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label asp-for="Amenities" class="form-label fw-semibold">Tiện Ích Trang Bị Trên Xe</label>
                     <textarea asp-for="Amenities" id="amenitiesInput" class="form-control" rows="3"></textarea>

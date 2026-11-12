@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebVanTai.Data;
 using WebVanTai.Models;
+using WebVanTai.Models.Enums;
 
 namespace WebVanTai.Areas.RouteManager.Controllers
 {
@@ -23,6 +24,8 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         {
             var query = _context.Buses
                 .Include(b => b.BusType)
+                .Include(b => b.Driver)
+                .Include(b => b.Assistant)
                 .Include(b => b.Trips)
                 .AsQueryable();
 
@@ -58,6 +61,8 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
             var bus = await _context.Buses
                 .Include(b => b.BusType)
+                .Include(b => b.Driver)
+                .Include(b => b.Assistant)
                 .Include(b => b.Trips.OrderByDescending(t => t.DepartureTime))
                     .ThenInclude(t => t.Route)
                 .FirstOrDefaultAsync(m => m.BusId == id);
@@ -71,6 +76,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         public async Task<IActionResult> Create()
         {
             await PopulateBusTypesDropDownList();
+            await PopulateCrewDropDownListsAsync();
             var model = new Bus
             {
                 Amenities = "Wifi tốc độ cao, Nước uống, Khăn lạnh, Cổng sạc USB",
@@ -82,7 +88,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         // POST: RouteManager/Buses/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BusId,BusTypeId,LicensePlate,Amenities,IsActive")] Bus bus)
+        public async Task<IActionResult> Create([Bind("BusId,BusTypeId,LicensePlate,Amenities,IsActive,DriverId,AssistantId")] Bus bus)
         {
             bus.LicensePlate = bus.LicensePlate?.Trim().ToUpper() ?? string.Empty;
 
@@ -91,6 +97,8 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             {
                 ModelState.AddModelError("LicensePlate", $"Biển số xe \"{bus.LicensePlate}\" đã tồn tại trong hệ thống!");
             }
+
+            await ValidateCrewAssignmentAsync(bus, currentBusId: 0);
 
             if (ModelState.IsValid)
             {
@@ -101,6 +109,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             }
 
             await PopulateBusTypesDropDownList(bus.BusTypeId);
+            await PopulateCrewDropDownListsAsync(bus.DriverId, bus.AssistantId);
             return View(bus);
         }
 
@@ -113,13 +122,14 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             if (bus == null) return NotFound();
 
             await PopulateBusTypesDropDownList(bus.BusTypeId);
+            await PopulateCrewDropDownListsAsync(bus.DriverId, bus.AssistantId, currentBusId: bus.BusId);
             return View(bus);
         }
 
         // POST: RouteManager/Buses/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BusId,BusTypeId,LicensePlate,Amenities,IsActive")] Bus bus)
+        public async Task<IActionResult> Edit(int id, [Bind("BusId,BusTypeId,LicensePlate,Amenities,IsActive,DriverId,AssistantId")] Bus bus)
         {
             if (id != bus.BusId) return NotFound();
 
@@ -130,6 +140,8 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             {
                 ModelState.AddModelError("LicensePlate", $"Biển số xe \"{bus.LicensePlate}\" đã được đăng ký bởi xe khác!");
             }
+
+            await ValidateCrewAssignmentAsync(bus, currentBusId: id);
 
             if (ModelState.IsValid)
             {
@@ -150,6 +162,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             }
 
             await PopulateBusTypesDropDownList(bus.BusTypeId);
+            await PopulateCrewDropDownListsAsync(bus.DriverId, bus.AssistantId, currentBusId: id);
             return View(bus);
         }
 
@@ -204,6 +217,76 @@ namespace WebVanTai.Areas.RouteManager.Controllers
                 .ToListAsync();
 
             ViewBag.BusTypeId = new SelectList(busTypes, "BusTypeId", "DisplayText", selectedId);
+        }
+
+        /// <summary>
+        /// Dropdown phân công Tài xế / Lơ xe; hiển thị cả nhân sự đang phục vụ xe khác
+        /// để điều hành dễ nhận biết (gán trùng sẽ bị chặn ở ValidateCrewAssignmentAsync).
+        /// </summary>
+        private async Task PopulateCrewDropDownListsAsync(int? selectedDriverId = null, int? selectedAssistantId = null, int currentBusId = 0)
+        {
+            var assignedBuses = await _context.Buses
+                .AsNoTracking()
+                .Where(b => b.BusId != currentBusId)
+                .Select(b => new { b.LicensePlate, b.DriverId, b.AssistantId })
+                .ToListAsync();
+
+            var driverMap = assignedBuses.Where(b => b.DriverId.HasValue).ToDictionary(b => b.DriverId!.Value, b => b.LicensePlate);
+            var assistantMap = assignedBuses.Where(b => b.AssistantId.HasValue).ToDictionary(b => b.AssistantId!.Value, b => b.LicensePlate);
+
+            var drivers = await _context.CrewMembers
+                .AsNoTracking()
+                .Where(c => c.Role == CrewRole.Driver && (c.IsActive || c.CrewMemberId == selectedDriverId))
+                .OrderBy(c => c.FullName)
+                .ToListAsync();
+
+            var assistants = await _context.CrewMembers
+                .AsNoTracking()
+                .Where(c => c.Role == CrewRole.Assistant && (c.IsActive || c.CrewMemberId == selectedAssistantId))
+                .OrderBy(c => c.FullName)
+                .ToListAsync();
+
+            ViewBag.DriverId = new SelectList(drivers.Select(d => new
+            {
+                d.CrewMemberId,
+                DisplayText = driverMap.TryGetValue(d.CrewMemberId, out var plate)
+                    ? $"{d.FullName} ({d.PhoneNumber}) [Đang phụ trách {plate}]"
+                    : $"{d.FullName} ({d.PhoneNumber})"
+            }), "CrewMemberId", "DisplayText", selectedDriverId);
+
+            ViewBag.AssistantId = new SelectList(assistants.Select(a => new
+            {
+                a.CrewMemberId,
+                DisplayText = assistantMap.TryGetValue(a.CrewMemberId, out var plate)
+                    ? $"{a.FullName} ({a.PhoneNumber}) [Đang phụ trách {plate}]"
+                    : $"{a.FullName} ({a.PhoneNumber})"
+            }), "CrewMemberId", "DisplayText", selectedAssistantId);
+        }
+
+        /// <summary>Chặn gán 1 tài xế / lơ xe cho 2 xe khách cùng lúc.</summary>
+        private async Task ValidateCrewAssignmentAsync(Bus bus, int currentBusId)
+        {
+            if (bus.DriverId.HasValue)
+            {
+                var otherBus = await _context.Buses
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(b => b.BusId != currentBusId && b.DriverId == bus.DriverId.Value);
+                if (otherBus != null)
+                {
+                    ModelState.AddModelError(nameof(bus.DriverId), $"Tài xế này đang được phân công cho xe {otherBus.LicensePlate}. Vui lòng chọn tài xế khác hoặc gỡ phân công ở xe kia trước.");
+                }
+            }
+
+            if (bus.AssistantId.HasValue)
+            {
+                var otherBus = await _context.Buses
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(b => b.BusId != currentBusId && b.AssistantId == bus.AssistantId.Value);
+                if (otherBus != null)
+                {
+                    ModelState.AddModelError(nameof(bus.AssistantId), $"Lơ xe này đang được phân công cho xe {otherBus.LicensePlate}. Vui lòng chọn lơ xe khác hoặc gỡ phân công ở xe kia trước.");
+                }
+            }
         }
 
         private bool BusExists(int id)

@@ -48,9 +48,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages(); // Bắt buộc cho ASP.NET Core Identity UI
 builder.Services.AddHostedService<SeatLockCleanupService>();
 
-// ── Payment services ──────────────────────────────────────────────────────
+// ── Payment, Email & extended-feature services ───────────────────────────
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<VnPayService>();
+builder.Services.AddScoped<EmailService>();
 
 var app = builder.Build();
 
@@ -70,6 +71,7 @@ using (var scope = app.Services.CreateScope())
             logger.LogInformation("Attempting database migration and seeding (attempt {Attempt}/{MaxAttempts})...", retry, maxRetries);
             await context.Database.MigrateAsync();
             await DbInitializer.SeedAsync(services);
+            await ExtraDataSeeder.SeedAsync(services); // Seed role TicketManager + tổ lái (ngoài vùng Data/)
             logger.LogInformation("Database migration and seed completed successfully.");
             break;
         }

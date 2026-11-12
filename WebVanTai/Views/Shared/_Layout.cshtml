@@ -104,6 +104,11 @@
                                 Tra cứu lịch trình
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-semibold px-3 py-2 rounded-lg" asp-area="" asp-controller="Home" asp-action="Contact">
+                                Liên hệ
+                            </a>
+                        </li>
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
@@ -125,10 +130,15 @@
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userNavDropdown">
                                     <li>
                                         <a class="dropdown-item py-2 fw-semibold" asp-area="" asp-controller="Payment" asp-action="MyTickets">
-                                            Vé của tôi
+                                            <i class="bi bi-ticket-perforated me-2 text-futa"></i>Vé của tôi
                                         </a>
                                     </li>
-                                    @if (User.IsInRole("Admin") || User.IsInRole("RouteManager") || User.IsInRole("TicketInspector"))
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold" asp-area="" asp-controller="Account" asp-action="Profile">
+                                            <i class="bi bi-person-gear me-2 text-futa"></i>Thông tin tài khoản
+                                        </a>
+                                    </li>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("RouteManager") || User.IsInRole("TicketInspector") || User.IsInRole("TicketManager"))
                                     {
                                         <li><hr class="dropdown-divider"></li>
                                         @if (User.IsInRole("Admin"))
@@ -136,6 +146,14 @@
                                             <li>
                                                 <a class="dropdown-item py-2 text-danger fw-semibold" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
                                                     Quản trị hệ thống (Admin)
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (User.IsInRole("TicketManager") || User.IsInRole("Admin"))
+                                        {
+                                            <li>
+                                                <a class="dropdown-item py-2 text-success fw-semibold" asp-area="TicketManager" asp-controller="Dashboard" asp-action="Index">
+                                                    Quản lý vé
                                                 </a>
                                             </li>
                                         }
@@ -246,6 +264,7 @@
                         <li><a href="/Payment/MyTickets"><i class="bi bi-qr-code me-2 text-futa"></i> Tra cứu vé QR</a></li>
                         <li><a href="/Trips/Index"><i class="bi bi-search me-2 text-futa"></i> Tra cứu lịch trình xe</a></li>
                         <li><a href="/Booking/Index"><i class="bi bi-ticket-perforated me-2 text-futa"></i> Hướng dẫn đặt vé</a></li>
+                        <li><a href="/Home/Contact"><i class="bi bi-envelope-paper me-2 text-futa"></i> Liên hệ hỗ trợ</a></li>
                         <li><a href="javascript:void(0)" title="Quy chế hủy vé trước 4 tiếng"><i class="bi bi-shield-check me-2 text-futa"></i> Chính sách đổi & hoàn vé</a></li>
                         <li><a href="javascript:void(0)" title="Cổng VNPay bảo mật"><i class="bi bi-credit-card me-2 text-futa"></i> Thanh toán an toàn VNPay</a></li>
                     </ul>
@@ -257,9 +276,10 @@
                     <ul class="list-unstyled d-flex flex-column gap-2 small mb-3">
                         <li><a href="/Identity/Account/Login"><i class="bi bi-box-arrow-in-right me-2 text-futa"></i> Đăng nhập tài khoản</a></li>
                         <li><a href="/Identity/Account/Register"><i class="bi bi-person-plus me-2 text-futa"></i> Đăng ký thành viên</a></li>
-                        <li><a href="/RouteManager/Account/QuickLogin?role=Admin"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Bảng quản trị (Admin)</a></li>
-                        <li><a href="/RouteManager/Account/QuickLogin?role=RouteManager"><i class="bi bi-speedometer2 text-warning me-2"></i> Điều hành tuyến xe</a></li>
-                        <li><a href="/RouteManager/Account/QuickLogin?role=TicketInspector"><i class="bi bi-qr-code-scan text-info me-2"></i> Soát vé trực tuyến</a></li>
+                        <li><a href="/Admin/Dashboard"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Bảng quản trị (Admin)</a></li>
+                        <li><a href="/TicketManager/Dashboard"><i class="bi bi-ticket-perforated-fill text-success me-2"></i> Quản lý vé (Bán vé tại quầy)</a></li>
+                        <li><a href="/RouteManager/Dashboard"><i class="bi bi-speedometer2 text-warning me-2"></i> Điều hành tuyến xe</a></li>
+                        <li><a href="/TicketInspector/Dashboard"><i class="bi bi-qr-code-scan text-info me-2"></i> Soát vé trực tuyến</a></li>
                     </ul>
                     <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 d-flex align-items-center gap-2">
                         <i class="bi bi-shield-shaded text-success fs-4"></i>

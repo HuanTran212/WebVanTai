@@ -17,7 +17,7 @@ namespace WebVanTai.Areas.Admin.Controllers
     public class UsersController : Controller
     {
         /// <summary>Các vai trò nhân sự được phép cấp từ phân hệ Admin (không bao gồm Customer - khách tự đăng ký).</summary>
-        private static readonly string[] StaffRoles = { "Admin", "RouteManager", "TicketInspector" };
+        private static readonly string[] StaffRoles = { "Admin", "RouteManager", "TicketInspector", "TicketManager" };
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;

@@ -1,4 +1,4 @@
-@model WebVanTai.Models.Trip
+@model WebVanTai.Areas.RouteManager.Models.TripCreateViewModel
 @{
     ViewData["Title"] = "Xếp Lịch Chuyến Xe Mới";
 }
@@ -91,6 +91,35 @@
                     </div>
                 </div>
 
+                <!-- Chạy lặp lại hàng ngày -->
+                <div class="p-3 rounded-3 border bg-light mb-4">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsDailyRecurring" class="form-check-input" type="checkbox" id="isRecurringSwitch" />
+                        <label class="form-check-label fw-bold text-dark" for="isRecurringSwitch">
+                            <i class="bi bi-arrow-repeat text-warning me-1"></i>Chạy lặp lại hàng ngày theo khung giờ này
+                        </label>
+                    </div>
+                    <div id="recurringOptions" class="mt-3 @(Model.IsDailyRecurring ? "" : "d-none")">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label asp-for="RepeatEndDate" class="form-label fw-semibold small">Lặp lại đến hết ngày <span class="text-danger">*</span></label>
+                                <input asp-for="RepeatEndDate" id="repeatEndDateInput" type="date" class="form-control"
+                                       value="@(Model.RepeatEndDate?.ToString("yyyy-MM-dd") ?? Model.DepartureTime.Date.AddDays(6).ToString("yyyy-MM-dd"))" />
+                                <span asp-validation-for="RepeatEndDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input asp-for="SkipConflictingDates" class="form-check-input" type="checkbox" id="skipConflictsCheck" />
+                                    <label class="form-check-label small" for="skipConflictsCheck">
+                                        Tự động bỏ qua ngày xe bị trùng lịch
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="small text-primary fw-semibold mt-2" id="recurringPreviewText"></div>
+                    </div>
+                </div>
+
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-futa flex-grow-1">
                         <i class="bi bi-calendar-check me-1"></i> Xác Nhận Lên Lịch Chuyến Xe
@@ -142,5 +171,31 @@
                 }
             });
         });
+
+        function updateRecurringPreview() {
+            var isRec = $('#isRecurringSwitch').is(':checked');
+            $('#recurringOptions').toggleClass('d-none', !isRec);
+            if (!isRec) return;
+
+            var depVal = $('#departureInput').val();
+            var endVal = $('#repeatEndDateInput').val();
+            if (!depVal || !endVal) {
+                $('#recurringPreviewText').text('');
+                return;
+            }
+            var startDay = new Date(depVal.split('T')[0] + 'T00:00:00');
+            var endDay = new Date(endVal + 'T00:00:00');
+            var diffDays = Math.floor((endDay - startDay) / (1000 * 60 * 60 * 24)) + 1;
+            if (diffDays >= 1 && diffDays <= 91) {
+                $('#recurringPreviewText').text(`Dự kiến tạo tối đa ${diffDays} chuyến liên tiếp (tối đa 90 ngày/lần).`);
+            } else if (diffDays > 91) {
+                $('#recurringPreviewText').text('Khoảng thời gian vượt quá giới hạn 90 ngày.');
+            } else {
+                $('#recurringPreviewText').text('Ngày kết thúc phải lớn hơn hoặc bằng ngày khởi hành.');
+            }
+        }
+
+        $('#isRecurringSwitch, #departureInput, #repeatEndDateInput').on('change input', updateRecurringPreview);
+        updateRecurringPreview();
     </script>
 }

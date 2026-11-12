@@ -1,0 +1,120 @@
+@model List<WebVanTai.Areas.TicketManager.ViewModels.ManagerTicketListItemViewModel>
+@using WebVanTai.Models.Enums
+@{
+    ViewData["Title"] = "Danh Sách Vé";
+}
+
+<div class="mb-4">
+    <h3 class="fw-bold mb-1"><i class="bi bi-ticket-detailed-fill text-warning me-2"></i>Danh Sách Vé Toàn Hệ Thống</h3>
+    <p class="text-muted small mb-0">Tra cứu mọi vé điện tử đã bán theo hành khách, ghế, chuyến, trạng thái vé và ngày khởi hành.</p>
+</div>
+
+<div class="card card-custom p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-muted">Tìm theo mã đơn (#), tên, SĐT hoặc ghế</label>
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="VD: 1024, A01, 0909..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Trạng thái vé</label>
+            <select name="status" class="form-select">
+                <option value="">-- Tất cả --</option>
+                <option value="0" selected="@(ViewBag.SelectedStatus?.ToString() == "Valid")">Hợp lệ</option>
+                <option value="1" selected="@(ViewBag.SelectedStatus?.ToString() == "CheckedIn")">Đã lên xe</option>
+                <option value="2" selected="@(ViewBag.SelectedStatus?.ToString() == "Void")">Vô hiệu (hủy/hết hạn)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Ngày khởi hành</label>
+            <input type="date" name="date" value="@ViewBag.SelectedDate" class="form-control" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-futa w-100"><i class="bi bi-search me-1"></i>Lọc</button>
+            <a asp-action="Tickets" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Vé / Đơn</th>
+                    <th>Hành khách</th>
+                    <th>Chuyến xe</th>
+                    <th>Ngày bán</th>
+                    <th>Trạng thái vé</th>
+                    <th>Trạng thái đơn</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Không có vé nào phù hợp bộ lọc.</td></tr>
+                }
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold">Vé #@t.TicketId</div>
+                            <small class="text-muted">Đơn #@t.BookingId</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@t.PassengerName</div>
+                            <small class="text-muted">@t.PassengerPhone &bull; Ghế <span class="badge bg-dark px-2">@t.SeatCode</span></small>
+                        </td>
+                        <td>
+                            <div class="small fw-semibold">@t.RouteName</div>
+                            <small class="text-muted">@t.DepartureTime.ToString("HH:mm dd/MM") &bull; Xe @t.LicensePlate</small>
+                        </td>
+                        <td><small class="text-muted">@t.CreatedAt.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</small></td>
+                        <td>
+                            @switch (t.TicketStatus)
+                            {
+                                case TicketStatus.Valid:
+                                    <span class="badge bg-success-subtle text-success">Hợp lệ</span>
+                                    break;
+                                case TicketStatus.CheckedIn:
+                                    <span class="badge bg-primary-subtle text-primary">Đã lên xe</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary-subtle text-secondary">Vô hiệu</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @switch (t.BookingStatus)
+                            {
+                                case BookingStatus.Paid:
+                                    <span class="badge bg-success-subtle text-success">Đã thanh toán @(t.PaymentMethod == PaymentMethod.Cash ? "(Tiền mặt)" : "(VNPay)")</span>
+                                    break;
+                                case BookingStatus.Pending:
+                                    <span class="badge bg-info-subtle text-dark">Giữ chỗ</span>
+                                    break;
+                                case BookingStatus.Cancelled:
+                                    <span class="badge bg-danger-subtle text-danger">Đã hủy</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary-subtle text-secondary">Hết hạn</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (t.CanPrint)
+                            {
+                                <a target="_blank" asp-area="" asp-controller="Payment" asp-action="PrintTicket" asp-route-bookingId="@t.BookingId"
+                                   class="btn btn-sm btn-outline-primary"><i class="bi bi-printer me-1"></i>In vé</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

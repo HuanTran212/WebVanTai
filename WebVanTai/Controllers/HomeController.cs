@@ -1,20 +1,30 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
+using WebVanTai.Services;
 
 namespace WebVanTai.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly EmailService _emailService;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ApplicationDbContext context, ILogger<HomeController> logger)
+        public HomeController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            EmailService emailService,
+            ILogger<HomeController> logger)
         {
             _context = context;
+            _userManager = userManager;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -111,6 +121,65 @@ namespace WebVanTai.Controllers
                 return "https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=600&q=80"; // HCM City skyline
 
             return "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80"; // Modern bus
+        }
+
+        [HttpGet("/Home/Contact")]
+        [HttpGet("/Contact")]
+        public async Task<IActionResult> Contact()
+        {
+            var model = new ContactMessage();
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    model.FullName = user.FullName;
+                    model.Email = user.Email ?? string.Empty;
+                    model.PhoneNumber = user.PhoneNumber;
+                }
+            }
+            ViewBag.SmtpConfigured = _emailService.IsConfigured();
+            return View(model);
+        }
+
+        [HttpPost("/Home/Contact")]
+        [HttpPost("/Contact")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Contact([Bind("FullName,Email,PhoneNumber,Subject,Message")] ContactMessage input)
+        {
+            ViewBag.SmtpConfigured = _emailService.IsConfigured();
+            if (!ModelState.IsValid)
+            {
+                return View(input);
+            }
+
+            input.FullName = input.FullName.Trim();
+            input.Email = input.Email.Trim();
+            input.PhoneNumber = string.IsNullOrWhiteSpace(input.PhoneNumber) ? null : input.PhoneNumber.Trim();
+            input.Subject = input.Subject.Trim();
+            input.Message = input.Message.Trim();
+            input.CreatedAt = DateTime.UtcNow;
+            input.UserId = User.Identity?.IsAuthenticated == true ? _userManager.GetUserId(User) : null;
+
+            _context.ContactMessages.Add(input);
+            await _context.SaveChangesAsync();
+
+            // Gửi thông tin liên hệ qua email SMTP đến bộ phận hỗ trợ; lưu kết quả để phòng khi SMTP lỗi
+            var (sent, error) = await _emailService.SendContactEmailAsync(input);
+            input.EmailSent = sent;
+            input.EmailError = sent ? null : (error?.Length > 500 ? error[..500] : error);
+            await _context.SaveChangesAsync();
+
+            if (sent)
+            {
+                TempData["SuccessMessage"] = "Cảm ơn bạn! Thông tin liên hệ đã được gửi qua email đến bộ phận hỗ trợ G-Trans.";
+            }
+            else
+            {
+                TempData["WarningMessage"] = $"Yêu cầu liên hệ #{input.ContactMessageId} đã được lưu trên hệ thống, nhưng chưa gửi được email SMTP ({error}).";
+            }
+
+            return RedirectToAction(nameof(Contact));
         }
 
         public IActionResult Privacy()

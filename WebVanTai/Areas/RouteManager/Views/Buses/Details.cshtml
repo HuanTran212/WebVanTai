@@ -49,6 +49,30 @@
                 <dt class="col-sm-5 text-muted">Sức chứa:</dt>
                 <dd class="col-sm-7">@Model.BusType?.TotalSeats chỗ &bull; @Model.BusType?.TotalDecks tầng</dd>
 
+                <dt class="col-sm-5 text-muted">Tài xế phụ trách:</dt>
+                <dd class="col-sm-7">
+                    @if (Model.Driver != null)
+                    {
+                        <strong>@Model.Driver.FullName</strong> <span class="text-muted small">(@Model.Driver.PhoneNumber)</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Chưa phân công</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-5 text-muted">Lơ xe phụ trách:</dt>
+                <dd class="col-sm-7">
+                    @if (Model.Assistant != null)
+                    {
+                        <strong>@Model.Assistant.FullName</strong> <span class="text-muted small">(@Model.Assistant.PhoneNumber)</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Chưa phân công</span>
+                    }
+                </dd>
+
                 <dt class="col-sm-5 text-muted">Tiện ích:</dt>
                 <dd class="col-sm-7">@Model.Amenities</dd>
 

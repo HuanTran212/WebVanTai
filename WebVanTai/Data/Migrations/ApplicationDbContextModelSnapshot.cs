@@ -236,6 +236,13 @@ namespace WebVanTai.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingId"));
 
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -245,8 +252,18 @@ namespace WebVanTai.Data.Migrations
                     b.Property<DateTime>("ExpiredAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
                     b.Property<int>("PickupStationId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("RefundedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SoldByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -272,6 +289,8 @@ namespace WebVanTai.Data.Migrations
 
                     b.HasIndex("PickupStationId");
 
+                    b.HasIndex("SoldByUserId");
+
                     b.HasIndex("TripId");
 
                     b.HasIndex("UserId");
@@ -292,7 +311,13 @@ namespace WebVanTai.Data.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
 
+                    b.Property<int?>("AssistantId")
+                        .HasColumnType("int");
+
                     b.Property<int>("BusTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DriverId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
@@ -305,7 +330,11 @@ namespace WebVanTai.Data.Migrations
 
                     b.HasKey("BusId");
 
+                    b.HasIndex("AssistantId");
+
                     b.HasIndex("BusTypeId");
+
+                    b.HasIndex("DriverId");
 
                     b.HasIndex("LicensePlate")
                         .IsUnique();
@@ -339,6 +368,95 @@ namespace WebVanTai.Data.Migrations
                     b.HasKey("BusTypeId");
 
                     b.ToTable("BusTypes");
+                });
+
+            modelBuilder.Entity("WebVanTai.Models.ContactMessage", b =>
+                {
+                    b.Property<int>("ContactMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContactMessageId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmailError")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("EmailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ContactMessageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ContactMessages");
+                });
+
+            modelBuilder.Entity("WebVanTai.Models.CrewMember", b =>
+                {
+                    b.Property<int>("CrewMemberId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CrewMemberId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LicenseNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.HasKey("CrewMemberId");
+
+                    b.ToTable("CrewMembers");
                 });
 
             modelBuilder.Entity("WebVanTai.Models.Route", b =>
@@ -593,6 +711,11 @@ namespace WebVanTai.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("WebVanTai.Models.ApplicationUser", "SoldByUser")
+                        .WithMany()
+                        .HasForeignKey("SoldByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("WebVanTai.Models.Trip", "Trip")
                         .WithMany("Bookings")
                         .HasForeignKey("TripId")
@@ -609,6 +732,8 @@ namespace WebVanTai.Data.Migrations
 
                     b.Navigation("PickupStation");
 
+                    b.Navigation("SoldByUser");
+
                     b.Navigation("Trip");
 
                     b.Navigation("User");
@@ -616,13 +741,36 @@ namespace WebVanTai.Data.Migrations
 
             modelBuilder.Entity("WebVanTai.Models.Bus", b =>
                 {
+                    b.HasOne("WebVanTai.Models.CrewMember", "Assistant")
+                        .WithMany("AssistedBuses")
+                        .HasForeignKey("AssistantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("WebVanTai.Models.BusType", "BusType")
                         .WithMany("Buses")
                         .HasForeignKey("BusTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WebVanTai.Models.CrewMember", "Driver")
+                        .WithMany("DrivenBuses")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Assistant");
+
                     b.Navigation("BusType");
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("WebVanTai.Models.ContactMessage", b =>
+                {
+                    b.HasOne("WebVanTai.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WebVanTai.Models.RouteStation", b =>
@@ -700,6 +848,13 @@ namespace WebVanTai.Data.Migrations
             modelBuilder.Entity("WebVanTai.Models.BusType", b =>
                 {
                     b.Navigation("Buses");
+                });
+
+            modelBuilder.Entity("WebVanTai.Models.CrewMember", b =>
+                {
+                    b.Navigation("AssistedBuses");
+
+                    b.Navigation("DrivenBuses");
                 });
 
             modelBuilder.Entity("WebVanTai.Models.Route", b =>
