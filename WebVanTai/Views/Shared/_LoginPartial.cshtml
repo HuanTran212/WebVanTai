@@ -12,13 +12,54 @@
         </a>
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
             <li>
-                <a class="dropdown-item" asp-controller="Payment" asp-action="MyTickets">
+                <a class="dropdown-item" asp-area="" asp-controller="Payment" asp-action="MyTickets">
                     <i class="bi bi-ticket-detailed me-2 text-warning"></i>Vé của tôi
                 </a>
             </li>
+            <li>
+                <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Profile">
+                    <i class="bi bi-person-gear me-2 text-primary"></i>Hồ sơ cá nhân
+                </a>
+            </li>
+            @if (User.IsInRole("Admin") || User.IsInRole("RouteManager") || User.IsInRole("TicketInspector") || User.IsInRole("TicketManager"))
+            {
+                <li><hr class="dropdown-divider" /></li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="dropdown-item text-danger fw-semibold" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-shield-lock-fill me-2"></i>Quản trị (Admin)
+                        </a>
+                    </li>
+                }
+                @if (User.IsInRole("TicketManager") || User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="dropdown-item text-success fw-semibold" asp-area="TicketManager" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-ticket-perforated-fill me-2"></i>Quầy bán vé POS
+                        </a>
+                    </li>
+                }
+                @if (User.IsInRole("RouteManager") || User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="dropdown-item text-warning fw-semibold" asp-area="RouteManager" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-speedometer2 me-2"></i>Điều hành tuyến xe
+                        </a>
+                    </li>
+                }
+                @if (User.IsInRole("TicketInspector") || User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="dropdown-item text-info fw-semibold" asp-area="TicketInspector" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-qr-code-scan me-2"></i>Soát vé trực tuyến
+                        </a>
+                    </li>
+                }
+            }
             <li><hr class="dropdown-divider" /></li>
             <li>
-                <form asp-area="Identity" asp-page="/Account/Logout"
+                <form asp-area="RouteManager" asp-controller="Account" asp-action="Logout"
                       asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
                       method="post">
                     <button type="submit" class="dropdown-item text-danger">
@@ -32,13 +73,13 @@
 else
 {
     <li class="nav-item">
-        <a class="nav-link text-dark fw-semibold" asp-area="Identity" asp-page="/Account/Register">
+        <a class="nav-link text-dark fw-semibold" asp-area="RouteManager" asp-controller="Account" asp-action="Register">
             <i class="bi bi-person-plus me-1"></i>Đăng ký
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link fw-semibold" style="color:var(--futa-orange, #F26522);"
-           asp-area="Identity" asp-page="/Account/Login">
+           asp-area="RouteManager" asp-controller="Account" asp-action="Login">
             <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
         </a>
     </li>

@@ -26,6 +26,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=BusTicketDb;User Id=sa;Password=BusTicket@StrongPass2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
       - VnPay__ReturnUrl=http://localhost:8080/Payment/VnPayReturn
+      - Smtp__Server=smtp.gmail.com
+      - Smtp__Port=587
+      - Smtp__SenderName=G-Trans Express
+      - Smtp__SenderEmail=
+      - Smtp__AppPassword=
     restart: unless-stopped
     networks:
       - webvantai_network
