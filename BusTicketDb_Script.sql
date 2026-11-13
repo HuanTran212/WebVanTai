@@ -433,3 +433,166 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Buses] ADD [AssistantId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Buses] ADD [DriverId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [CancelledAt] datetime2 NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [ContactEmail] nvarchar(150) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [PaymentMethod] int NOT NULL DEFAULT 0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [RefundedAmount] decimal(18,2) NOT NULL DEFAULT 0.0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD [SoldByUserId] nvarchar(450) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE TABLE [ContactMessages] (
+        [ContactMessageId] int NOT NULL IDENTITY,
+        [FullName] nvarchar(100) NOT NULL,
+        [Email] nvarchar(150) NOT NULL,
+        [PhoneNumber] nvarchar(20) NULL,
+        [Subject] nvarchar(200) NOT NULL,
+        [Message] nvarchar(2000) NOT NULL,
+        [UserId] nvarchar(450) NULL,
+        [EmailSent] bit NOT NULL,
+        [EmailError] nvarchar(500) NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [PK_ContactMessages] PRIMARY KEY ([ContactMessageId]),
+        CONSTRAINT [FK_ContactMessages_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE TABLE [CrewMembers] (
+        [CrewMemberId] int NOT NULL IDENTITY,
+        [FullName] nvarchar(100) NOT NULL,
+        [PhoneNumber] nvarchar(20) NOT NULL,
+        [LicenseNumber] nvarchar(50) NULL,
+        [Role] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [PK_CrewMembers] PRIMARY KEY ([CrewMemberId])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE INDEX [IX_Buses_AssistantId] ON [Buses] ([AssistantId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE INDEX [IX_Buses_DriverId] ON [Buses] ([DriverId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE INDEX [IX_Bookings_SoldByUserId] ON [Bookings] ([SoldByUserId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    CREATE INDEX [IX_ContactMessages_UserId] ON [ContactMessages] ([UserId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Bookings] ADD CONSTRAINT [FK_Bookings_AspNetUsers_SoldByUserId] FOREIGN KEY ([SoldByUserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Buses] ADD CONSTRAINT [FK_Buses_CrewMembers_AssistantId] FOREIGN KEY ([AssistantId]) REFERENCES [CrewMembers] ([CrewMemberId]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    ALTER TABLE [Buses] ADD CONSTRAINT [FK_Buses_CrewMembers_DriverId] FOREIGN KEY ([DriverId]) REFERENCES [CrewMembers] ([CrewMemberId]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111180119_AddTicketAndCrewFeatures'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261111180119_AddTicketAndCrewFeatures', N'10.0.14');
+END;
+
+COMMIT;
+GO
+
