@@ -1,4 +1,4 @@
-@model IEnumerable<WebVanTai.Models.Route>
+@model WebVanTai.Models.ViewModels.PaginatedList<WebVanTai.Models.Route>
 @{
     ViewData["Title"] = "Quản Lý Tuyến Đường";
 }
@@ -140,5 +140,10 @@
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="px-3 pb-3">
+        <partial name="_PaginationPartial" model="Model" />
     </div>
 </div>

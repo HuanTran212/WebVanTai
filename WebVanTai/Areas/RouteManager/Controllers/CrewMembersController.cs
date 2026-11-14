@@ -5,6 +5,8 @@ using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
 
+using WebVanTai.Models.ViewModels;
+
 namespace WebVanTai.Areas.RouteManager.Controllers
 {
     /// <summary>
@@ -22,7 +24,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(CrewRole? role, string? search)
+        public async Task<IActionResult> Index(CrewRole? role, string? search, int page = 1)
         {
             var query = _context.CrewMembers
                 .Include(c => c.DrivenBuses)
@@ -43,8 +45,20 @@ namespace WebVanTai.Areas.RouteManager.Controllers
 
             ViewBag.SelectedRole = role;
             ViewBag.Search = search;
-            var items = await query.OrderBy(c => c.Role).ThenBy(c => c.FullName).ToListAsync();
-            return View(items);
+
+            var totalItems = await query.CountAsync();
+            int pageSize = 15;
+            page = Math.Max(1, page);
+
+            var items = await query
+                .OrderBy(c => c.Role)
+                .ThenBy(c => c.FullName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var paginatedList = new PaginatedList<CrewMember>(items, totalItems, page, pageSize);
+            return View(paginatedList);
         }
 
         [HttpGet]

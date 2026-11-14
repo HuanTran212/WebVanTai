@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using WebVanTai.Data;
 using WebVanTai.Models;
 
+using WebVanTai.Models.ViewModels;
+
 namespace WebVanTai.Areas.RouteManager.Controllers
 {
     [Area("RouteManager")]
@@ -18,7 +20,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         }
 
         // GET: RouteManager/Stations
-        public async Task<IActionResult> Index(string? searchString, string? province)
+        public async Task<IActionResult> Index(string? searchString, string? province, int page = 1)
         {
             var query = _context.Stations
                 .Include(s => s.RouteStations)
@@ -44,8 +46,19 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             ViewBag.CurrentSearch = searchString;
             ViewBag.CurrentProvince = province;
 
-            var stations = await query.OrderBy(s => s.Province).ThenBy(s => s.Name).ToListAsync();
-            return View(stations);
+            var totalItems = await query.CountAsync();
+            int pageSize = 15;
+            page = Math.Max(1, page);
+
+            var items = await query
+                .OrderBy(s => s.Province)
+                .ThenBy(s => s.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var paginatedList = new PaginatedList<Station>(items, totalItems, page, pageSize);
+            return View(paginatedList);
         }
 
         // GET: RouteManager/Stations/Details/5

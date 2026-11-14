@@ -6,6 +6,7 @@ using WebVanTai.Areas.RouteManager.Models;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
+using WebVanTai.Models.ViewModels;
 using Route = WebVanTai.Models.Route;
 
 namespace WebVanTai.Areas.RouteManager.Controllers
@@ -22,7 +23,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         }
 
         // GET: RouteManager/Routes
-        public async Task<IActionResult> Index(string? searchProvince, bool? isActive)
+        public async Task<IActionResult> Index(string? searchProvince, bool? isActive, int page = 1)
         {
             var query = _context.Routes
                 .Include(r => r.RouteStations)
@@ -44,12 +45,19 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             ViewBag.SearchProvince = searchProvince;
             ViewBag.IsActiveFilter = isActive;
 
-            var routes = await query
+            var totalItems = await query.CountAsync();
+            int pageSize = 15;
+            page = Math.Max(1, page);
+
+            var items = await query
                 .OrderBy(r => r.StartProvince)
                 .ThenBy(r => r.EndProvince)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return View(routes);
+            var paginatedList = new PaginatedList<Route>(items, totalItems, page, pageSize);
+            return View(paginatedList);
         }
 
         // GET: RouteManager/Routes/Details/5

@@ -5,6 +5,7 @@ using System.IO;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Services;
+using WebVanTai.Services.Chatbot;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,9 +50,11 @@ builder.Services.AddRazorPages(); // Bắt buộc cho ASP.NET Core Identity UI
 builder.Services.AddHostedService<SeatLockCleanupService>();
 
 // ── Payment, Email & extended-feature services ───────────────────────────
+builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<VnPayService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
 var app = builder.Build();
 
