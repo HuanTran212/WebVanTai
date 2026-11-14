@@ -190,7 +190,7 @@
                 </span>
                 <input type="date" class="form-control border-start-0 ps-0 fw-bold text-dark rounded-end-pill" id="topDepartureDate" name="departureDate" 
                        value="@(Model.Filter.DepartureDate?.ToString("yyyy-MM-dd") ?? "")" 
-                       min="@DateTime.Today.ToString("yyyy-MM-dd")">
+                       min="@WebVanTai.Services.VietnamTimeHelper.Today.ToString("yyyy-MM-dd")">
             </div>
         </div>
 

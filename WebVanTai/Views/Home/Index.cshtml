@@ -1,8 +1,8 @@
 @model WebVanTai.Controllers.HomeViewModel
 @{
     ViewData["Title"] = "G-Trans - Hệ Thống Đặt Vé Xe Khách Cao Cấp & Trực Tuyến Toàn Quốc";
-    var tomorrow = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
-    var today = DateTime.Today.ToString("yyyy-MM-dd");
+    var tomorrow = WebVanTai.Services.VietnamTimeHelper.Today.AddDays(1).ToString("yyyy-MM-dd");
+    var today = WebVanTai.Services.VietnamTimeHelper.Today.ToString("yyyy-MM-dd");
 }
 
 <style>

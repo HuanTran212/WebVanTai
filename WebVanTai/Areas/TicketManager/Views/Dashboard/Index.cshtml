@@ -95,7 +95,11 @@
                         </td>
                         <td class="fw-bold text-danger">@trip.BasePrice.ToString("N0") đ</td>
                         <td class="text-end">
-                            @if (trip.AvailableSeats > 0)
+                            @if (trip.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now)
+                            {
+                                <span class="badge bg-secondary">Đã khởi hành</span>
+                            }
+                            else if (trip.AvailableSeats > 0)
                             {
                                 <a asp-action="Sell" asp-route-tripId="@trip.TripId" class="btn btn-futa btn-sm">
                                     <i class="bi bi-ticket-detailed me-1"></i>Bán vé

@@ -119,6 +119,12 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TripCreateViewModel model)
         {
+            // Business Rule: DepartureTime must be in the future
+            if (model.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now)
+            {
+                ModelState.AddModelError(nameof(model.DepartureTime), "Thời gian khởi hành (DepartureTime) phải ở trong tương lai!");
+            }
+
             // Business Rule 1: ArrivalTime must be strictly after DepartureTime
             if (model.ArrivalTime <= model.DepartureTime)
             {
@@ -248,6 +254,12 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("TripId,RouteId,BusId,DepartureTime,ArrivalTime,BasePrice,Status")] Trip trip)
         {
             if (id != trip.TripId) return NotFound();
+
+            // Business Rule: DepartureTime must not be in the past for Scheduled trips
+            if (trip.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now && trip.Status == TripStatus.Scheduled)
+            {
+                ModelState.AddModelError("DepartureTime", "Không thể chỉnh thời gian khởi hành về quá khứ cho chuyến xe đang lên lịch!");
+            }
 
             // Business Rule 1: ArrivalTime > DepartureTime
             if (trip.ArrivalTime <= trip.DepartureTime)

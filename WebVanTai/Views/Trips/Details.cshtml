@@ -200,7 +200,13 @@
                     <span class="badge bg-slate-50 text-slate-700 border fw-semibold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem;">
                         <i class="bi bi-upc-scan me-1 text-muted"></i> BKS: @Model.LicensePlate
                     </span>
-                    @if (Model.AvailableSeats > 5)
+                    @if (Model.IsPastTrip || Model.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now)
+                    {
+                        <span class="badge bg-secondary text-white fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem;">
+                            <i class="bi bi-clock-history me-1"></i> Đã xuất bến
+                        </span>
+                    }
+                    else if (Model.AvailableSeats > 5)
                     {
                         <span class="badge bg-emerald-50 text-success border border-success-subtle fw-bold px-2.5 py-1.5 rounded-pill" style="font-size: 0.75rem; background: #ECFDF5;">
                             <i class="bi bi-check-circle-fill me-1"></i> Còn @Model.AvailableSeats chỗ
@@ -236,7 +242,19 @@
                 </div>
             </div>
             <div class="col-12 col-md-4 text-md-end">
-                @if (Model.AvailableSeats > 0)
+                @if (Model.IsPastTrip || Model.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now)
+                {
+                    <button class="btn btn-secondary fw-bold px-5 py-3" disabled title="Chuyến xe đã qua giờ khởi hành">
+                        <i class="bi bi-clock-history me-1"></i> ĐÃ QUA GIỜ KHỞI HÀNH
+                    </button>
+                }
+                else if (Model.Status != WebVanTai.Models.Enums.TripStatus.Scheduled)
+                {
+                    <button class="btn btn-secondary fw-bold px-5 py-3" disabled>
+                        <i class="bi bi-slash-circle me-1"></i> KHÔNG CÒN NHẬN KHÁCH
+                    </button>
+                }
+                else if (Model.AvailableSeats > 0)
                 {
                     <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
                        class="btn btn-futa-primary fw-bold px-5 py-3 shadow-lg d-inline-flex align-items-center gap-2">
@@ -444,7 +462,19 @@
             </div>
 
             <!-- CTA BUTTON -->
-            @if (Model.AvailableSeats > 0)
+            @if (Model.IsPastTrip || Model.DepartureTime <= WebVanTai.Services.VietnamTimeHelper.Now)
+            {
+                <button class="btn btn-secondary btn-lg w-100 fw-bold py-3" disabled title="Chuyến xe đã qua giờ khởi hành">
+                    <i class="bi bi-clock-history me-1"></i> ĐÃ QUA GIỜ KHỞI HÀNH
+                </button>
+            }
+            else if (Model.Status != WebVanTai.Models.Enums.TripStatus.Scheduled)
+            {
+                <button class="btn btn-secondary btn-lg w-100 fw-bold py-3" disabled>
+                    <i class="bi bi-slash-circle me-1"></i> KHÔNG CÒN NHẬN KHÁCH
+                </button>
+            }
+            else if (Model.AvailableSeats > 0)
             {
                 <a asp-controller="Booking" asp-action="SelectSeats" asp-route-id="@Model.TripId" 
                    class="btn btn-futa-primary btn-lg w-100 fw-bold py-3 shadow-lg d-flex align-items-center justify-content-center gap-2">

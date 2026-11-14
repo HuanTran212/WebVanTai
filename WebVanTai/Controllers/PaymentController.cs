@@ -51,6 +51,7 @@ namespace WebVanTai.Controllers
 
             var booking = await _context.Bookings
                 .Include(b => b.Tickets)
+                .Include(b => b.Trip)
                 .FirstOrDefaultAsync(b => b.BookingId == bookingId);
 
             if (booking == null)
@@ -69,6 +70,15 @@ namespace WebVanTai.Controllers
             {
                 TempData["ErrorMessage"] = "Đơn đặt vé này đã được xử lý hoặc đã hủy.";
                 return RedirectToAction("Index", "Home");
+            }
+
+            if (booking.Trip != null && (booking.Trip.DepartureTime <= VietnamTimeHelper.Now || booking.Trip.Status != TripStatus.Scheduled))
+            {
+                booking.Status = BookingStatus.Expired;
+                foreach (var t in booking.Tickets) t.Status = TicketStatus.Void;
+                await _context.SaveChangesAsync();
+                TempData["ErrorMessage"] = "Chuyến xe này đã qua giờ khởi hành. Rất tiếc không thể tiếp tục thanh toán.";
+                return RedirectToAction("Index", "Trips");
             }
 
             if (DateTime.UtcNow >= booking.ExpiredAt)

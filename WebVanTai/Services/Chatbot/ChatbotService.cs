@@ -734,15 +734,17 @@ Phong cách giao tiếp:
                      (kw.Count > 1 && t.Route.EndProvince.Contains(kw[1]))));
             }
 
+            var nowVn = VietnamTimeHelper.Now;
+
             if (date.HasValue)
             {
                 var dStart = date.Value.Date;
                 var dEnd = dStart.AddDays(1);
-                query = query.Where(t => t.DepartureTime >= dStart && t.DepartureTime < dEnd);
+                query = query.Where(t => t.DepartureTime >= dStart && t.DepartureTime < dEnd && t.DepartureTime > nowVn);
             }
             else
             {
-                query = query.Where(t => t.DepartureTime >= nowUtc.AddMinutes(-30));
+                query = query.Where(t => t.DepartureTime > nowVn);
             }
 
             var trips = await query
@@ -873,15 +875,14 @@ Phong cách giao tiếp:
 
         public async Task<List<TripCardDto>> GetUpcomingTripsAsync(int hours = 24, int limit = 5)
         {
-            var nowUtc = DateTime.UtcNow;
+            var nowVn = VietnamTimeHelper.Now;
 
             var trips = await _context.Trips
                 .AsNoTracking()
                 .Include(t => t.Route)
                 .Include(t => t.Bus).ThenInclude(b => b!.BusType)
                 .Include(t => t.Tickets)
-                .Where(t => (t.Status == TripStatus.Scheduled || t.Status == TripStatus.Running) &&
-                            t.DepartureTime >= nowUtc.AddMinutes(-30))
+                .Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime > nowVn)
                 .OrderBy(t => t.DepartureTime)
                 .Take(limit)
                 .ToListAsync();
@@ -1048,7 +1049,7 @@ Phong cách giao tiếp:
 
         private static string FormatTimeRemaining(DateTime departureTime)
         {
-            var diff = departureTime - DateTime.UtcNow;
+            var diff = departureTime - VietnamTimeHelper.Now;
             if (diff.TotalMinutes < 0) return "Đang/Đã khởi hành";
             if (diff.TotalHours < 1) return $"Còn {Math.Max(1, (int)diff.TotalMinutes)} phút nữa";
             if (diff.TotalHours < 24) return $"Còn {(int)diff.TotalHours} giờ {diff.Minutes} phút";

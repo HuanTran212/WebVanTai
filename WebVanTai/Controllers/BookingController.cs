@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +8,7 @@ using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
 using WebVanTai.Models.ViewModels;
+using WebVanTai.Services;
 
 namespace WebVanTai.Controllers
 {
@@ -31,11 +32,12 @@ namespace WebVanTai.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(int? tripId)
         {
+            var nowVn = VietnamTimeHelper.Now;
             if (!tripId.HasValue || tripId.Value <= 0)
             {
                 // Chọn chuyến xe sắp khởi hành đầu tiên nếu không truyền id
                 var firstTrip = await _context.Trips
-                    .Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime > DateTime.UtcNow)
+                    .Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime > nowVn)
                     .OrderBy(t => t.DepartureTime)
                     .FirstOrDefaultAsync();
 
@@ -73,6 +75,14 @@ namespace WebVanTai.Controllers
             {
                 TempData["ErrorMessage"] = "Không tìm thấy thông tin chuyến xe hợp lệ.";
                 return RedirectToAction("Index", "Home");
+            }
+
+            // CHẶN ĐẶT VÉ CHUYẾN XE TRONG QUÁ KHỨ HOẶC ĐÃ HỦY/HOÀN THÀNH
+            var nowVn = VietnamTimeHelper.Now;
+            if (trip.DepartureTime <= nowVn || trip.Status != TripStatus.Scheduled)
+            {
+                TempData["ErrorMessage"] = "Chuyến xe này đã qua giờ khởi hành hoặc không còn nhận khách. Vui lòng chọn chuyến xe khác.";
+                return RedirectToAction("Index", "Trips");
             }
 
             // Lấy danh sách mã ghế đã có vé hợp lệ hoặc đang giữ chỗ (không tính Void)
@@ -129,6 +139,16 @@ namespace WebVanTai.Controllers
             if (trip == null || trip.Route == null)
             {
                 ModelState.AddModelError("", "Chuyến xe không tồn tại hoặc đã bị hủy.");
+            }
+            else
+            {
+                // CHẶN ĐẶT VÉ CHUYẾN XE TRONG QUÁ KHỨ HOẶC ĐÃ HỦY/HOÀN THÀNH
+                var nowVn = VietnamTimeHelper.Now;
+                if (trip.DepartureTime <= nowVn || trip.Status != TripStatus.Scheduled)
+                {
+                    TempData["ErrorMessage"] = "Chuyến xe này đã qua giờ khởi hành hoặc không còn nhận khách. Không thể đặt vé cho chuyến đi trong quá khứ.";
+                    return RedirectToAction("Index", "Trips");
+                }
             }
 
             if (!ModelState.IsValid || trip == null)
@@ -218,6 +238,14 @@ namespace WebVanTai.Controllers
                     using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
                     try
                     {
+                        // Kiểm tra lại thời gian khởi hành ngay trong transaction tránh race condition
+                        if (trip.DepartureTime <= VietnamTimeHelper.Now || trip.Status != TripStatus.Scheduled)
+                        {
+                            await transaction.RollbackAsync();
+                            TempData["ErrorMessage"] = "Chuyến xe đã khởi hành trong lúc thao tác. Quý khách vui lòng chọn chuyến xe khác.";
+                            return RedirectToAction("Index", "Trips");
+                        }
+
                         // Kiểm tra trực tiếp xem có ghế nào đã bị đặt trong DB không
                         var conflictingSeats = await _context.Tickets
                             .Where(t => t.TripId == model.TripId && seatList.Contains(t.SeatCode) && t.Status != TicketStatus.Void)

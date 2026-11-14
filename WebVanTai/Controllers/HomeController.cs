@@ -33,7 +33,7 @@ namespace WebVanTai.Controllers
             // 1. Lấy danh sách các tỉnh đi và tỉnh đến từ các tuyến xe đang hoạt động
             var activeRoutes = await _context.Routes
                 .Where(r => r.IsActive)
-                .Include(r => r.Trips.Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime >= DateTime.UtcNow.AddMinutes(-30)))
+                .Include(r => r.Trips.Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime > VietnamTimeHelper.Now))
                     .ThenInclude(t => t.Bus)
                         .ThenInclude(b => b!.BusType)
                 .ToListAsync();

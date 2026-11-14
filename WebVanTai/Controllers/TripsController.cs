@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
+using WebVanTai.Services;
 
 namespace WebVanTai.Controllers
 {
@@ -125,6 +126,9 @@ namespace WebVanTai.Controllers
             var totalSeats = trip.Bus.BusType.TotalSeats;
             var occupiedSeats = trip.Tickets.Count(tk => tk.Status != TicketStatus.Void);
             var availableSeats = Math.Max(0, totalSeats - occupiedSeats);
+            var nowVn = VietnamTimeHelper.Now;
+            var isPastTrip = trip.DepartureTime <= nowVn;
+            var isBookable = !isPastTrip && trip.Status == TripStatus.Scheduled && availableSeats > 0;
 
             var stationMarkers = trip.Route.RouteStations
                 .OrderBy(rs => rs.StopOrder)
@@ -163,7 +167,9 @@ namespace WebVanTai.Controllers
                 OccupiedSeats = occupiedSeats,
                 LicensePlate = trip.Bus.LicensePlate,
                 Amenities = trip.Bus.Amenities,
-                Stations = stationMarkers
+                Stations = stationMarkers,
+                IsBookable = isBookable,
+                IsPastTrip = isPastTrip
             };
 
             return View(viewModel);
@@ -271,6 +277,7 @@ namespace WebVanTai.Controllers
                 })
                 .ToListAsync();
 
+            var nowVn = VietnamTimeHelper.Now;
             var query = _context.Trips
                 .Include(t => t.Route)
                     .ThenInclude(r => r!.RouteStations)
@@ -278,7 +285,7 @@ namespace WebVanTai.Controllers
                 .Include(t => t.Bus)
                     .ThenInclude(b => b!.BusType)
                 .Include(t => t.Tickets)
-                .Where(t => t.Status == TripStatus.Scheduled || t.Status == TripStatus.Running);
+                .Where(t => t.Status == TripStatus.Scheduled && t.DepartureTime > nowVn);
 
             // 1. Lọc Tỉnh Đi
             if (!string.IsNullOrWhiteSpace(filter.StartProvince))
@@ -298,12 +305,6 @@ namespace WebVanTai.Controllers
                 var targetDate = filter.DepartureDate.Value.Date;
                 var nextDate = targetDate.AddDays(1);
                 query = query.Where(t => t.DepartureTime >= targetDate && t.DepartureTime < nextDate);
-            }
-            else
-            {
-                // Mặc định: hiện các chuyến sắp chạy từ hôm nay trở đi
-                var threshold = DateTime.Today;
-                query = query.Where(t => t.DepartureTime >= threshold);
             }
 
             // 4. Lọc Loại Xe (BusType)
@@ -368,6 +369,8 @@ namespace WebVanTai.Controllers
                 var firstStation = sortedStations.FirstOrDefault() ?? t.Route?.StartProvince ?? "Điểm đón";
                 var lastStation = sortedStations.LastOrDefault() ?? t.Route?.EndProvince ?? "Điểm trả";
 
+                var isPast = t.DepartureTime <= nowVn;
+
                 return new TripCardViewModel
                 {
                     TripId = t.TripId,
@@ -387,7 +390,9 @@ namespace WebVanTai.Controllers
                     Amenities = t.Bus?.Amenities ?? "",
                     TotalSeats = totalSeats,
                     AvailableSeats = availableSeats,
-                    OccupiedSeats = occupiedSeats
+                    OccupiedSeats = occupiedSeats,
+                    IsBookable = !isPast && t.Status == TripStatus.Scheduled && availableSeats > 0,
+                    IsPastTrip = isPast
                 };
             }).ToList();
 
@@ -455,6 +460,8 @@ namespace WebVanTai.Controllers
         public int TotalSeats { get; set; }
         public int AvailableSeats { get; set; }
         public int OccupiedSeats { get; set; }
+        public bool IsBookable { get; set; } = true;
+        public bool IsPastTrip { get; set; } = false;
     }
 
     public class TripSearchPageViewModel
@@ -508,6 +515,8 @@ namespace WebVanTai.Controllers
         public string LicensePlate { get; set; } = string.Empty;
         public string Amenities { get; set; } = string.Empty;
         public List<StationMarkerViewModel> Stations { get; set; } = new();
+        public bool IsBookable { get; set; } = true;
+        public bool IsPastTrip { get; set; } = false;
     }
 
     #endregion

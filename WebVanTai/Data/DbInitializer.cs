@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebVanTai.Models;
@@ -328,10 +328,10 @@ namespace WebVanTai.Data
                 await context.SaveChangesAsync();
             }
 
-            // 7.1. Cập nhật chuyến đi mẫu: Luôn đảm bảo ngày giờ khởi hành trong tương lai
-            var nowUtc = DateTime.UtcNow;
+            // 7.1. Cập nhật chuyến đi mẫu: Luôn đảm bảo ngày giờ khởi hành trong tương lai theo giờ VN
+            var nowVn = Services.VietnamTimeHelper.Now;
             var expiredTrips = await context.Trips
-                .Where(t => t.DepartureTime <= nowUtc)
+                .Where(t => t.DepartureTime <= nowVn)
                 .ToListAsync();
 
             if (expiredTrips.Count > 0)
@@ -340,7 +340,7 @@ namespace WebVanTai.Data
                 {
                     var expTrip = expiredTrips[i];
                     var dayOffset = (i % 2 == 0) ? 1 : 2;
-                    var newDepartureDate = DateTime.Today.AddDays(dayOffset);
+                    var newDepartureDate = Services.VietnamTimeHelper.Today.AddDays(dayOffset);
                     var originalHour = expTrip.DepartureTime.Hour;
                     var originalMinute = expTrip.DepartureTime.Minute;
                     var duration = expTrip.ArrivalTime > expTrip.DepartureTime

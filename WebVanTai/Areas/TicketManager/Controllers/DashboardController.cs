@@ -43,7 +43,8 @@ namespace WebVanTai.Areas.TicketManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string? searchRoute, DateTime? date)
         {
-            var selectedDate = (date ?? DateTime.Today).Date;
+            var todayVn = VietnamTimeHelper.Today;
+            var selectedDate = (date ?? todayVn).Date;
             var nextDay = selectedDate.AddDays(1);
             var todayStartUtc = DateTime.Today.ToUniversalTime();
 
@@ -56,7 +57,7 @@ namespace WebVanTai.Areas.TicketManager.Controllers
                 .Include(t => t.Tickets)
                 .Where(t => (t.Status == TripStatus.Scheduled || t.Status == TripStatus.Running)
                          && t.DepartureTime >= selectedDate
-                         && (date.HasValue ? t.DepartureTime < nextDay : t.DepartureTime >= DateTime.Today));
+                         && (date.HasValue ? t.DepartureTime < nextDay : t.DepartureTime >= todayVn));
 
             if (!string.IsNullOrWhiteSpace(searchRoute))
             {
@@ -122,6 +123,13 @@ namespace WebVanTai.Areas.TicketManager.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var nowVn = VietnamTimeHelper.Now;
+            if (trip.DepartureTime <= nowVn || trip.Status != TripStatus.Scheduled)
+            {
+                TempData["ErrorMessage"] = "Chuyến xe đã qua giờ khởi hành hoặc không còn nhận khách. Không thể bán vé tại quầy.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(await BuildSellViewModelAsync(trip));
         }
 
@@ -135,6 +143,13 @@ namespace WebVanTai.Areas.TicketManager.Controllers
             {
                 TempData["ErrorMessage"] = "Chuyến xe không tồn tại.";
                 return RedirectToAction(nameof(Index));
+            }
+
+            var nowVn = VietnamTimeHelper.Now;
+            if (trip.DepartureTime <= nowVn || trip.Status != TripStatus.Scheduled)
+            {
+                ModelState.AddModelError("", "Chuyến xe đã qua giờ khởi hành hoặc không còn nhận khách. Không thể xuất vé cho chuyến trong quá khứ.");
+                return View(await BuildSellViewModelAsync(trip, input));
             }
 
             var seats = (input.SelectedSeats ?? string.Empty)
@@ -172,6 +187,13 @@ namespace WebVanTai.Areas.TicketManager.Controllers
                 using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
                 try
                 {
+                    if (trip.DepartureTime <= VietnamTimeHelper.Now || trip.Status != TripStatus.Scheduled)
+                    {
+                        conflictError = "Chuyến xe đã khởi hành trong lúc thao tác. Không thể xuất vé.";
+                        await tx.RollbackAsync();
+                        return;
+                    }
+
                     var taken = await _context.Tickets
                         .Where(t => t.TripId == trip.TripId && seats.Contains(t.SeatCode) && t.Status != TicketStatus.Void)
                         .Select(t => t.SeatCode)
