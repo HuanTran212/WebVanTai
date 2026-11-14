@@ -63,8 +63,12 @@ namespace WebVanTai.Controllers
                 if (!endProvinces.Any()) endProvinces = stationProvinces;
             }
 
-            // 2. Danh sách tuyến đường nổi bật (Popular Routes)
-            var popularRoutes = activeRoutes.Select(r =>
+            // 2. Danh sách tuyến đường nổi bật (Random 6 chuyến phổ biến tránh danh sách quá dài)
+            var rng = new Random();
+            var popularRoutes = activeRoutes
+                .OrderBy(_ => rng.Next())
+                .Take(6)
+                .Select(r =>
             {
                 var upcomingTrips = r.Trips.ToList();
                 var minPrice = upcomingTrips.Any() ? upcomingTrips.Min(t => t.BasePrice) : 250000m;

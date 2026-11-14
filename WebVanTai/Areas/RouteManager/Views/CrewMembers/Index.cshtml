@@ -1,4 +1,4 @@
-@model IEnumerable<WebVanTai.Models.CrewMember>
+@model WebVanTai.Models.ViewModels.PaginatedList<WebVanTai.Models.CrewMember>
 @using WebVanTai.Models.Enums
 @{
     ViewData["Title"] = "Quản Lý Tài Xế & Lơ Xe";
@@ -116,5 +116,10 @@
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="px-3 pb-3">
+        <partial name="_PaginationPartial" model="Model" />
     </div>
 </div>

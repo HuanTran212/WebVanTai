@@ -1,0 +1,104 @@
+@model dynamic
+@{
+    int pageIndex = Model.PageIndex;
+    int totalPages = Model.TotalPages;
+    int totalItems = Model.TotalItems;
+    bool hasPreviousPage = Model.HasPreviousPage;
+    bool hasNextPage = Model.HasNextPage;
+
+    // Lấy query string hiện tại để giữ lại các filter khi bấm chuyển trang
+    var routeValues = new Dictionary<string, string>();
+    foreach (var key in Context.Request.Query.Keys)
+    {
+        if (!string.Equals(key, "page", StringComparison.OrdinalIgnoreCase))
+        {
+            routeValues[key] = Context.Request.Query[key].ToString();
+        }
+    }
+}
+
+@if (totalPages > 1)
+{
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mt-4 pt-2 border-top">
+        <div class="small text-muted">
+            Hiển thị trang <strong>@pageIndex</strong> / <strong>@totalPages</strong> (Tổng <strong>@totalItems</strong> bản ghi)
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+                <!-- Nút Về đầu -->
+                <li class="page-item @(pageIndex == 1 ? "disabled" : "")">
+                    @{
+                        routeValues["page"] = "1";
+                    }
+                    <a class="page-link" href="@Url.Action(null, routeValues)" title="Trang đầu">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+
+                <!-- Nút Trước -->
+                <li class="page-item @(!hasPreviousPage ? "disabled" : "")">
+                    @{
+                        routeValues["page"] = (pageIndex - 1).ToString();
+                    }
+                    <a class="page-link" href="@Url.Action(null, routeValues)" title="Trang trước">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Các số trang (hiển thị tối đa 5 trang xung quanh trang hiện tại) -->
+                @{
+                    int startPage = Math.Max(1, pageIndex - 2);
+                    int endPage = Math.Min(totalPages, pageIndex + 2);
+
+                    if (startPage > 1)
+                    {
+                        routeValues["page"] = "1";
+                        <li class="page-item"><a class="page-link" href="@Url.Action(null, routeValues)">1</a></li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+
+                    for (int p = startPage; p <= endPage; p++)
+                    {
+                        routeValues["page"] = p.ToString();
+                        <li class="page-item @(p == pageIndex ? "active" : "")">
+                            <a class="page-link" href="@Url.Action(null, routeValues)">@p</a>
+                        </li>
+                    }
+
+                    if (endPage < totalPages)
+                    {
+                        if (endPage < totalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        routeValues["page"] = totalPages.ToString();
+                        <li class="page-item"><a class="page-link" href="@Url.Action(null, routeValues)">@totalPages</a></li>
+                    }
+                }
+
+                <!-- Nút Sau -->
+                <li class="page-item @(!hasNextPage ? "disabled" : "")">
+                    @{
+                        routeValues["page"] = (pageIndex + 1).ToString();
+                    }
+                    <a class="page-link" href="@Url.Action(null, routeValues)" title="Trang kế tiếp">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+
+                <!-- Nút Về cuối -->
+                <li class="page-item @(pageIndex == totalPages ? "disabled" : "")">
+                    @{
+                        routeValues["page"] = totalPages.ToString();
+                    }
+                    <a class="page-link" href="@Url.Action(null, routeValues)" title="Trang cuối">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}

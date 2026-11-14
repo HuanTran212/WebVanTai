@@ -1,0 +1,89 @@
+@* G-Trans AI Chatbox Partial View *@
+<link rel="stylesheet" href="~/css/chatbot.css" asp-append-version="true" />
+
+<!-- Floating Launcher Button -->
+<div id="chatbotLauncher" class="chatbot-launcher" title="Mở Trợ lý ảo G-Trans AI">
+    <div class="chatbot-launcher-label shadow-sm d-none d-sm-flex">
+        <i class="bi bi-stars text-warning"></i>
+        <span>Hỏi Trợ lý G-Trans AI</span>
+    </div>
+    <div class="chatbot-launcher-btn">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span class="chatbot-launcher-badge"></span>
+    </div>
+</div>
+
+<!-- Chatbox Window Container -->
+<div id="chatbotContainer" class="chatbot-container" role="dialog" aria-labelledby="chatbotTitle" aria-hidden="true">
+    <!-- Header -->
+    <div class="chatbot-header">
+        <div class="chatbot-header-info">
+            <div class="chatbot-header-avatar">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div>
+                <h6 id="chatbotTitle" class="chatbot-header-title">Trợ lý ảo G-Trans AI</h6>
+                <div id="chatbotStatusText" class="chatbot-header-status">
+                    <span class="chatbot-status-dot"></span> Đang kết nối...
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-header-actions">
+            <button type="button" id="chatbotResetBtn" class="chatbot-header-btn" title="Xóa lịch sử & làm mới hội thoại">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button type="button" id="chatbotCloseBtn" class="chatbot-header-btn" title="Thu nhỏ chatbox">
+                <i class="bi bi-dash-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Message Body -->
+    <div id="chatbotBody" class="chatbot-body">
+        <!-- Initial Welcome Message -->
+        <div class="chatbot-message bot" id="chatbotWelcomeMsg">
+            <div class="chatbot-msg-avatar">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div class="chatbot-msg-content">
+                <p class="mb-1"><strong>Xin chào quý khách! 👋</strong></p>
+                <p class="mb-2">Em là <strong>Trợ lý AI của G-Trans</strong>, em có thể hỗ trợ:</p>
+                <ul class="ps-3 mb-2 small">
+                    <li>🚌 <strong>Tra cứu chuyến xe:</strong> Tìm chuyến, giờ chạy, giá vé & ghế trống</li>
+                    <li>🎫 <strong>Tra cứu vé đã đặt:</strong> Bằng mã vé, mã đơn hoặc số điện thoại</li>
+                    <li>⏰ <strong>Chuyến sắp chạy:</strong> Xem các chuyến khởi hành trong ngày</li>
+                    @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("RouteManager") || User.IsInRole("TicketManager") || User.IsInRole("TicketInspector")))
+                    {
+                        <li>📊 <strong>Thống kê nội bộ:</strong> Doanh thu, vé bán, chuyến đang chạy</li>
+                    }
+                </ul>
+                <div class="text-muted" style="font-size: 11.5px;">Quý khách có thể chọn nhanh gợi ý bên dưới hoặc nhắn tin trực tiếp:</div>
+            </div>
+        </div>
+
+        <!-- Dynamic Message History will be inserted here -->
+
+        <!-- Quick suggestion pills -->
+        <div id="chatbotSuggestions" class="chatbot-suggestions"></div>
+
+        <!-- Typing Indicator -->
+        <div id="chatbotTyping" class="chatbot-typing">
+            <div class="chatbot-dot"></div>
+            <div class="chatbot-dot"></div>
+            <div class="chatbot-dot"></div>
+            <span class="small text-muted ms-2" style="font-size: 11px;">Trợ lý AI đang tra cứu...</span>
+        </div>
+    </div>
+
+    <!-- Footer Input Bar -->
+    <div class="chatbot-footer">
+        <form id="chatbotForm" class="chatbot-input-form" onsubmit="return false;">
+            <input type="text" id="chatbotInput" class="chatbot-input" placeholder="Hỏi về chuyến xe, tra cứu vé, thống kê..." autocomplete="off" />
+            <button type="submit" id="chatbotSendBtn" class="chatbot-send-btn" title="Gửi tin nhắn">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="~/js/chatbot.js" asp-append-version="true"></script>

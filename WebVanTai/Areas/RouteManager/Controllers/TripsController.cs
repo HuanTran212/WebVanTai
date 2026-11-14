@@ -6,6 +6,7 @@ using WebVanTai.Areas.RouteManager.Models;
 using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
+using WebVanTai.Models.ViewModels;
 using Route = WebVanTai.Models.Route;
 
 namespace WebVanTai.Areas.RouteManager.Controllers
@@ -22,7 +23,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         }
 
         // GET: RouteManager/Trips
-        public async Task<IActionResult> Index(int? routeId, int? busId, TripStatus? status, DateTime? departureDate)
+        public async Task<IActionResult> Index(int? routeId, int? busId, TripStatus? status, DateTime? departureDate, int page = 1)
         {
             var query = _context.Trips
                 .Include(t => t.Route)
@@ -61,11 +62,18 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             ViewBag.SelectedStatus = status;
             ViewBag.SelectedDate = departureDate?.ToString("yyyy-MM-dd");
 
-            var trips = await query
+            var totalItems = await query.CountAsync();
+            int pageSize = 15;
+            page = Math.Max(1, page);
+
+            var items = await query
                 .OrderByDescending(t => t.DepartureTime)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return View(trips);
+            var paginatedList = new PaginatedList<Trip>(items, totalItems, page, pageSize);
+            return View(paginatedList);
         }
 
         // GET: RouteManager/Trips/Details/5

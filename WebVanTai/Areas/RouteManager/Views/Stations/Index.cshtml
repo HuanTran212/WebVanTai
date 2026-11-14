@@ -1,4 +1,4 @@
-@model IEnumerable<WebVanTai.Models.Station>
+@model WebVanTai.Models.ViewModels.PaginatedList<WebVanTai.Models.Station>
 @{
     ViewData["Title"] = "Quản Lý Trạm Dừng & Bến Xe";
     var provinces = ViewBag.Provinces as List<string> ?? new List<string>();
@@ -117,5 +117,10 @@
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="px-3 pb-3">
+        <partial name="_PaginationPartial" model="Model" />
     </div>
 </div>

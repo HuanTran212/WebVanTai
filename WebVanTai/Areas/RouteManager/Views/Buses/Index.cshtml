@@ -1,4 +1,4 @@
-@model IEnumerable<WebVanTai.Models.Bus>
+@model WebVanTai.Models.ViewModels.PaginatedList<WebVanTai.Models.Bus>
 @{
     ViewData["Title"] = "Quản Lý Xe Khách";
     var busTypes = ViewBag.BusTypes as SelectList ?? new SelectList(Enumerable.Empty<object>());
@@ -133,5 +133,10 @@
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="px-3 pb-3">
+        <partial name="_PaginationPartial" model="Model" />
     </div>
 </div>

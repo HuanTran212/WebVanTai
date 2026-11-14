@@ -6,6 +6,8 @@ using WebVanTai.Data;
 using WebVanTai.Models;
 using WebVanTai.Models.Enums;
 
+using WebVanTai.Models.ViewModels;
+
 namespace WebVanTai.Areas.RouteManager.Controllers
 {
     [Area("RouteManager")]
@@ -20,7 +22,7 @@ namespace WebVanTai.Areas.RouteManager.Controllers
         }
 
         // GET: RouteManager/Buses
-        public async Task<IActionResult> Index(string? searchLicensePlate, int? busTypeId, bool? isActive)
+        public async Task<IActionResult> Index(string? searchLicensePlate, int? busTypeId, bool? isActive, int page = 1)
         {
             var query = _context.Buses
                 .Include(b => b.BusType)
@@ -50,8 +52,18 @@ namespace WebVanTai.Areas.RouteManager.Controllers
             ViewBag.SelectedBusTypeId = busTypeId;
             ViewBag.IsActiveFilter = isActive;
 
-            var buses = await query.OrderBy(b => b.LicensePlate).ToListAsync();
-            return View(buses);
+            var totalItems = await query.CountAsync();
+            int pageSize = 15;
+            page = Math.Max(1, page);
+
+            var items = await query
+                .OrderBy(b => b.LicensePlate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var paginatedList = new PaginatedList<Bus>(items, totalItems, page, pageSize);
+            return View(paginatedList);
         }
 
         // GET: RouteManager/Buses/Details/5
